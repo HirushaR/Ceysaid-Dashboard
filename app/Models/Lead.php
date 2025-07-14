@@ -32,12 +32,10 @@ class Lead extends Model
         'depature_date',
         'number_of_days',
         'tour_details',
-        'attachments',
     ];
 
     protected $casts = [
         'tour_details' => 'array',
-        'attachments' => 'array',
     ];
 
     public function customer()
@@ -58,5 +56,10 @@ class Lead extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(\App\Models\Attachment::class);
     }
 }

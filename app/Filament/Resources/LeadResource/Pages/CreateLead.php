@@ -14,6 +14,7 @@ class CreateLead extends CreateRecord
     public static function canCreate(): bool
     {
         $user = Auth::user();
+        var_dump($user);
         return $user && ($user->isMarketing() || $user->isAdmin());
     }
 }

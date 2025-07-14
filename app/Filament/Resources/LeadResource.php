@@ -93,6 +93,25 @@ class LeadResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user && $user->isSales()) {
+            $query->whereNull('assigned_to');
+        }
+        return $query;
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user && $user->isOperation()) {
+            return false;
+        }
+        return true;
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -161,7 +180,7 @@ class LeadResource extends Resource
                     ),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -182,6 +201,7 @@ class LeadResource extends Resource
         return [
             'index' => Pages\ListLeads::route('/'),
             'create' => Pages\CreateLead::route('/create'),
+            'view' => Pages\ViewLead::route('/{record}'),
             'edit' => Pages\EditLead::route('/{record}/edit'),
         ];
     }

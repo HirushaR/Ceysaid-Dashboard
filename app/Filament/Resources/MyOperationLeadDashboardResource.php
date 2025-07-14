@@ -65,12 +65,23 @@ class MyOperationLeadDashboardResource extends Resource
                         'mark_closed' => 'danger',
                         'pricing_in_progress' => 'primary',
                         'sent_to_customer' => 'success',
+                        'operation complete' => 'success', // added new status color
                     ]),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('operation_complete')
+                    ->label('Operation Complete')
+                    ->color('success')
+                    ->icon('heroicon-o-check-circle')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->status = 'operation_complete';
+                        $record->save();
+                    })
+                    ->visible(fn ($record) => $record->status !== 'assigned_to_operations'),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
     }

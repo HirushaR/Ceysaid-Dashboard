@@ -121,7 +121,29 @@ class MySalesDashboardResource extends Resource
                 Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Textarea::make('attachments')->label('Attachments')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Repeater::make('attachments')
+                    ->relationship('attachments')
+                    ->schema([
+                        Forms\Components\FileUpload::make('file_path')
+                            ->label('Attachment')
+                            ->disk('public')
+                            ->directory('lead-attachments')
+                            ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
+                            ->required()
+                            ->saveUploadedFileUsing(function ($file, $record, $set) {
+                                $path = $file->storeAs('lead-attachments', $file->getClientOriginalName(), 'public');
+                                $set('file_path', $path);
+                                $set('original_name', $file->getClientOriginalName());
+                                return $path;
+                            }),
+                        Forms\Components\Hidden::make('original_name'),
+                    ])
+                    ->createItemButtonLabel('Add Attachment')
+                    ->disableLabel()
+                    ->columns(1)
+                    ->disabled(fn($context) => $context === 'view'),
                 Forms\Components\DateTimePicker::make('created_at')->label('Created At')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
             ]);

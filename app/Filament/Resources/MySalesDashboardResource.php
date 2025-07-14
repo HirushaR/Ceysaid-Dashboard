@@ -18,6 +18,7 @@ class MySalesDashboardResource extends Resource
     protected static ?string $navigationLabel = 'My Sales Dashboard';
     protected static ?string $label = 'My Sales Dashboard';
     protected static ?string $pluralLabel = 'My Sales Dashboard';
+    protected static ?string $navigationGroup = 'Dashboard';
 
     public static function getEloquentQuery(): Builder
     {

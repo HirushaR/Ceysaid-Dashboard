@@ -18,6 +18,7 @@ class MyOperationLeadDashboardResource extends Resource
     protected static ?string $navigationLabel = 'My Operation Lead';
     protected static ?string $label = 'My Operation Lead';
     protected static ?string $pluralLabel = 'My Operation Leads';
+    protected static ?string $navigationGroup = 'Dashboard';
 
     public static function canViewAny(): bool
     {

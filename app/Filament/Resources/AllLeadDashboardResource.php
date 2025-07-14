@@ -18,6 +18,7 @@ class AllLeadDashboardResource extends Resource
     protected static ?string $navigationLabel = 'All Lead Dashboard';
     protected static ?string $label = 'All Lead Dashboard';
     protected static ?string $pluralLabel = 'All Lead Dashboard';
+    protected static ?string $navigationGroup = 'Dashboard';
 
     public static function canViewAny(): bool
     {

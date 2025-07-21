@@ -63,7 +63,8 @@ class ViewConfirmLead extends ViewRecord
                         ->success()
                         ->title('Lead marked as Document Upload Complete.')
                         ->send();
-                }),
+                })
+                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value),
         ];
     }
 } 

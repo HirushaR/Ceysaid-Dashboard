@@ -29,7 +29,7 @@ class AllLeadDashboardResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', 'info_gather_complete');
+        return parent::getEloquentQuery()->where('status', \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value);
     }
 
     public static function getPages(): array

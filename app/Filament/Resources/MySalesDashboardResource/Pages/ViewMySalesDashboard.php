@@ -17,14 +17,14 @@ class ViewMySalesDashboard extends ViewRecord
                 ->label('Info Gather Complete')
                 ->color('success')
                 ->action(function () {
-                    $this->record->status = 'info_gather_complete';
+                    $this->record->status = \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value;
                     $this->record->save();
                     \Filament\Notifications\Notification::make()
                         ->success()
                         ->title('Lead marked as Info Gather Complete.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status !== 'operation complete'),
+                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
             \Filament\Actions\Action::make('sent_to_customer')
                 ->label('Sent to Customer')
                 ->color('success')
@@ -33,14 +33,14 @@ class ViewMySalesDashboard extends ViewRecord
                 ->modalHeading('Are you sure?')
                 ->modalDescription('Confirm that all steps are done and this lead will be marked as sent to customer.')
                 ->action(function () {
-                    $this->record->status = 'sent_to_customer';
+                    $this->record->status = \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value;
                     $this->record->save();
                     \Filament\Notifications\Notification::make()
                         ->success()
                         ->title('Lead marked as Sent to Customer.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status === 'operation complete'),
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
         ];
     }
 } 

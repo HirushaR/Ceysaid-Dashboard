@@ -20,7 +20,7 @@ class EditLead extends EditRecord
                 ->action(function () {
                     $user = auth()->user();
                     $this->record->assigned_to = $user->id;
-                    $this->record->status = 'assigned_to_sales';
+                    $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value;
                     $this->record->save();
                     $this->notify('success', 'Lead assigned to you and status updated.');
                 }),

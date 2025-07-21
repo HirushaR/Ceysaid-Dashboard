@@ -19,7 +19,7 @@ class ViewLead extends ViewRecord
                 ->action(function () {
                     $user = auth()->user();
                     $this->record->assigned_to = $user->id;
-                    $this->record->status = 'assigned_to_sales';
+                    $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value;
                     $this->record->save();
                     Notification::make()
                         ->success()

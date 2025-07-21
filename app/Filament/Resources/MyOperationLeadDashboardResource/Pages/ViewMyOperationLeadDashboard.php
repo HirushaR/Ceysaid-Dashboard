@@ -20,14 +20,14 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                 ->icon('heroicon-o-check-circle')
                 ->requiresConfirmation()
                 ->action(function ($record) {
-                    $record->status = 'operation complete';
+                    $record->status = \App\Enums\LeadStatus::OPERATION_COMPLETE->value;
                     $record->save();
                     Notification::make()
                         ->title('Operation marked as complete!')
                         ->success()
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status !== 'operation complete'),
+                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
         ];
     }
 } 

@@ -17,7 +17,7 @@ class ViewAllLeadDashboard extends ViewRecord
                 ->label('Assign to Operation')
                 ->action(function () {
                     $user = auth()->user();
-                    $this->record->status = 'assigned_to_operations';
+                    $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value;
                     $this->record->assigned_operator = $user ? $user->id : null;
                     $this->record->save();
                     \Filament\Notifications\Notification::make()

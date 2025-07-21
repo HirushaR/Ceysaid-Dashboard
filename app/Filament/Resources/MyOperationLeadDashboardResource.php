@@ -70,10 +70,10 @@ class MyOperationLeadDashboardResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->requiresConfirmation()
                     ->action(function ($record) {
-                        $record->status = 'operation_complete';
+                        $record->status = \App\Enums\LeadStatus::OPERATION_COMPLETE->value;
                         $record->save();
                     })
-                    ->visible(fn ($record) => $record->status !== 'assigned_to_operations'),
+                    ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
     }

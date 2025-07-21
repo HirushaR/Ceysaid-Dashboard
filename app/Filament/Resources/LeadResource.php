@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\EditRecord;
+use App\Enums\LeadStatus;
 
 class LeadResource extends Resource
 {
@@ -53,18 +54,9 @@ class LeadResource extends Resource
                     ->searchable()
                     ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
                 Forms\Components\Select::make('status')
-                    ->options([
-                        'new' => 'New',
-                        'assigned_to_sales' => 'Assigned to Sales',
-                        'assigned_to_operations' => 'Assigned to Operations',
-                        'info_gather_complete' => 'Info Gather Complete',
-                        'mark_completed' => 'Mark Completed',
-                        'mark_closed' => 'Mark Closed',
-                        'pricing_in_progress' => 'Pricing In Progress',
-                        'sent_to_customer' => 'Sent to Customer',
-                    ])
+                    ->options(LeadStatus::options())
                     ->required()
-                    ->default('new')
+                    ->default(LeadStatus::NEW->value)
                     ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
                 Forms\Components\Select::make('contact_method')
                     ->options([
@@ -133,16 +125,7 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('assignedUser.name')->label('Assigned To')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('assignedOperator.name')->label('Assigned Operator')->sortable()->searchable(),
                 Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'new' => 'gray',
-                        'assigned_to_sales' => 'info',
-                        'assigned_to_operations' => 'warning',
-                        'info_gather_complete' => 'success',
-                        'mark_completed' => 'success',
-                        'mark_closed' => 'danger',
-                        'pricing_in_progress' => 'primary',
-                        'sent_to_customer' => 'success',
-                    ]),
+                    ->colors(LeadStatus::colorMap()),
                 Tables\Columns\BadgeColumn::make('priority')
                     ->colors([
                         'low' => 'gray',
@@ -165,13 +148,7 @@ class LeadResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'info_gather_complete' => 'Info Gather Complete',
-                        'mark_completed' => 'Mark Completed',
-                        'mark_closed' => 'Mark Closed',
-                        'pricing_in_progress' => 'Pricing In Progress',
-                        'sent_to_customer' => 'Sent to Customer',
-                    ]),
+                    ->options(LeadStatus::options()),
                 Tables\Filters\TernaryFilter::make('assigned_to')
                     ->label('Unassigned')
                     ->trueLabel('Unassigned')

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\MyOperationLeadDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
+use App\Enums\LeadStatus;
 
 class MyOperationLeadDashboardResource extends Resource
 {
@@ -57,17 +58,7 @@ class MyOperationLeadDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('tour')->limit(20),
                 Tables\Columns\TextColumn::make('message')->limit(20),
                 Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'new' => 'gray',
-                        'assigned_to_sales' => 'info',
-                        'assigned_to_operations' => 'warning',
-                        'info_gather_complete' => 'success',
-                        'mark_completed' => 'success',
-                        'mark_closed' => 'danger',
-                        'pricing_in_progress' => 'primary',
-                        'sent_to_customer' => 'success',
-                        'operation complete' => 'success', // added new status color
-                    ]),
+                    ->colors(LeadStatus::colorMap()),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
@@ -109,17 +100,7 @@ class MyOperationLeadDashboardResource extends Resource
                 Forms\Components\TextInput::make('assigned_operator')->label('Assigned Operator')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Placeholder::make('status')
                     ->label('Status')
-                    ->content(fn($record) => match($record->status ?? null) {
-                        'new' => 'New',
-                        'assigned_to_sales' => 'Assigned to Sales',
-                        'assigned_to_operations' => 'Assigned to Operations',
-                        'info_gather_complete' => 'Info Gather Complete',
-                        'mark_completed' => 'Mark Completed',
-                        'mark_closed' => 'Mark Closed',
-                        'pricing_in_progress' => 'Pricing In Progress',
-                        'sent_to_customer' => 'Sent to Customer',
-                        default => $record->status ?? '',
-                    })
+                    ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? '')
                     ->visible(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn($context) => $context === 'view'),

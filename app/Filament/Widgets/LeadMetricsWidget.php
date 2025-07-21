@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
+use App\Enums\LeadStatus;
 
 class LeadMetricsWidget extends ChartWidget
 {
@@ -10,16 +11,10 @@ class LeadMetricsWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $statuses = [
-            'info_gather_complete' => 'Info Gather Complete',
-            'mark_completed' => 'Mark Completed',
-            'mark_closed' => 'Mark Closed',
-            'pricing_in_progress' => 'Pricing In Progress',
-            'sent_to_customer' => 'Sent to Customer',
-        ];
+        $statuses = LeadStatus::cases();
         $counts = [];
-        foreach ($statuses as $key => $label) {
-            $counts[] = \App\Models\Lead::where('status', $key)->count();
+        foreach ($statuses as $status) {
+            $counts[] = \App\Models\Lead::where('status', $status->value)->count();
         }
         return [
             'datasets' => [
@@ -28,7 +23,7 @@ class LeadMetricsWidget extends ChartWidget
                     'data' => $counts,
                 ],
             ],
-            'labels' => array_values($statuses),
+            'labels' => array_map(fn($status) => $status->label(), $statuses),
         ];
     }
 

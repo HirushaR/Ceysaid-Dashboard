@@ -15,6 +15,7 @@ class ViewConfirmLead extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\EditAction::make(),
             Action::make('attach_documents')
                 ->label('Attach Documents')
                 ->form([

@@ -36,6 +36,7 @@ class ConfirmLeadResource extends Resource
         return [
             'index' => Pages\ListConfirmLeads::route('/'),
             'view' => Pages\ViewConfirmLead::route('/{record}'),
+            'edit' => Pages\EditConfirmLead::route('/{record}/edit'),
         ];
     }
 
@@ -56,6 +57,18 @@ class ConfirmLeadResource extends Resource
                 Tables\Columns\TextColumn::make('message')->limit(20),
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors(LeadStatus::colorMap()),
+                Tables\Columns\IconColumn::make('air_ticket')
+                    ->boolean()
+                    ->label('Air Ticket'),
+                Tables\Columns\IconColumn::make('hotel')
+                    ->boolean()
+                    ->label('Hotel'),
+                Tables\Columns\IconColumn::make('visa')
+                    ->boolean()
+                    ->label('Visa'),
+                Tables\Columns\IconColumn::make('land_package')
+                    ->boolean()
+                    ->label('Land Package'),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
@@ -100,6 +113,10 @@ class ConfirmLeadResource extends Resource
                 Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Toggle::make('air_ticket')->label('Air Ticket')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Toggle::make('hotel')->label('Hotel')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Toggle::make('visa')->label('Visa')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Toggle::make('land_package')->label('Land Package')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Repeater::make('attachments')
                     ->relationship('attachments')

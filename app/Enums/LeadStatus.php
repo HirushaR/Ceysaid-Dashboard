@@ -13,6 +13,7 @@ enum LeadStatus: string
     case PRICING_IN_PROGRESS = 'pricing_in_progress';
     case SENT_TO_CUSTOMER = 'sent_to_customer';
     case OPERATION_COMPLETE = 'operation_complete'; // found in MyOperationLeadDashboardResource
+    case CONFIRMED = 'confirmed';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum LeadStatus: string
             self::PRICING_IN_PROGRESS => 'Pricing In Progress',
             self::SENT_TO_CUSTOMER => 'Sent to Customer',
             self::OPERATION_COMPLETE => 'Operation Complete',
+            self::CONFIRMED => 'Confirmed',
         };
     }
 
@@ -41,6 +43,7 @@ enum LeadStatus: string
             self::PRICING_IN_PROGRESS => 'primary',
             self::SENT_TO_CUSTOMER => 'success',
             self::OPERATION_COMPLETE => 'success',
+            self::CONFIRMED => 'primary',
         };
     }
 
@@ -56,6 +59,7 @@ enum LeadStatus: string
             self::PRICING_IN_PROGRESS->value => self::PRICING_IN_PROGRESS->label(),
             self::SENT_TO_CUSTOMER->value => self::SENT_TO_CUSTOMER->label(),
             self::OPERATION_COMPLETE->value => self::OPERATION_COMPLETE->label(),
+            self::CONFIRMED->value => self::CONFIRMED->label(),
         ];
     }
 
@@ -71,6 +75,7 @@ enum LeadStatus: string
             self::PRICING_IN_PROGRESS->value => self::PRICING_IN_PROGRESS->color(),
             self::SENT_TO_CUSTOMER->value => self::SENT_TO_CUSTOMER->color(),
             self::OPERATION_COMPLETE->value => self::OPERATION_COMPLETE->color(),
+            self::CONFIRMED->value => self::CONFIRMED->color(),
         ];
     }
 } 

@@ -24,7 +24,7 @@ class ViewMySalesDashboard extends ViewRecord
                         ->title('Lead marked as Info Gather Complete.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
             \Filament\Actions\Action::make('sent_to_customer')
                 ->label('Sent to Customer')
                 ->color('success')
@@ -41,6 +41,22 @@ class ViewMySalesDashboard extends ViewRecord
                         ->send();
                 })
                 ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+            \Filament\Actions\Action::make('confirm_lead')
+                ->label('Confirm Lead')
+                ->color('info')
+                ->icon('heroicon-o-check')
+                ->requiresConfirmation()
+                ->modalHeading('Confirm this lead?')
+                ->modalDescription('This will mark the lead as confirmed.')
+                ->action(function () {
+                    $this->record->status = \App\Enums\LeadStatus::CONFIRMED->value;
+                    $this->record->save();
+                    \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('Lead confirmed successfully.')
+                        ->send();
+                })
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value),
         ];
     }
 } 

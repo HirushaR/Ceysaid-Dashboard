@@ -10,6 +10,7 @@ class Attachment extends Model
         'lead_id',
         'file_path',
         'original_name',
+        'type',
     ];
 
     public function lead()

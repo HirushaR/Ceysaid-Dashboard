@@ -28,7 +28,7 @@ class ConfirmLeadResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', LeadStatus::CONFIRMED->value);
+        return parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
     }
 
     public static function getPages(): array
@@ -104,6 +104,14 @@ class ConfirmLeadResource extends Resource
                 Forms\Components\Repeater::make('attachments')
                     ->relationship('attachments')
                     ->schema([
+                        Forms\Components\Select::make('type')
+                            ->label('Document Type')
+                            ->options([
+                                'lead_documents' => 'Lead Documents',
+                                'passport' => 'Passport',
+                                'other_documents' => 'Other Documents',
+                            ])
+                            ->required(),
                         Forms\Components\FileUpload::make('file_path')
                             ->label('Attachment')
                             ->disk('public')

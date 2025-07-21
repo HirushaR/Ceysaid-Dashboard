@@ -14,6 +14,7 @@ enum LeadStatus: string
     case SENT_TO_CUSTOMER = 'sent_to_customer';
     case OPERATION_COMPLETE = 'operation_complete'; // found in MyOperationLeadDashboardResource
     case CONFIRMED = 'confirmed';
+    case DOCUMENT_UPLOAD_COMPLETE = 'document_upload_complete';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum LeadStatus: string
             self::SENT_TO_CUSTOMER => 'Sent to Customer',
             self::OPERATION_COMPLETE => 'Operation Complete',
             self::CONFIRMED => 'Confirmed',
+            self::DOCUMENT_UPLOAD_COMPLETE => 'Document Upload Complete',
         };
     }
 
@@ -44,6 +46,7 @@ enum LeadStatus: string
             self::SENT_TO_CUSTOMER => 'success',
             self::OPERATION_COMPLETE => 'success',
             self::CONFIRMED => 'primary',
+            self::DOCUMENT_UPLOAD_COMPLETE => 'info',
         };
     }
 
@@ -60,6 +63,7 @@ enum LeadStatus: string
             self::SENT_TO_CUSTOMER->value => self::SENT_TO_CUSTOMER->label(),
             self::OPERATION_COMPLETE->value => self::OPERATION_COMPLETE->label(),
             self::CONFIRMED->value => self::CONFIRMED->label(),
+            self::DOCUMENT_UPLOAD_COMPLETE->value => self::DOCUMENT_UPLOAD_COMPLETE->label(),
         ];
     }
 
@@ -76,6 +80,7 @@ enum LeadStatus: string
             self::SENT_TO_CUSTOMER->value => self::SENT_TO_CUSTOMER->color(),
             self::OPERATION_COMPLETE->value => self::OPERATION_COMPLETE->color(),
             self::CONFIRMED->value => self::CONFIRMED->color(),
+            self::DOCUMENT_UPLOAD_COMPLETE->value => self::DOCUMENT_UPLOAD_COMPLETE->color(),
         ];
     }
 } 

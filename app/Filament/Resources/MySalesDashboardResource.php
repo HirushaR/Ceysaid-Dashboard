@@ -59,6 +59,7 @@ class MySalesDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                 ->badge()
                 ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'),
+                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
@@ -85,6 +86,7 @@ class MySalesDashboardResource extends Resource
                 Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Textarea::make('message')->label('Message')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
                 Forms\Components\TextInput::make('created_by')->label('Created By')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('assigned_to')->label('Assigned To')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('assigned_operator')->label('Assigned Operator')->disabled(fn($context) => $context === 'view'),

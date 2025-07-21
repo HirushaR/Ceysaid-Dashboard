@@ -10,6 +10,7 @@ class Lead extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'reference_id',
         'customer_name',
         'customer_id',
         'platform',

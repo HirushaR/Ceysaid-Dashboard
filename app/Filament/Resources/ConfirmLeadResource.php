@@ -44,6 +44,7 @@ class ConfirmLeadResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('id')->sortable(),
                 Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
@@ -81,6 +82,7 @@ class ConfirmLeadResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
                 Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Select::make('customer_id')
                     ->label('Customer')
@@ -151,6 +153,7 @@ class ConfirmLeadResource extends Resource
                     ->disabled(fn($context) => $context === 'view'),
                 Forms\Components\DateTimePicker::make('created_at')->label('Created At')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
+                Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(fn($context) => $context === 'view'),
             ]);
     }
 } 

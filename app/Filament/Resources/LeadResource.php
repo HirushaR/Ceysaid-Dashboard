@@ -28,6 +28,7 @@ class LeadResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
                 Forms\Components\TextInput::make('customer_name')
                     ->required(),
                 Forms\Components\Select::make('customer_id')
@@ -81,6 +82,7 @@ class LeadResource extends Resource
                 Forms\Components\DatePicker::make('arrival_date'),
                 Forms\Components\DatePicker::make('depature_date'),
                 Forms\Components\TextInput::make('number_of_days')->numeric(),
+                Forms\Components\TextInput::make('reference_id')->disabled(),
 
                 Forms\Components\DateTimePicker::make('created_at')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->disabled(),
@@ -110,6 +112,7 @@ class LeadResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('id')->sortable(),
                 Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),

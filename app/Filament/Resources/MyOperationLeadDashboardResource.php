@@ -46,6 +46,7 @@ class MyOperationLeadDashboardResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('id')->sortable(),
                 Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
@@ -82,6 +83,7 @@ class MyOperationLeadDashboardResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('reference_id')->label('Reference ID'),
                 Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Select::make('customer_id')
                     ->label('Customer')

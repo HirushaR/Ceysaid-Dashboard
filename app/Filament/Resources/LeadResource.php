@@ -120,6 +120,7 @@ class LeadResource extends Resource
                     ->label('Visa Status')
                     ->options(ServiceStatus::options())
                     ->default('pending')
+                    ->disabled()
                     ->suffixIcon(fn ($state) => match ($state) {
                         'pending' => 'heroicon-o-clock',
                         'not_required' => 'heroicon-o-minus-circle',
@@ -131,7 +132,8 @@ class LeadResource extends Resource
                         'not_required' => 'gray',
                         'done' => 'success',
                         default => 'gray'
-                    }),
+                    })
+                    ->helperText('Visa status can only be edited in Visa Leads tab'),
                 Forms\Components\Select::make('land_package_status')
                     ->label('Land Package Status')
                     ->options(ServiceStatus::options())

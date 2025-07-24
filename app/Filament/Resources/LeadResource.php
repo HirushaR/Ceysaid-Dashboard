@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\EditRecord;
 use App\Enums\LeadStatus;
+use App\Enums\ServiceStatus;
 
 class LeadResource extends Resource
 {
@@ -82,7 +83,71 @@ class LeadResource extends Resource
                 Forms\Components\DatePicker::make('arrival_date'),
                 Forms\Components\DatePicker::make('depature_date'),
                 Forms\Components\TextInput::make('number_of_days')->numeric(),
-                Forms\Components\TextInput::make('reference_id')->disabled(),
+                Forms\Components\Textarea::make('tour_details')->label('Tour Details'),
+                Forms\Components\Select::make('air_ticket_status')
+                    ->label('Air Ticket Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('hotel_status')
+                    ->label('Hotel Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('visa_status')
+                    ->label('Visa Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('land_package_status')
+                    ->label('Land Package Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
 
                 Forms\Components\DateTimePicker::make('created_at')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->disabled(),
@@ -145,7 +210,67 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('number_of_infants'),
                 Tables\Columns\TextColumn::make('arrival_date')->date(),
                 Tables\Columns\TextColumn::make('depature_date')->date(),
-                Tables\Columns\TextColumn::make('number_of_days'),                
+                Tables\Columns\TextColumn::make('number_of_days'),
+                Tables\Columns\IconColumn::make('air_ticket_status')
+                    ->label('Air Ticket')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('hotel_status')
+                    ->label('Hotel')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('visa_status')
+                    ->label('Visa')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('land_package_status')
+                    ->label('Land Package')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),               
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
                 Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable(),
             ])

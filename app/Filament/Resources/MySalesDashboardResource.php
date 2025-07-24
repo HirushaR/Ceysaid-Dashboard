@@ -11,6 +11,7 @@ use App\Filament\Resources\MySalesDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\ServiceStatus;
 
 class MySalesDashboardResource extends Resource
 {
@@ -59,6 +60,66 @@ class MySalesDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                 ->badge()
                 ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'),
+                Tables\Columns\IconColumn::make('air_ticket_status')
+                    ->label('Air Ticket')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('hotel_status')
+                    ->label('Hotel')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('visa_status')
+                    ->label('Visa')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                Tables\Columns\IconColumn::make('land_package_status')
+                    ->label('Land Package')
+                    ->icon(fn (string $state): string => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    })
+                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
@@ -107,6 +168,74 @@ class MySalesDashboardResource extends Resource
                 Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
                 Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
+                Forms\Components\Select::make('air_ticket_status')
+                    ->label('Air Ticket Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->disabled(fn($context) => $context === 'view')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('hotel_status')
+                    ->label('Hotel Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->disabled(fn($context) => $context === 'view')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('visa_status')
+                    ->label('Visa Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->disabled(fn($context) => $context === 'view')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
+                Forms\Components\Select::make('land_package_status')
+                    ->label('Land Package Status')
+                    ->options(ServiceStatus::options())
+                    ->default('pending')
+                    ->disabled(fn($context) => $context === 'view')
+                    ->suffixIcon(fn ($state) => match ($state) {
+                        'pending' => 'heroicon-o-clock',
+                        'not_required' => 'heroicon-o-minus-circle',
+                        'done' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle'
+                    })
+                    ->suffixIconColor(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'not_required' => 'gray',
+                        'done' => 'success',
+                        default => 'gray'
+                    }),
                 Forms\Components\Repeater::make('attachments')
                     ->relationship('attachments')
                     ->schema([

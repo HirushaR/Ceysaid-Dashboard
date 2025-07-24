@@ -33,18 +33,14 @@ class Lead extends Model
         'depature_date',
         'number_of_days',
         'tour_details',
-        'air_ticket',
-        'hotel',
-        'visa',
-        'land_package',
+        'air_ticket_status',
+        'hotel_status',
+        'visa_status',
+        'land_package_status',
     ];
 
     protected $casts = [
         'tour_details' => 'array',
-        'air_ticket' => 'boolean',
-        'hotel' => 'boolean',
-        'visa' => 'boolean',
-        'land_package' => 'boolean',
     ];
 
     public function customer()

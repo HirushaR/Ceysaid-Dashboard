@@ -29,127 +29,84 @@ class LeadResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
-                Forms\Components\TextInput::make('customer_name')
-                    ->required(),
-                Forms\Components\Select::make('customer_id')
-                    ->relationship('customer', 'name')
-                    ->searchable()
-                    ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                Forms\Components\Select::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
+                Forms\Components\Section::make('Lead Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
+                        Forms\Components\TextInput::make('customer_name')
+                            ->required(),
+                        Forms\Components\Select::make('customer_id')
+                            ->relationship('customer', 'name')
+                            ->searchable()
+                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                        Forms\Components\Select::make('platform')
+                            ->options([
+                                'facebook' => 'Facebook',
+                                'whatsapp' => 'WhatsApp',
+                                'email' => 'Email',
+                            ])
+                            ->required(),
+                        Forms\Components\Textarea::make('tour'),
+                        Forms\Components\Textarea::make('message'),
+                        Forms\Components\Hidden::make('created_by')
+                            ->default(fn() => auth()->id()),
                     ])
-                    ->required(),
-                Forms\Components\Textarea::make('tour'),
-                Forms\Components\Textarea::make('message'),
-                Forms\Components\Hidden::make('created_by')
-                    ->default(fn() => auth()->id()),
-                Forms\Components\Select::make('assigned_to')
-                    ->relationship('assignedUser', 'name')
-                    ->searchable()
-                    ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                Forms\Components\Select::make('assigned_operator')
-                    ->relationship('assignedOperator', 'name')
-                    ->searchable()
-                    ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                Forms\Components\Select::make('status')
-                    ->options(LeadStatus::options())
-                    ->required()
-                    ->default(LeadStatus::NEW->value)
-                    ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                Forms\Components\Select::make('contact_method')
-                    ->options([
-                        'phone' => 'Phone',
-                        'email' => 'Email',
-                        'whatsapp' => 'WhatsApp',
-                        'facebook' => 'Facebook',
-                    ]),
-                Forms\Components\TextInput::make('contact_value'),
-                Forms\Components\TextInput::make('subject'),
-                Forms\Components\TextInput::make('country'),
-                Forms\Components\TextInput::make('destination'),
-                Forms\Components\TextInput::make('number_of_adults')->numeric(),
-                Forms\Components\TextInput::make('number_of_children')->numeric(),
-                Forms\Components\TextInput::make('number_of_infants')->numeric(),
-                Forms\Components\Select::make('priority')
-                    ->options([
-                        'low' => 'Low',
-                        'medium' => 'Medium',
-                        'high' => 'High',
-                    ]),
-                Forms\Components\DatePicker::make('arrival_date'),
-                Forms\Components\DatePicker::make('depature_date'),
-                Forms\Components\TextInput::make('number_of_days')->numeric(),
-                Forms\Components\Textarea::make('tour_details')->label('Tour Details'),
-                Forms\Components\Select::make('air_ticket_status')
-                    ->label('Air Ticket Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
-                Forms\Components\Select::make('hotel_status')
-                    ->label('Hotel Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
-                Forms\Components\Select::make('visa_status')
-                    ->label('Visa Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->disabled()
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->helperText('Visa status can only be edited in Visa Leads tab'),
-                Forms\Components\Select::make('land_package_status')
-                    ->label('Land Package Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Contact Information')
+                    ->schema([
+                        Forms\Components\Select::make('contact_method')
+                            ->options([
+                                'phone' => 'Phone',
+                                'email' => 'Email',
+                                'whatsapp' => 'WhatsApp',
+                                'facebook' => 'Facebook',
+                            ]),
+                        Forms\Components\TextInput::make('contact_value'),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Assignment & Status')
+                    ->schema([
+                        Forms\Components\Select::make('assigned_to')
+                            ->relationship('assignedUser', 'name')
+                            ->searchable()
+                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                        Forms\Components\Select::make('assigned_operator')
+                            ->relationship('assignedOperator', 'name')
+                            ->searchable()
+                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                        Forms\Components\Select::make('status')
+                            ->options(LeadStatus::options())
+                            ->required()
+                            ->default(LeadStatus::NEW->value)
+                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Travel Details')
+                    ->schema([
+                        Forms\Components\TextInput::make('subject'),
+                        Forms\Components\TextInput::make('country'),
+                        Forms\Components\TextInput::make('destination'),
+                        Forms\Components\TextInput::make('number_of_adults')->numeric(),
+                        Forms\Components\TextInput::make('number_of_children')->numeric(),
+                        Forms\Components\TextInput::make('number_of_infants')->numeric(),
+                        Forms\Components\Select::make('priority')
+                            ->options([
+                                'low' => 'Low',
+                                'medium' => 'Medium',
+                                'high' => 'High',
+                            ]),
+                        Forms\Components\DatePicker::make('arrival_date'),
+                        Forms\Components\DatePicker::make('depature_date'),
+                        Forms\Components\TextInput::make('number_of_days')->numeric(),
+                        Forms\Components\Textarea::make('tour_details')->label('Tour Details'),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
 
                 Forms\Components\DateTimePicker::make('created_at')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->disabled(),
@@ -213,66 +170,6 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('arrival_date')->date(),
                 Tables\Columns\TextColumn::make('depature_date')->date(),
                 Tables\Columns\TextColumn::make('number_of_days'),
-                Tables\Columns\IconColumn::make('air_ticket_status')
-                    ->label('Air Ticket')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('hotel_status')
-                    ->label('Hotel')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('visa_status')
-                    ->label('Visa')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('land_package_status')
-                    ->label('Land Package')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),               
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
                 Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable(),
             ])

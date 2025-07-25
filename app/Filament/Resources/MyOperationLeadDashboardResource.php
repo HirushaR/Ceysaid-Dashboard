@@ -61,66 +61,6 @@ class MyOperationLeadDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('message')->limit(20),
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors(LeadStatus::colorMap()),
-                Tables\Columns\IconColumn::make('air_ticket_status')
-                    ->label('Air Ticket')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('hotel_status')
-                    ->label('Hotel')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('visa_status')
-                    ->label('Visa')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\IconColumn::make('land_package_status')
-                    ->label('Land Package')
-                    ->icon(fn (string $state): string => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
@@ -144,132 +84,97 @@ class MyOperationLeadDashboardResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('reference_id')->label('Reference ID'),
-                Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Select::make('customer_id')
-                    ->label('Customer')
-                    ->relationship('customer', 'name')
-                    ->searchable()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')->required(),
-                        Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
-                    ])
-                    ->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Textarea::make('message')->label('Message')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('created_by')->label('Created By')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('assigned_to')->label('Assigned To')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('assigned_operator')->label('Assigned Operator')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Placeholder::make('status')
-                    ->label('Status')
-                    ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? '')
-                    ->visible(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('country')->label('Country')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
-                Forms\Components\Select::make('air_ticket_status')
-                    ->label('Air Ticket Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->disabled(fn($context) => $context === 'view')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
-                Forms\Components\Select::make('hotel_status')
-                    ->label('Hotel Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->disabled(fn($context) => $context === 'view')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
-                Forms\Components\Select::make('visa_status')
-                    ->label('Visa Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->disabled()
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
-                    ->helperText('Visa status can only be edited in Visa Leads tab'),
-                Forms\Components\Select::make('land_package_status')
-                    ->label('Land Package Status')
-                    ->options(ServiceStatus::options())
-                    ->default('pending')
-                    ->disabled(fn($context) => $context === 'view')
-                    ->suffixIcon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'not_required' => 'heroicon-o-minus-circle',
-                        'done' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    })
-                    ->suffixIconColor(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    }),
-                Forms\Components\Repeater::make('attachments')
-                    ->relationship('attachments')
+                Forms\Components\Section::make('Lead Information')
                     ->schema([
-                        Forms\Components\FileUpload::make('file_path')
-                            ->label('Attachment')
-                            ->disk('public')
-                            ->directory('lead-attachments')
-                            ->preserveFilenames()
-                            ->downloadable()
-                            ->openable()
-                            ->required()
-                            ->saveUploadedFileUsing(function ($file, $record, $set) {
-                                $path = $file->storeAs('lead-attachments', $file->getClientOriginalName(), 'public');
-                                $set('file_path', $path);
-                                $set('original_name', $file->getClientOriginalName());
-                                return $path;
-                            }),
-                        Forms\Components\Hidden::make('original_name'),
+                        Forms\Components\TextInput::make('reference_id')->label('Reference ID'),
+                        Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\Select::make('customer_id')
+                            ->label('Customer')
+                            ->relationship('customer', 'name')
+                            ->searchable()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')->required(),
+                                Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
+                            ])
+                            ->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('message')->label('Message')->disabled(fn($context) => $context === 'view'),
                     ])
-                    ->createItemButtonLabel('Add Attachment')
-                    ->disableLabel()
-                    ->columns(1)
-                    ->disabled(fn($context) => $context === 'view'),
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Contact Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn($context) => $context === 'view'),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Assignment & Status')
+                    ->schema([
+                        Forms\Components\Placeholder::make('created_by')
+                            ->label('Created By')
+                            ->content(fn($record) => $record->creator?->name ?? 'N/A'),
+                        Forms\Components\Placeholder::make('assigned_to')
+                            ->label('Assigned To')
+                            ->content(fn($record) => $record->assignedUser?->name ?? 'Unassigned'),
+                        Forms\Components\Placeholder::make('assigned_operator')
+                            ->label('Assigned Operator')
+                            ->content(fn($record) => $record->assignedOperator?->name ?? 'Unassigned'),
+                        Forms\Components\Placeholder::make('status')
+                            ->label('Status')
+                            ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Travel Details')
+                    ->schema([
+                        Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('country')->label('Country')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Attachments')
+                    ->schema([
+                        Forms\Components\Repeater::make('attachments')
+                            ->relationship('attachments')
+                            ->schema([
+                                Forms\Components\FileUpload::make('file_path')
+                                    ->label('Attachment')
+                                    ->disk('public')
+                                    ->directory('lead-attachments')
+                                    ->preserveFilenames()
+                                    ->downloadable()
+                                    ->openable()
+                                    ->required()
+                                    ->saveUploadedFileUsing(function ($file, $record, $set) {
+                                        $path = $file->storeAs('lead-attachments', $file->getClientOriginalName(), 'public');
+                                        $set('file_path', $path);
+                                        $set('original_name', $file->getClientOriginalName());
+                                        return $path;
+                                    }),
+                                Forms\Components\Hidden::make('original_name'),
+                            ])
+                            ->createItemButtonLabel('Add Attachment')
+                            ->disableLabel()
+                            ->columns(1)
+                            ->disabled(fn($context) => $context === 'view'),
+                    ])
+                    ->collapsible(),
+
                 Forms\Components\DateTimePicker::make('created_at')->label('Created At')->disabled(),
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
             ]);

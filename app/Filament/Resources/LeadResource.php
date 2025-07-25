@@ -175,9 +175,44 @@ class LeadResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(LeadStatus::options()),
-                Tables\Filters\TernaryFilter::make('assigned_to')
-                    ->label('Unassigned')
+                    ->options(LeadStatus::options())
+                    ->label('Lead Status'),
+                Tables\Filters\SelectFilter::make('priority')
+                    ->options([
+                        'low' => 'Low',
+                        'medium' => 'Medium',
+                        'high' => 'High',
+                    ])
+                    ->label('Priority'),
+                Tables\Filters\SelectFilter::make('platform')
+                    ->options([
+                        'facebook' => 'Facebook',
+                        'whatsapp' => 'WhatsApp',
+                        'email' => 'Email',
+                    ])
+                    ->label('Platform'),
+                Tables\Filters\SelectFilter::make('air_ticket_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Air Ticket Status'),
+                Tables\Filters\SelectFilter::make('hotel_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Hotel Status'),
+                Tables\Filters\SelectFilter::make('visa_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Visa Status'),
+                Tables\Filters\SelectFilter::make('land_package_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Land Package Status'),
+                Tables\Filters\SelectFilter::make('assigned_to')
+                    ->relationship('assignedUser', 'name')
+                    ->label('Assigned To')
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('assigned_operator')
+                    ->relationship('assignedOperator', 'name')
+                    ->label('Assigned Operator')
+                    ->searchable(),
+                Tables\Filters\TernaryFilter::make('unassigned')
+                    ->label('Assignment Status')
                     ->trueLabel('Unassigned')
                     ->falseLabel('Assigned')
                     ->queries(

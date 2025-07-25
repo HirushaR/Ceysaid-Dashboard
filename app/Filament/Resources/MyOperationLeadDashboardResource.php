@@ -59,9 +59,32 @@ class MyOperationLeadDashboardResource extends Resource
                     ]),
                 Tables\Columns\TextColumn::make('tour')->limit(20),
                 Tables\Columns\TextColumn::make('message')->limit(20),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors(LeadStatus::colorMap()),
+                Tables\Columns\TextColumn::make('status')
+                ->badge()
+                ->color(fn (string $state): string => 
+                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                ),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(LeadStatus::options())
+                    ->label('Lead Status'),
+                Tables\Filters\SelectFilter::make('platform')
+                    ->options([
+                        'facebook' => 'Facebook',
+                        'whatsapp' => 'WhatsApp',
+                        'email' => 'Email',
+                    ])
+                    ->label('Platform'),
+                Tables\Filters\SelectFilter::make('assigned_to')
+                    ->relationship('assignedUser', 'name')
+                    ->label('Assigned To')
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->relationship('creator', 'name')
+                    ->label('Created By')
+                    ->searchable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

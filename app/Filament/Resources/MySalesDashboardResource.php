@@ -65,6 +65,26 @@ class MySalesDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(LeadStatus::options())
+                    ->label('Lead Status'),
+                Tables\Filters\SelectFilter::make('platform')
+                    ->options([
+                        'facebook' => 'Facebook',
+                        'whatsapp' => 'WhatsApp',
+                        'email' => 'Email',
+                    ])
+                    ->label('Platform'),
+                Tables\Filters\SelectFilter::make('assigned_operator')
+                    ->relationship('assignedOperator', 'name')
+                    ->label('Assigned Operator')
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->relationship('creator', 'name')
+                    ->label('Created By')
+                    ->searchable(),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

@@ -57,8 +57,11 @@ class ConfirmLeadResource extends Resource
                     ]),
                 Tables\Columns\TextColumn::make('tour')->limit(20),
                 Tables\Columns\TextColumn::make('message')->limit(20),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors(LeadStatus::colorMap()),
+                Tables\Columns\TextColumn::make('status')
+                ->badge()
+                ->color(fn (string $state): string => 
+                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                ),
                 Tables\Columns\IconColumn::make('air_ticket_status')
                     ->label('Air Ticket')
                     ->icon(fn (string $state): string => match ($state) {
@@ -67,12 +70,9 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('hotel_status')
                     ->label('Hotel')
@@ -82,12 +82,9 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('visa_status')
                     ->label('Visa')
@@ -97,12 +94,9 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('land_package_status')
                     ->label('Land Package')
@@ -112,12 +106,9 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
@@ -207,12 +198,9 @@ class ConfirmLeadResource extends Resource
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => match ($state) {
-                                'pending' => 'warning',
-                                'not_required' => 'gray',
-                                'done' => 'success',
-                                default => 'gray'
-                            }),
+                            ->suffixIconColor(fn ($state) => 
+                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ),
                         Forms\Components\Select::make('hotel_status')
                             ->label('Hotel Status')
                             ->options(ServiceStatus::options())
@@ -224,12 +212,9 @@ class ConfirmLeadResource extends Resource
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => match ($state) {
-                                'pending' => 'warning',
-                                'not_required' => 'gray',
-                                'done' => 'success',
-                                default => 'gray'
-                            }),
+                            ->suffixIconColor(fn ($state) => 
+                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ),
                         Forms\Components\Select::make('visa_status')
                             ->label('Visa Status')
                             ->options(ServiceStatus::options())
@@ -241,12 +226,9 @@ class ConfirmLeadResource extends Resource
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => match ($state) {
-                                'pending' => 'warning',
-                                'not_required' => 'gray',
-                                'done' => 'success',
-                                default => 'gray'
-                            })
+                            ->suffixIconColor(fn ($state) => 
+                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            )
                             ->helperText('Visa status can only be edited in Visa Leads tab'),
                         Forms\Components\Select::make('land_package_status')
                             ->label('Land Package Status')
@@ -259,12 +241,9 @@ class ConfirmLeadResource extends Resource
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => match ($state) {
-                                'pending' => 'warning',
-                                'not_required' => 'gray',
-                                'done' => 'success',
-                                default => 'gray'
-                            }),
+                            ->suffixIconColor(fn ($state) => 
+                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ),
                     ])
                     ->columns(2)
                     ->collapsible(),

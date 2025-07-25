@@ -29,6 +29,29 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => Color::Blue,
+                // Add custom colors using different methods
+                'brand' => Color::hex('#6366f1'),              // Custom hex color
+                'success' => Color::Green,                     // Predefined color
+                'warning' => Color::Amber,                     // Predefined color  
+                'danger' => Color::Red,                        // Predefined color
+                'secondary' => Color::Gray,                    // Predefined color
+                'info' => Color::Sky,                          // Predefined color
+                // Custom RGB color
+                'accent' => Color::rgb('rgb(139, 69, 19)'),    // Brown accent
+                // You can also define custom color shades
+                'company' => [
+                    50 => '252, 251, 246',
+                    100 => '246, 244, 235', 
+                    200 => '237, 233, 217',
+                    300 => '224, 218, 185',
+                    400 => '205, 195, 143',
+                    500 => '186, 174, 108',
+                    600 => '167, 156, 89',
+                    700 => '140, 130, 74',
+                    800 => '115, 107, 61',
+                    900 => '94, 88, 50',
+                    950 => '53, 50, 28',
+                ],
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

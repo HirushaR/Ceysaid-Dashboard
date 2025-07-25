@@ -59,7 +59,9 @@ class MySalesDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('message')->limit(20),
                 Tables\Columns\TextColumn::make('status')
                 ->badge()
-                ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'),
+                ->color(fn (string $state): string => 
+                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                ),
                 Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])

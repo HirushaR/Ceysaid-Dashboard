@@ -40,13 +40,13 @@ enum LeadStatus: string
             self::ASSIGNED_TO_SALES => 'info',
             self::ASSIGNED_TO_OPERATIONS => 'warning',
             self::INFO_GATHER_COMPLETE => 'success',
-            self::MARK_COMPLETED => 'success',
+            self::MARK_COMPLETED => 'company',           // Custom company color
             self::MARK_CLOSED => 'danger',
             self::PRICING_IN_PROGRESS => 'primary',
-            self::SENT_TO_CUSTOMER => 'success',
-            self::OPERATION_COMPLETE => 'success',
-            self::CONFIRMED => 'primary',
-            self::DOCUMENT_UPLOAD_COMPLETE => 'info',
+            self::SENT_TO_CUSTOMER => 'accent',          // Custom accent color  
+            self::OPERATION_COMPLETE => 'brand',         // Custom brand color
+            self::CONFIRMED => 'secondary',              // Changed from primary
+            self::DOCUMENT_UPLOAD_COMPLETE => 'brand',   // Keep existing custom color
         };
     }
 

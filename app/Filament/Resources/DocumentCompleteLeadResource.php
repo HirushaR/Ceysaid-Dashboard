@@ -61,8 +61,11 @@ class DocumentCompleteLeadResource extends Resource
                 Tables\Columns\TextColumn::make('country'),
                 Tables\Columns\TextColumn::make('assignedUser.name')->label('Assigned To')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('assignedOperator.name')->label('Assigned Operator')->sortable()->searchable(),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors(LeadStatus::colorMap()),
+                Tables\Columns\TextColumn::make('status')
+                ->badge()
+                ->color(fn (string $state): string => 
+                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                ),
                 Tables\Columns\IconColumn::make('air_ticket_status')
                     ->label('Air Ticket')
                     ->icon(fn (string $state): string => match ($state) {
@@ -71,12 +74,9 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('hotel_status')
                     ->label('Hotel')
@@ -86,12 +86,9 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('visa_status')
                     ->label('Visa')
@@ -101,12 +98,9 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('land_package_status')
                     ->label('Land Package')
@@ -116,12 +110,9 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'danger',
-                        'not_required' => 'gray',
-                        'done' => 'success',
-                        default => 'gray'
-                    })
+                    ->color(fn (string $state): string => 
+                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])

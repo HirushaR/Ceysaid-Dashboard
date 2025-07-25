@@ -25,4 +25,22 @@ enum ServiceStatus: string
             self::DONE => 'Done',
         };
     }
+
+    public function color(): string
+    {
+        return match($this) {
+            self::PENDING => 'warning',
+            self::NOT_REQUIRED => 'gray',
+            self::DONE => 'success',
+        };
+    }
+
+    public static function colorMap(): array
+    {
+        return [
+            self::PENDING->value => self::PENDING->color(),
+            self::NOT_REQUIRED->value => self::NOT_REQUIRED->color(),
+            self::DONE->value => self::DONE->color(),
+        ];
+    }
 } 

@@ -175,6 +175,13 @@ class MyOperationLeadDashboardResource extends Resource
                         Forms\Components\Repeater::make('attachments')
                             ->relationship('attachments')
                             ->schema([
+                                Forms\Components\Select::make('type')
+                                    ->label('Document Type')
+                                    ->options([
+                                        'passport' => 'Passport',
+                                        'other_documents' => 'Other Documents',
+                                    ])
+                                    ->required(),
                                 Forms\Components\FileUpload::make('file_path')
                                     ->label('Attachment')
                                     ->disk('public')

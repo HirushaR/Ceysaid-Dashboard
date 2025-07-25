@@ -25,6 +25,12 @@ class LeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isSales() || $user->isMarketing() || $user->isOperation() || $user->isAdmin());
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -121,15 +127,6 @@ class LeadResource extends Resource
             $query->whereNull('assigned_to');
         }
         return $query;
-    }
-
-    public static function canViewAny(): bool
-    {
-        $user = auth()->user();
-        if ($user && $user->isOperation()) {
-            return false;
-        }
-        return true;
     }
 
     public static function table(Table $table): Table

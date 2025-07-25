@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Leave;
 
 class User extends Authenticatable
 {
@@ -63,5 +64,20 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+    public function isHR(): bool
+    {
+        return $this->role === 'hr';
+    }
+
+    // Relationships
+    public function leaves(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    public function approvedLeaves(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Leave::class, 'approved_by');
     }
 }

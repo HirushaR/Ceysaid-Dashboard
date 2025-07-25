@@ -25,7 +25,8 @@ class ConfirmLeadResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return true; // Show to everyone
+        $user = auth()->user();
+        return $user && ($user->isSales() || $user->isOperation() || $user->isAdmin());
     }
 
     private static function getAttachmentFileUpload(): Forms\Components\FileUpload

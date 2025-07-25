@@ -8,6 +8,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ConfirmLeadResource\Pages;
+use App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
@@ -30,6 +31,13 @@ class ConfirmLeadResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\LeadCostsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -246,6 +254,41 @@ class ConfirmLeadResource extends Resource
                             ),
                     ])
                     ->columns(2)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Lead Costs')
+                    ->schema([
+                        Forms\Components\Repeater::make('leadCosts')
+                            ->relationship('leadCosts')
+                            ->schema([
+                                Forms\Components\TextInput::make('invoice_number')
+                                    ->label('Invoice Number')
+                                    ->required(),
+                                Forms\Components\TextInput::make('amount')
+                                    ->label('Amount')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->prefix('$')
+                                    ->required(),
+                                Forms\Components\Textarea::make('details')
+                                    ->label('Details')
+                                    ->rows(2),
+                                Forms\Components\TextInput::make('vendor_bill')
+                                    ->label('Vendor Bill'),
+                                Forms\Components\TextInput::make('vendor_amount')
+                                    ->label('Vendor Amount')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->prefix('$'),
+                                Forms\Components\Toggle::make('is_paid')
+                                    ->label('Is Paid')
+                                    ->default(false),
+                            ])
+                            ->createItemButtonLabel('Add Cost')
+                            ->reorderable(false)
+                            ->columns(2)
+                            ->disabled(fn($context) => $context === 'view'),
+                    ])
                     ->collapsible(),
 
                 Forms\Components\Section::make('Attachments')

@@ -16,6 +16,42 @@ class ViewConfirmLead extends ViewRecord
     {
         return [
             \Filament\Actions\EditAction::make(),
+            Action::make('add_cost')
+                ->label('Add Cost')
+                ->icon('heroicon-o-currency-dollar')
+                ->form([
+                    Forms\Components\TextInput::make('invoice_number')
+                        ->label('Invoice Number')
+                        ->required(),
+                    Forms\Components\TextInput::make('amount')
+                        ->label('Amount')
+                        ->numeric()
+                        ->step(0.01)
+                        ->prefix('$')
+                        ->required(),
+                    Forms\Components\Textarea::make('details')
+                        ->label('Details')
+                        ->rows(3),
+                    Forms\Components\TextInput::make('vendor_bill')
+                        ->label('Vendor Bill'),
+                    Forms\Components\TextInput::make('vendor_amount')
+                        ->label('Vendor Amount')
+                        ->numeric()
+                        ->step(0.01)
+                        ->prefix('$'),
+                    Forms\Components\Toggle::make('is_paid')
+                        ->label('Is Paid')
+                        ->default(false),
+                ])
+                ->action(function (array $data) {
+                    $this->record->leadCosts()->create($data);
+                    Notification::make()
+                        ->success()
+                        ->title('Cost added successfully.')
+                        ->send();
+                })
+                ->modalHeading('Add Lead Cost')
+                ->modalButton('Add Cost'),
             Action::make('attach_documents')
                 ->label('Attach Documents')
                 ->form([

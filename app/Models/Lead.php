@@ -67,4 +67,9 @@ class Lead extends Model
     {
         return $this->hasMany(\App\Models\Attachment::class);
     }
+
+    public function leadCosts()
+    {
+        return $this->hasMany(LeadCost::class);
+    }
 }

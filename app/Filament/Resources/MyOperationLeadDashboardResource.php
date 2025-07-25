@@ -28,6 +28,32 @@ class MyOperationLeadDashboardResource extends Resource
         return $user && $user->isOperation();
     }
 
+    private static function getAttachmentFileUpload(): Forms\Components\FileUpload
+    {
+        return Forms\Components\FileUpload::make('file_path')
+            ->label('Attachment')
+            ->disk('lead-attachments')
+            ->directory('')
+            ->preserveFilenames()
+            ->downloadable()
+            ->openable()
+            ->acceptedFileTypes(['image/*', 'application/pdf', '.doc', '.docx', '.txt'])
+            ->maxSize(10 * 1024) // 10MB limit
+            ->required()
+            ->saveUploadedFileUsing(function ($file, $record, $set) {
+                // Generate unique filename to prevent conflicts
+                $timestamp = now()->format('Y-m-d_H-i-s');
+                $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension = $file->getClientOriginalExtension();
+                $fileName = "{$timestamp}_{$originalName}.{$extension}";
+                
+                $path = $file->storeAs('', $fileName, 'lead-attachments');
+                $set('file_path', $path);
+                $set('original_name', $file->getClientOriginalName());
+                return $path;
+            });
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
@@ -182,20 +208,7 @@ class MyOperationLeadDashboardResource extends Resource
                                         'other_documents' => 'Other Documents',
                                     ])
                                     ->required(),
-                                Forms\Components\FileUpload::make('file_path')
-                                    ->label('Attachment')
-                                    ->disk('public')
-                                    ->directory('lead-attachments')
-                                    ->preserveFilenames()
-                                    ->downloadable()
-                                    ->openable()
-                                    ->required()
-                                    ->saveUploadedFileUsing(function ($file, $record, $set) {
-                                        $path = $file->storeAs('lead-attachments', $file->getClientOriginalName(), 'public');
-                                        $set('file_path', $path);
-                                        $set('original_name', $file->getClientOriginalName());
-                                        return $path;
-                                    }),
+                                self::getAttachmentFileUpload(),
                                 Forms\Components\Hidden::make('original_name'),
                             ])
                             ->createItemButtonLabel('Add Attachment')

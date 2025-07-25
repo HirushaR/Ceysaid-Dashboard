@@ -64,12 +64,25 @@ class ViewConfirmLead extends ViewRecord
                         ->required(),
                     Forms\Components\FileUpload::make('file_path')
                         ->label('Attachment')
-                        ->disk('public')
-                        ->directory('lead-attachments')
+                        ->disk('lead-attachments')
+                        ->directory('')
                         ->preserveFilenames()
                         ->downloadable()
                         ->openable()
-                        ->required(),
+                        ->acceptedFileTypes(['image/*', 'application/pdf', '.doc', '.docx', '.txt'])
+                        ->maxSize(10 * 1024) // 10MB limit
+                        ->required()
+                        ->saveUploadedFileUsing(function ($file, $record, $set) {
+                            // Generate unique filename to prevent conflicts
+                            $timestamp = now()->format('Y-m-d_H-i-s');
+                            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                            $extension = $file->getClientOriginalExtension();
+                            $fileName = "{$timestamp}_{$originalName}.{$extension}";
+                            
+                            $path = $file->storeAs('', $fileName, 'lead-attachments');
+                            $set('file_path', $path);
+                            return $path;
+                        }),
                 ])
                 ->action(function (array $data) {
                     $this->record->attachments()->create([

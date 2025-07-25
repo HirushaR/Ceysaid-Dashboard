@@ -272,8 +272,8 @@ class DocumentCompleteLeadResource extends Resource
                                     ->disabled(),
                                 Forms\Components\FileUpload::make('file_path')
                                     ->label('Attachment')
-                                    ->disk('public')
-                                    ->directory('lead-attachments')
+                                    ->disk('lead-attachments')
+                                    ->directory('')
                                     ->preserveFilenames()
                                     ->downloadable()
                                     ->openable()

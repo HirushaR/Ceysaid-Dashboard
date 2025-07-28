@@ -348,6 +348,158 @@ a:hover {
     border-bottom: 1px solid rgb(226 232 240) !important;
 }
 
+/* Modern Detail View Layout */
+.fi-view-record {
+    background-color: rgb(248 250 252) !important;
+}
+
+.fi-resource-view-page-content {
+    display: grid !important;
+    grid-template-columns: 1fr 300px !important;
+    gap: 2rem !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    padding: 0 1rem !important;
+}
+
+.fi-form-content-main {
+    background-color: rgb(255 255 255) !important;
+    border-radius: 0.75rem !important;
+    border: 1px solid rgb(226 232 240) !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+    padding: 2rem !important;
+}
+
+.fi-view-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+}
+
+.fi-view-sidebar-card {
+    background-color: rgb(255 255 255) !important;
+    border-radius: 0.75rem !important;
+    border: 1px solid rgb(226 232 240) !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+    padding: 1.5rem !important;
+}
+
+.fi-view-sidebar-nav {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.fi-view-sidebar-nav li {
+    margin-bottom: 0.5rem !important;
+}
+
+.fi-view-sidebar-nav a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.5rem !important;
+    color: rgb(71 85 105) !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease-in-out !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+.fi-view-sidebar-nav a:hover,
+.fi-view-sidebar-nav a.active {
+    background-color: rgb(241 245 249) !important;
+    color: rgb(37 99 235) !important;
+}
+
+.fi-view-sidebar-nav .icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    flex-shrink: 0 !important;
+}
+
+/* Section styling improvements */
+.fi-fo-section {
+    margin-bottom: 2rem !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.fi-fo-section-header {
+    margin-bottom: 1rem !important;
+    padding-bottom: 0.75rem !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+}
+
+.fi-fo-section-header-heading {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: rgb(15 23 42) !important;
+    margin: 0 !important;
+}
+
+.fi-fo-section-content {
+    padding: 0 !important;
+}
+
+/* Form field improvements */
+.fi-fo-field-wrp {
+    margin-bottom: 1.5rem !important;
+}
+
+.fi-fo-field-wrp-label {
+    margin-bottom: 0.5rem !important;
+}
+
+.fi-fo-field-wrp-label .text-sm {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: rgb(51 65 85) !important;
+}
+
+/* Image display in view */
+.fi-view-image-container {
+    margin-bottom: 1.5rem !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+    border: 1px solid rgb(226 232 240) !important;
+}
+
+.fi-view-image-container img {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+}
+
+/* Responsive design for detail view */
+@media (max-width: 1024px) {
+    .fi-resource-view-page-content {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+    
+    .fi-view-sidebar {
+        order: -1 !important;
+    }
+    
+    .fi-view-sidebar-card {
+        padding: 1rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .fi-resource-view-page-content {
+        padding: 0 0.5rem !important;
+    }
+    
+    .fi-form-content-main {
+        padding: 1.5rem !important;
+    }
+}
+
 /* Specific fixes for Filament resource list pages */
 .fi-resource-list-records > .fi-page-header,
 .fi-resource-table > .fi-page-header {
@@ -395,6 +547,43 @@ a:hover {
     }
     
     .fi-dashboard-header {
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    /* Dark mode for modern detail view */
+    .fi-view-record {
+        background-color: rgb(2 6 23) !important;
+    }
+    
+    .fi-form-content-main,
+    .fi-view-sidebar-card {
+        background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-fo-section-header {
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-fo-section-header-heading {
+        color: rgb(248 250 252) !important;
+    }
+    
+    .fi-fo-field-wrp-label .text-sm {
+        color: rgb(203 213 225) !important;
+    }
+    
+    .fi-view-sidebar-nav a {
+        color: rgb(203 213 225) !important;
+    }
+    
+    .fi-view-sidebar-nav a:hover,
+    .fi-view-sidebar-nav a.active {
+        background-color: rgb(30 41 59) !important;
+        color: rgb(147 197 253) !important;
+    }
+    
+    .fi-view-image-container {
         border-color: rgb(30 41 59) !important;
     }
     

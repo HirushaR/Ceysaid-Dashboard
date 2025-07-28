@@ -34,89 +34,199 @@ class LeadResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Section::make('Lead Information')
-                    ->schema([
-                        Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
-                        Forms\Components\TextInput::make('customer_name')
-                            ->required(),
-                        Forms\Components\Select::make('customer_id')
-                            ->relationship('customer', 'name')
-                            ->searchable()
-                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                        Forms\Components\Select::make('platform')
-                            ->options([
-                                'facebook' => 'Facebook',
-                                'whatsapp' => 'WhatsApp',
-                                'email' => 'Email',
-                            ])
-                            ->required(),
-                        Forms\Components\Textarea::make('tour'),
-                        Forms\Components\Textarea::make('message'),
-                        Forms\Components\Hidden::make('created_by')
-                            ->default(fn() => auth()->id()),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+            ->schema(static::getFormSchema())
+            ->columns(1);
+    }
 
-                Forms\Components\Section::make('Contact Information')
-                    ->schema([
-                        Forms\Components\Select::make('contact_method')
-                            ->options([
-                                'phone' => 'Phone',
-                                'email' => 'Email',
-                                'whatsapp' => 'WhatsApp',
-                                'facebook' => 'Facebook',
-                            ]),
-                        Forms\Components\TextInput::make('contact_value'),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+    public static function getFormSchema(): array
+    {
+        return [
+            // Basic Information Section
+            Forms\Components\Section::make('Basic Information')
+                ->description('Core lead details and customer information')
+                ->schema([
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\TextInput::make('reference_id')
+                                ->label('Reference ID')
+                                ->disabled()
+                                ->helperText('Auto-generated unique identifier'),
+                            Forms\Components\TextInput::make('customer_name')
+                                ->label('Customer Name')
+                                ->required()
+                                ->maxLength(255)
+                                ->placeholder('Enter customer name'),
+                        ]),
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\Select::make('customer_id')
+                                ->label('Linked Customer')
+                                ->relationship('customer', 'name')
+                                ->searchable()
+                                ->createOptionForm([
+                                    Forms\Components\TextInput::make('name')->required(),
+                                    Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
+                                ])
+                                ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                            Forms\Components\Select::make('platform')
+                                ->label('Source Platform')
+                                ->options([
+                                    'facebook' => 'Facebook',
+                                    'whatsapp' => 'WhatsApp',
+                                    'email' => 'Email',
+                                ])
+                                ->required()
+                                ->native(false),
+                        ]),
+                    Forms\Components\Textarea::make('tour')
+                        ->label('Tour Requirements')
+                        ->rows(2)
+                        ->placeholder('Describe the requested tour or package'),
+                    Forms\Components\Textarea::make('message')
+                        ->label('Customer Message')
+                        ->rows(3)
+                        ->placeholder('Original customer message or inquiry'),
+                    Forms\Components\Hidden::make('created_by')
+                        ->default(fn() => auth()->id()),
+                ])
+                ->collapsed(false)
+                ->compact(),
 
-                Forms\Components\Section::make('Assignment & Status')
-                    ->schema([
-                        Forms\Components\Select::make('assigned_to')
-                            ->relationship('assignedUser', 'name')
-                            ->searchable()
-                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                        Forms\Components\Select::make('assigned_operator')
-                            ->relationship('assignedOperator', 'name')
-                            ->searchable()
-                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                        Forms\Components\Select::make('status')
-                            ->options(LeadStatus::options())
-                            ->required()
-                            ->default(LeadStatus::NEW->value)
-                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+            // Contact Information Section
+            Forms\Components\Section::make('Contact Information')
+                ->description('Customer contact details')
+                ->schema([
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\Select::make('contact_method')
+                                ->label('Contact Method')
+                                ->options([
+                                    'phone' => 'Phone',
+                                    'email' => 'Email',
+                                    'whatsapp' => 'WhatsApp',
+                                    'facebook' => 'Facebook',
+                                ])
+                                ->native(false),
+                            Forms\Components\TextInput::make('contact_value')
+                                ->label('Contact Value')
+                                ->placeholder('Enter phone, email, or contact ID'),
+                        ]),
+                ])
+                ->collapsed(false)
+                ->compact(),
 
-                Forms\Components\Section::make('Travel Details')
-                    ->schema([
-                        Forms\Components\TextInput::make('subject'),
-                        Forms\Components\TextInput::make('country'),
-                        Forms\Components\TextInput::make('destination'),
-                        Forms\Components\TextInput::make('number_of_adults')->numeric(),
-                        Forms\Components\TextInput::make('number_of_children')->numeric(),
-                        Forms\Components\TextInput::make('number_of_infants')->numeric(),
-                        Forms\Components\Select::make('priority')
-                            ->options([
-                                'low' => 'Low',
-                                'medium' => 'Medium',
-                                'high' => 'High',
-                            ]),
-                        Forms\Components\DatePicker::make('arrival_date'),
-                        Forms\Components\DatePicker::make('depature_date'),
-                        Forms\Components\TextInput::make('number_of_days')->numeric(),
-                        Forms\Components\Textarea::make('tour_details')->label('Tour Details'),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+            // Travel Details Section
+            Forms\Components\Section::make('Travel Details')
+                ->description('Trip specifications and requirements')
+                ->schema([
+                    Forms\Components\Grid::make(3)
+                        ->schema([
+                            Forms\Components\TextInput::make('subject')
+                                ->label('Subject')
+                                ->placeholder('Trip title or subject'),
+                            Forms\Components\TextInput::make('country')
+                                ->label('Country')
+                                ->placeholder('Destination country'),
+                            Forms\Components\TextInput::make('destination')
+                                ->label('Destination')
+                                ->placeholder('Specific destination'),
+                        ]),
+                    Forms\Components\Grid::make(3)
+                        ->schema([
+                            Forms\Components\TextInput::make('number_of_adults')
+                                ->label('Adults')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(1),
+                            Forms\Components\TextInput::make('number_of_children')
+                                ->label('Children')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(0),
+                            Forms\Components\TextInput::make('number_of_infants')
+                                ->label('Infants')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(0),
+                        ]),
+                    Forms\Components\Grid::make(3)
+                        ->schema([
+                            Forms\Components\DatePicker::make('arrival_date')
+                                ->label('Arrival Date')
+                                ->native(false),
+                            Forms\Components\DatePicker::make('depature_date')
+                                ->label('Departure Date')
+                                ->native(false),
+                            Forms\Components\TextInput::make('number_of_days')
+                                ->label('Duration (Days)')
+                                ->numeric()
+                                ->minValue(1),
+                        ]),
+                    Forms\Components\Select::make('priority')
+                        ->label('Priority Level')
+                        ->options([
+                            'low' => 'Low',
+                            'medium' => 'Medium',
+                            'high' => 'High',
+                        ])
+                        ->default('medium')
+                        ->native(false),
+                    Forms\Components\Textarea::make('tour_details')
+                        ->label('Tour Details')
+                        ->rows(3)
+                        ->placeholder('Detailed tour requirements and specifications'),
+                ])
+                ->collapsed(false)
+                ->compact(),
 
-                Forms\Components\DateTimePicker::make('created_at')->disabled(),
-                Forms\Components\DateTimePicker::make('updated_at')->disabled(),
-            ]);
+            // Assignment & Status Section (Only visible in edit/view)
+            Forms\Components\Section::make('Assignment & Status')
+                ->description('Lead assignment and current status')
+                ->schema([
+                    Forms\Components\Grid::make(3)
+                        ->schema([
+                            Forms\Components\Select::make('assigned_to')
+                                ->label('Assigned Sales Rep')
+                                ->relationship('assignedUser', 'name')
+                                ->searchable()
+                                ->placeholder('Select sales representative'),
+                            Forms\Components\Select::make('assigned_operator')
+                                ->label('Assigned Operator')
+                                ->relationship('assignedOperator', 'name')
+                                ->searchable()
+                                ->placeholder('Select operations staff'),
+                            Forms\Components\Select::make('status')
+                                ->label('Lead Status')
+                                ->options(LeadStatus::options())
+                                ->required()
+                                ->default(LeadStatus::NEW->value)
+                                ->native(false),
+                        ]),
+                ])
+                ->hidden(fn($livewire) => $livewire instanceof CreateRecord)
+                ->collapsed(true)
+                ->compact(),
+
+            // System Information (Only in view mode)
+            Forms\Components\Section::make('System Information')
+                ->description('Timestamps and system data')
+                ->schema([
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\DateTimePicker::make('created_at')
+                                ->label('Created At')
+                                ->disabled()
+                                ->displayFormat('M j, Y \a\t g:i A'),
+                            Forms\Components\DateTimePicker::make('updated_at')
+                                ->label('Last Updated')
+                                ->disabled()
+                                ->displayFormat('M j, Y \a\t g:i A'),
+                        ]),
+                ])
+                ->hidden(fn($context) => $context !== 'view')
+                ->collapsed(true)
+                ->compact(),
+        ];
     }
 
     public static function getEloquentQuery(): Builder

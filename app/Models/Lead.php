@@ -41,6 +41,10 @@ class Lead extends Model
 
     protected $casts = [
         'tour_details' => 'array',
+        'arrival_date' => 'date',
+        'depature_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function customer()

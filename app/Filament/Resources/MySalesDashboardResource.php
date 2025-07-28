@@ -157,13 +157,9 @@ class MySalesDashboardResource extends Resource
                     ->searchable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->button()
-                    ->size('sm'),
-                Tables\Actions\EditAction::make()
-                    ->button()
-                    ->size('sm')
-                    ->color('gray'),
+                Tables\Actions\ViewAction::make(),
+                    
+                Tables\Actions\EditAction::make(),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
             ->striped()

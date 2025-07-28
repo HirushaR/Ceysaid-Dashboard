@@ -260,13 +260,56 @@ a:hover {
 
 /* Additional styling for overall theme consistency */
 .fi-sidebar {
-    background-color: rgb(255 255 255) !important;
+    background: linear-gradient(180deg, rgb(248 250 252) 0%, rgb(241 245 249) 100%) !important;
     border-right: 1px solid rgb(226 232 240) !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Sidebar navigation styling enhancements */
+.fi-sidebar-nav {
+    padding: 1rem !important;
+}
+
+.fi-sidebar-nav-item {
+    margin-bottom: 0.25rem !important;
+}
+
+.fi-sidebar-nav-item-link {
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease-in-out !important;
+    margin-bottom: 2px !important;
+}
+
+.fi-sidebar-nav-item-link:hover {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    transform: translateX(2px) !important;
+}
+
+.fi-sidebar-nav-item-link[aria-current="page"] {
+    background: linear-gradient(135deg, rgb(59 130 246) 0%, rgb(37 99 235) 100%) !important;
+    color: rgb(255 255 255) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Sidebar header styling */
+.fi-sidebar-header {
+    background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(29 78 216) 100%) !important;
+    margin: -1rem -1rem 1rem -1rem !important;
+    padding: 1.5rem 1rem !important;
+    border-radius: 0 0 1rem 0 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+}
+
+.fi-sidebar-header .fi-logo {
+    color: rgb(255 255 255) !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .fi-header {
     background-color: rgb(255 255 255) !important;
     border-bottom: 1px solid rgb(226 232 240) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Header content alignment fixes */
@@ -336,6 +379,7 @@ a:hover {
 /* Fix for main page content layout */
 .fi-main {
     padding-top: 1.5rem !important;
+    background-color: white;
 }
 
 /* Dashboard title and actions alignment */
@@ -533,13 +577,30 @@ a:hover {
 
 @media (prefers-color-scheme: dark) {
     .fi-sidebar {
-        background-color: rgb(15 23 42) !important;
+        background: linear-gradient(180deg, rgb(15 23 42) 0%, rgb(2 6 23) 100%) !important;
         border-color: rgb(30 41 59) !important;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .fi-sidebar-header {
+        background: linear-gradient(135deg, rgb(29 78 216) 0%, rgb(23 37 84) 100%) !important;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3) !important;
+    }
+    
+    .fi-sidebar-nav-item-link:hover {
+        background-color: rgba(147, 197, 253, 0.1) !important;
+    }
+    
+    .fi-sidebar-nav-item-link[aria-current="page"] {
+        background: linear-gradient(135deg, rgb(147 197 253) 0%, rgb(96 165 250) 100%) !important;
+        color: rgb(15 23 42) !important;
+        box-shadow: 0 2px 8px rgba(147, 197, 253, 0.3) !important;
     }
     
     .fi-header {
         background-color: rgb(15 23 42) !important;
         border-color: rgb(30 41 59) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
     }
     
     .fi-page-header-heading {

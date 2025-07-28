@@ -97,16 +97,7 @@ class ConfirmLeadResource extends Resource
                     
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'secondary' => LeadStatus::NEW->value,
-                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
-                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
-                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
-                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
-                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
-                        'brand' => LeadStatus::CONFIRMED->value,
-                        'danger' => LeadStatus::MARK_CLOSED->value,
-                    ])
+                    ->colors(LeadStatus::colorMap())
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
                     
                 Tables\Columns\IconColumn::make('air_ticket_status')
@@ -147,6 +138,14 @@ class ConfirmLeadResource extends Resource
                         ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
+                    
+                Tables\Columns\TextColumn::make('leadCosts.amount')
+                    ->label('Revenue')
+                    ->money('USD')
+                    ->sortable()
+                    ->alignRight()
+                    ->width('140px')
+                    ->placeholder('No cost set'),
                     
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
@@ -198,6 +197,38 @@ class ConfirmLeadResource extends Resource
                     ->relationship('assignedOperator', 'name')
                     ->label('Assigned Operator')
                     ->searchable(),
+                    
+                Tables\Filters\Filter::make('has_revenue')
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->whereHas('leadCosts'))
+                    ->label('Has Revenue'),
+                    
+                Tables\Filters\Filter::make('revenue_range')
+                    ->form([
+                        Forms\Components\TextInput::make('revenue_from')
+                            ->label('Revenue From')
+                            ->numeric()
+                            ->prefix('$'),
+                        Forms\Components\TextInput::make('revenue_to')
+                            ->label('Revenue To')
+                            ->numeric()
+                            ->prefix('$'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['revenue_from'],
+                                fn (Builder $query, $amount): Builder => $query->whereHas('leadCosts', function (Builder $query) use ($amount) {
+                                    $query->where('amount', '>=', $amount);
+                                })
+                            )
+                            ->when(
+                                $data['revenue_to'],
+                                fn (Builder $query, $amount): Builder => $query->whereHas('leadCosts', function (Builder $query) use ($amount) {
+                                    $query->where('amount', '<=', $amount);
+                                })
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

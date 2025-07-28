@@ -46,26 +46,72 @@ class DocumentCompleteLeadResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('reference_id')
+                    ->label('Reference ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
+                    
+                Tables\Columns\TextColumn::make('customer_name')
+                    ->label('Customer')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('medium')
+                    ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
+                    
                 Tables\Columns\BadgeColumn::make('platform')
+                    ->label('Source')
                     ->colors([
-                        'facebook' => 'info',
-                        'whatsapp' => 'success',
-                        'email' => 'warning',
-                    ]),
-                Tables\Columns\TextColumn::make('tour')->limit(20),
-                Tables\Columns\TextColumn::make('destination'),
-                Tables\Columns\TextColumn::make('country'),
-                Tables\Columns\TextColumn::make('assignedUser.name')->label('Assigned To')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('assignedOperator.name')->label('Assigned Operator')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                ->badge()
-                ->color(fn (string $state): string => 
-                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
-                ),
+                        'info' => 'facebook',
+                        'success' => 'whatsapp', 
+                        'warning' => 'email',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    
+                Tables\Columns\TextColumn::make('tour')
+                    ->label('Tour Package')
+                    ->limit(25)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 25 ? $state : null;
+                    })
+                    ->weight('medium'),
+                    
+                Tables\Columns\TextColumn::make('destination')
+                    ->label('Destination')
+                    ->limit(15)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 15 ? $state : null;
+                    })
+                    ->color('primary'),
+                    
+                Tables\Columns\TextColumn::make('country')
+                    ->label('Country')
+                    ->badge()
+                    ->color('gray')
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
+                Tables\Columns\TextColumn::make('assignedUser.name')
+                    ->label('Sales Rep')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('Unassigned')
+                    ->color('info'),
+                    
+                Tables\Columns\TextColumn::make('assignedOperator.name')
+                    ->label('Operator')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('Unassigned')
+                    ->color('warning'),
+                    
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->colors(LeadStatus::colorMap())
+                    ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
                 Tables\Columns\IconColumn::make('air_ticket_status')
                     ->label('Air Ticket')
                     ->icon(fn (string $state): string => match ($state) {
@@ -114,7 +160,21 @@ class DocumentCompleteLeadResource extends Resource
                         ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                    
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Travel Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('primary'),
+                    
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime('M j, Y')
+                    ->sortable()
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -148,11 +208,24 @@ class DocumentCompleteLeadResource extends Resource
                     ->relationship('assignedOperator', 'name')
                     ->searchable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
                 Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray')
                     ->visible(fn() => auth()->user()?->isSales() || auth()->user()?->isOperation() || auth()->user()?->isAdmin()),
             ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->striped()
+            ->paginated([10, 25, 50, 100])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
     }
 

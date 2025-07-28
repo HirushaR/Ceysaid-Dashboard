@@ -91,27 +91,12 @@ class MySalesDashboardResource extends Resource
                     
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'secondary' => LeadStatus::NEW->value,
-                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
-                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
-                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
-                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
-                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
-                        'brand' => LeadStatus::CONFIRMED->value,
-                        'danger' => LeadStatus::MARK_CLOSED->value,
-                    ])
+                    ->color(fn (string $state): string => 
+                        LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                    )
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state)
                     ->alignCenter()
                     ->width('180px'),
-                    
-                Tables\Columns\TextColumn::make('leadCosts.amount')
-                    ->label('Revenue')
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('USD'))
-                    ->money('USD')
-                    ->sortable()
-                    ->alignRight()
-                    ->width('140px'),
                     
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')

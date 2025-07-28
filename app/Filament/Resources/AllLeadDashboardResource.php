@@ -62,16 +62,7 @@ class AllLeadDashboardResource extends Resource
                     
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'secondary' => LeadStatus::NEW->value,
-                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
-                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
-                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
-                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
-                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
-                        'brand' => LeadStatus::CONFIRMED->value,
-                        'danger' => LeadStatus::MARK_CLOSED->value,
-                    ])
+                    ->colors(LeadStatus::colorMap())
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
                     
                 Tables\Columns\TextColumn::make('assignedUser.name')

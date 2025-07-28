@@ -16,6 +16,8 @@ use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\EditRecord;
 use App\Enums\LeadStatus;
 use App\Enums\ServiceStatus;
+use App\Enums\Platform;
+use App\Enums\Priority;
 
 class LeadResource extends Resource
 {
@@ -260,16 +262,7 @@ class LeadResource extends Resource
                     
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'secondary' => LeadStatus::NEW->value,
-                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
-                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
-                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
-                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
-                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
-                        'brand' => LeadStatus::CONFIRMED->value,
-                        'danger' => LeadStatus::MARK_CLOSED->value,
-                    ])
+                    ->colors(LeadStatus::colorMap())
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
                     
                 Tables\Columns\TextColumn::make('assignedUser.name')
@@ -281,22 +274,14 @@ class LeadResource extends Resource
                     
                 Tables\Columns\BadgeColumn::make('priority')
                     ->label('Priority')
-                    ->colors([
-                        'gray' => 'low',
-                        'warning' => 'medium',
-                        'danger' => 'high',
-                    ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->colors(Priority::colorMap())
+                    ->formatStateUsing(fn ($state) => Priority::tryFrom($state)?->label() ?? ucfirst($state)),
                     
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
                     ->badge()
-                    ->colors([
-                        'info' => 'facebook',
-                        'success' => 'whatsapp', 
-                        'warning' => 'email',
-                    ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->colors(Platform::colorMap())
+                    ->formatStateUsing(fn ($state) => Platform::tryFrom($state)?->label() ?? ucfirst($state)),
                     
                 Tables\Columns\TextColumn::make('destination')
                     ->label('Destination')
@@ -326,18 +311,10 @@ class LeadResource extends Resource
                     ->options(LeadStatus::options())
                     ->label('Lead Status'),
                 Tables\Filters\SelectFilter::make('priority')
-                    ->options([
-                        'low' => 'Low',
-                        'medium' => 'Medium',
-                        'high' => 'High',
-                    ])
+                    ->options(Priority::options())
                     ->label('Priority'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')

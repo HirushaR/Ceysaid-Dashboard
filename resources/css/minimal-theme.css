@@ -269,6 +269,109 @@ a:hover {
     border-bottom: 1px solid rgb(226 232 240) !important;
 }
 
+/* Header content alignment fixes */
+.fi-page-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+}
+
+.fi-page-header-heading {
+    margin: 0 !important;
+    flex: 1 !important;
+    font-size: 1.875rem !important;
+    font-weight: 700 !important;
+    color: rgb(15 23 42) !important;
+    line-height: 1.2 !important;
+}
+
+.fi-page-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    flex-shrink: 0 !important;
+}
+
+/* Ensure header content wrapper has proper flex layout */
+.fi-header-ctn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+}
+
+/* Resource page header specific styling */
+.fi-resource-page-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* List page header layout */
+.fi-resources-table-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Header widgets spacing */
+.fi-header-widgets {
+    margin-bottom: 2rem !important;
+}
+
+/* Page header content area */
+.fi-page-header-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 3rem !important;
+}
+
+/* Fix for main page content layout */
+.fi-main {
+    padding-top: 1.5rem !important;
+}
+
+/* Dashboard title and actions alignment */
+.fi-dashboard-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 2rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+}
+
+/* Specific fixes for Filament resource list pages */
+.fi-resource-list-records > .fi-page-header,
+.fi-resource-table > .fi-page-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 4rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Ensure the page title and actions are on the same line */
+.fi-header-heading-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 !important;
+}
+
+.fi-header-actions-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
 .fi-table {
     background-color: rgb(255 255 255) !important;
     border: 1px solid rgb(226 232 240) !important;
@@ -284,6 +387,14 @@ a:hover {
     
     .fi-header {
         background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-page-header-heading {
+        color: rgb(248 250 252) !important;
+    }
+    
+    .fi-dashboard-header {
         border-color: rgb(30 41 59) !important;
     }
     

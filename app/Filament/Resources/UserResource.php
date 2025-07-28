@@ -69,56 +69,85 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Full Name')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('medium')
+                    ->description(fn ($record) => $record->email),
+                    
                 Tables\Columns\BadgeColumn::make('role')
+                    ->label('Role')
                     ->colors([
+                        'danger' => 'admin',
+                        'info' => 'hr',
                         'primary' => 'marketing',
                         'success' => 'sales', 
                         'warning' => 'operation',
-                        'info' => 'hr',
-                        'danger' => 'admin',
                     ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    
+                Tables\Columns\IconColumn::make('email_verified_at')
+                    ->label('Verified')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
+                    
+                Tables\Columns\TextColumn::make('leaves_count')
+                    ->label('Active Leaves')
+                    ->counts([
+                        'leaves' => fn ($query) => $query->where('status', 'approved')
+                            ->where('start_date', '<=', now())
+                            ->where('end_date', '>=', now())
+                    ])
+                    ->badge()
+                    ->color('info'),
+                    
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Joined')
+                    ->dateTime('M j, Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->options([
+                        'admin' => 'Admin',
+                        'hr' => 'HR',
                         'marketing' => 'Marketing',
                         'sales' => 'Sales',
                         'operation' => 'Operation',
-                        'hr' => 'HR',
-                        'admin' => 'Admin',
-                    ]),
+                    ])
+                    ->label('Role'),
+                Tables\Filters\TernaryFilter::make('email_verified_at')
+                    ->label('Email Verification')
+                    ->trueLabel('Verified')
+                    ->falseLabel('Unverified')
+                    ->nullable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
+                Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array

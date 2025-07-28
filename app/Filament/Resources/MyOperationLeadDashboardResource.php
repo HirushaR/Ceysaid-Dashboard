@@ -73,25 +73,69 @@ class MyOperationLeadDashboardResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
-                Tables\Columns\BadgeColumn::make('platform')
+                Tables\Columns\TextColumn::make('reference_id')
+                    ->label('Reference ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
+                    
+                Tables\Columns\TextColumn::make('customer_name')
+                    ->label('Customer')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('medium')
+                    ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
+                    
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
                     ->colors([
-                        'facebook' => 'info',
-                        'whatsapp' => 'success',
-                        'email' => 'warning',
-                    ]),
-                Tables\Columns\TextColumn::make('tour')->limit(20),
-                Tables\Columns\TextColumn::make('message')->limit(20),
-                Tables\Columns\TextColumn::make('status')
-                ->badge()
-                ->color(fn (string $state): string => 
-                    LeadStatus::tryFrom($state)?->color() ?? 'secondary'
-                ),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                        'secondary' => LeadStatus::NEW->value,
+                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
+                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
+                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
+                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
+                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
+                        'brand' => LeadStatus::CONFIRMED->value,
+                        'danger' => LeadStatus::MARK_CLOSED->value,
+                    ])
+                    ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
+                    
+                Tables\Columns\TextColumn::make('assignedUser.name')
+                    ->label('Sales Rep')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('Unassigned')
+                    ->color('info'),
+                    
+                Tables\Columns\TextColumn::make('destination')
+                    ->label('Destination')
+                    ->limit(15)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 15 ? $state : null;
+                    }),
+                    
+                Tables\Columns\TextColumn::make('platform')
+                    ->label('Source')
+                    ->badge()
+                    ->colors([
+                        'info' => 'facebook',
+                        'success' => 'whatsapp', 
+                        'warning' => 'email',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime('M j, Y')
+                    ->sortable()
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())
@@ -113,20 +157,34 @@ class MyOperationLeadDashboardResource extends Resource
                     ->searchable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
+                Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray'),
                 Tables\Actions\Action::make('operation_complete')
-                    ->label('Operation Complete')
+                    ->label('Complete')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
+                    ->button()
+                    ->size('sm')
                     ->requiresConfirmation()
+                    ->modalDescription('Mark this lead as operation complete?')
                     ->action(function ($record) {
                         $record->status = \App\Enums\LeadStatus::OPERATION_COMPLETE->value;
                         $record->save();
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Lead marked as Operation Complete')
+                            ->send();
                     })
-                    ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value),
+                    ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value),
             ])
-            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
+            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function form(Form $form): Form

@@ -133,43 +133,84 @@ class LeadResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('reference_id')->label('Reference ID')->sortable(),
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                Tables\Columns\TextColumn::make('customer_name')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
-                Tables\Columns\BadgeColumn::make('platform')
-                    ->colors([
-                        'facebook' => 'info',
-                        'whatsapp' => 'success',
-                        'email' => 'warning',
-                    ]),
-                Tables\Columns\TextColumn::make('tour')->limit(20),
-                Tables\Columns\TextColumn::make('message')->limit(20),
-                Tables\Columns\TextColumn::make('created_by')->sortable(),
-                Tables\Columns\TextColumn::make('assignedUser.name')->label('Assigned To')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('assignedOperator.name')->label('Assigned Operator')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('reference_id')
+                    ->label('Reference ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
+                    
+                Tables\Columns\TextColumn::make('customer_name')
+                    ->label('Customer')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('medium')
+                    ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
+                    
                 Tables\Columns\BadgeColumn::make('status')
-                    ->colors(LeadStatus::colorMap()),
-                Tables\Columns\BadgeColumn::make('priority')
+                    ->label('Status')
                     ->colors([
-                        'low' => 'gray',
-                        'medium' => 'warning',
-                        'high' => 'danger',
-                    ]),
-                Tables\Columns\TextColumn::make('contact_method'),
-                Tables\Columns\TextColumn::make('contact_value'),
-                Tables\Columns\TextColumn::make('subject'),
-                Tables\Columns\TextColumn::make('country'),
-                Tables\Columns\TextColumn::make('destination'),
-                Tables\Columns\TextColumn::make('number_of_adults'),
-                Tables\Columns\TextColumn::make('number_of_children'),
-                Tables\Columns\TextColumn::make('number_of_infants'),
-                Tables\Columns\TextColumn::make('arrival_date')->date(),
-                Tables\Columns\TextColumn::make('depature_date')->date(),
-                Tables\Columns\TextColumn::make('number_of_days'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
-                Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable(),
+                        'secondary' => LeadStatus::NEW->value,
+                        'info' => LeadStatus::ASSIGNED_TO_SALES->value,
+                        'warning' => LeadStatus::ASSIGNED_TO_OPERATIONS->value,
+                        'success' => LeadStatus::INFO_GATHER_COMPLETE->value,
+                        'primary' => LeadStatus::PRICING_IN_PROGRESS->value,
+                        'accent' => LeadStatus::SENT_TO_CUSTOMER->value,
+                        'brand' => LeadStatus::CONFIRMED->value,
+                        'danger' => LeadStatus::MARK_CLOSED->value,
+                    ])
+                    ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
+                    
+                Tables\Columns\TextColumn::make('assignedUser.name')
+                    ->label('Assigned To')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('Unassigned')
+                    ->color('info'),
+                    
+                Tables\Columns\BadgeColumn::make('priority')
+                    ->label('Priority')
+                    ->colors([
+                        'gray' => 'low',
+                        'warning' => 'medium',
+                        'danger' => 'high',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    
+                Tables\Columns\TextColumn::make('platform')
+                    ->label('Source')
+                    ->badge()
+                    ->colors([
+                        'info' => 'facebook',
+                        'success' => 'whatsapp', 
+                        'warning' => 'email',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    
+                Tables\Columns\TextColumn::make('destination')
+                    ->label('Destination')
+                    ->limit(15)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 15 ? $state : null;
+                    }),
+                    
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Travel Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime('M j, Y')
+                    ->sortable()
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())
@@ -188,43 +229,31 @@ class LeadResource extends Resource
                         'email' => 'Email',
                     ])
                     ->label('Platform'),
-                Tables\Filters\SelectFilter::make('air_ticket_status')
-                    ->options(ServiceStatus::options())
-                    ->label('Air Ticket Status'),
-                Tables\Filters\SelectFilter::make('hotel_status')
-                    ->options(ServiceStatus::options())
-                    ->label('Hotel Status'),
-                Tables\Filters\SelectFilter::make('visa_status')
-                    ->options(ServiceStatus::options())
-                    ->label('Visa Status'),
-                Tables\Filters\SelectFilter::make('land_package_status')
-                    ->options(ServiceStatus::options())
-                    ->label('Land Package Status'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')
                     ->label('Assigned To')
                     ->searchable(),
-                Tables\Filters\SelectFilter::make('assigned_operator')
-                    ->relationship('assignedOperator', 'name')
-                    ->label('Assigned Operator')
+                Tables\Filters\SelectFilter::make('created_by')
+                    ->relationship('creator', 'name')
+                    ->label('Created By')
                     ->searchable(),
-                Tables\Filters\TernaryFilter::make('unassigned')
-                    ->label('Assignment Status')
-                    ->trueLabel('Unassigned')
-                    ->falseLabel('Assigned')
-                    ->queries(
-                        true: fn (Builder $query) => $query->whereNull('assigned_to'),
-                        false: fn (Builder $query) => $query->whereNotNull('assigned_to'),
-                    ),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
+                Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array

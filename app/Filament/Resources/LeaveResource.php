@@ -97,36 +97,43 @@ class LeaveResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Employee')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('user.role')
-                    ->label('Role')
-                    ->badge()
+                    ->sortable()
+                    ->weight('medium')
+                    ->description(fn ($record) => $record->user->role ? ucfirst($record->user->role) : null),
+                    
+                Tables\Columns\BadgeColumn::make('type')
+                    ->label('Leave Type')
                     ->colors([
-                        'primary' => 'marketing',
-                        'success' => 'sales',
-                        'warning' => 'operation',
-                        'info' => 'hr',
-                        'danger' => 'admin',
-                    ]),
-                Tables\Columns\TextColumn::make('type')
-                    ->badge()
+                        'info' => 'annual',
+                        'warning' => 'sick',
+                        'primary' => 'personal',
+                        'secondary' => 'emergency',
+                    ])
                     ->formatStateUsing(fn ($state) => $state->getLabel()),
+                    
                 Tables\Columns\TextColumn::make('start_date')
-                    ->date()
-                    ->sortable(),
+                    ->label('Start Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
                 Tables\Columns\TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
+                    ->label('End Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
                 Tables\Columns\TextColumn::make('duration_in_days')
                     ->label('Duration')
-                    ->suffix(' days'),
+                    ->suffix(' days')
+                    ->badge()
+                    ->color('gray'),
+                    
                 Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
                     ->colors([
                         'warning' => LeaveStatus::PENDING->value,
                         'success' => LeaveStatus::APPROVED->value,
@@ -134,43 +141,43 @@ class LeaveResource extends Resource
                         'gray' => LeaveStatus::CANCELLED->value,
                     ])
                     ->formatStateUsing(fn ($state) => $state->getLabel()),
+                    
                 Tables\Columns\TextColumn::make('approver.name')
                     ->label('Approved By')
-                    ->default('N/A'),
+                    ->placeholder('Pending approval')
+                    ->color('info'),
+                    
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Requested')
-                    ->dateTime()
-                    ->sortable(),
+                    ->dateTime('M j, Y')
+                    ->sortable()
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('📋 Leave Status')
+                    ->label('Leave Status')
                     ->options([
-                        'all' => '📊 All Leaves',
-                        'pending' => '⏳ Pending',
-                        'approved' => '✅ Approved',
-                        'rejected' => '❌ Rejected',
-                        'cancelled' => '🚫 Cancelled',
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'cancelled' => 'Cancelled',
                     ])
-                    ->default('pending')
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (empty($data['value']) || $data['value'] === 'all') {
-                            return $query; // Show all
-                        }
-                        return $query->where('status', $data['value']);
-                    }),
+                    ->placeholder('All Statuses'),
                 Tables\Filters\SelectFilter::make('type')
-                    ->label('📝 Leave Type')
+                    ->label('Leave Type')
                     ->options(LeaveType::getOptions())
                     ->placeholder('All Types'),
                 Tables\Filters\SelectFilter::make('user')
-                    ->label('👤 Employee')
+                    ->label('Employee')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
                     ->placeholder('All Employees'),
                 Tables\Filters\Filter::make('date_range')
-                    ->label('📅 Date Range')
+                    ->label('Date Range')
                     ->form([
                         Forms\Components\DatePicker::make('from_date')
                             ->label('From Date'),

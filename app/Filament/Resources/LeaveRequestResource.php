@@ -113,29 +113,47 @@ class LeaveRequestResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type')
-                    ->badge()
+                Tables\Columns\BadgeColumn::make('type')
+                    ->label('Request Type')
+                    ->colors([
+                        'info' => 'annual',
+                        'warning' => 'sick',
+                        'primary' => 'personal',
+                        'secondary' => 'emergency',
+                    ])
                     ->formatStateUsing(fn ($state) => $state->getLabel()),
+                    
                 Tables\Columns\TextColumn::make('description')
-                    ->limit(40)
+                    ->label('Description')
+                    ->limit(30)
                     ->wrap()
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
-                        if (strlen($state) <= 40) {
-                            return null;
-                        }
-                        return $state;
-                    }),
+                        return strlen($state) > 30 ? $state : null;
+                    })
+                    ->placeholder('No description')
+                    ->color('gray'),
+                    
                 Tables\Columns\TextColumn::make('start_date')
-                    ->date()
-                    ->sortable(),
+                    ->label('From')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
                 Tables\Columns\TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
+                    ->label('To')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
+                    
                 Tables\Columns\TextColumn::make('duration_in_days')
                     ->label('Duration')
-                    ->suffix(' days'),
+                    ->suffix(' days')
+                    ->badge()
+                    ->color('gray'),
+                    
                 Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
                     ->colors([
                         'warning' => LeaveStatus::PENDING->value,
                         'success' => LeaveStatus::APPROVED->value,
@@ -143,27 +161,49 @@ class LeaveRequestResource extends Resource
                         'gray' => LeaveStatus::CANCELLED->value,
                     ])
                     ->formatStateUsing(fn ($state) => $state->getLabel()),
+                    
                 Tables\Columns\TextColumn::make('approver.name')
-                    ->label('Approved By')
-                    ->default('Pending'),
+                    ->label('Reviewer')
+                    ->placeholder('Pending review')
+                    ->color('info'),
+                    
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Requested')
-                    ->dateTime()
-                    ->sortable(),
+                    ->label('Submitted')
+                    ->dateTime('M j, Y')
+                    ->sortable()
+                    ->since()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(LeaveStatus::getOptions()),
+                    ->label('Request Status')
+                    ->options(LeaveStatus::getOptions())
+                    ->placeholder('All Statuses'),
                 Tables\Filters\SelectFilter::make('type')
-                    ->options(LeaveType::getOptions()),
+                    ->label('Leave Type')
+                    ->options(LeaveType::getOptions())
+                    ->placeholder('All Types'),
+                Tables\Filters\Filter::make('my_requests')
+                    ->label('My Requests Only')
+                    ->query(fn ($query) => $query->where('user_id', auth()->id())),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
                 Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray')
                     ->visible(fn (Leave $record) => $record->isPending()),
                 Tables\Actions\Action::make('cancel')
+                    ->label('Cancel')
                     ->icon('heroicon-m-x-mark')
-                    ->color('gray')
+                    ->color('danger')
+                    ->button()
+                    ->size('sm')
                     ->visible(fn (Leave $record) => $record->isPending())
                     ->requiresConfirmation()
                     ->modalDescription('Are you sure you want to cancel this leave request?')
@@ -179,7 +219,6 @@ class LeaveRequestResource extends Resource
                         ->visible(fn () => auth()->user()->isAdmin()),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No Leave Requests Found')
             ->emptyStateDescription('You haven\'t submitted any leave requests yet.')
             ->emptyStateIcon('heroicon-o-calendar');

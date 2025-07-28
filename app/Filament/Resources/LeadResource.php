@@ -44,14 +44,14 @@ class LeadResource extends Resource
             // Basic Information Section
             Forms\Components\Section::make('Basic Information')
                 ->description('Core lead details and customer information')
-                ->schema([
+            ->schema([
                     Forms\Components\Grid::make(2)
-                        ->schema([
+                    ->schema([
                             Forms\Components\TextInput::make('reference_id')
                                 ->label('Reference ID')
                                 ->disabled()
                                 ->helperText('Auto-generated unique identifier'),
-                            Forms\Components\TextInput::make('customer_name')
+                        Forms\Components\TextInput::make('customer_name')
                                 ->label('Customer Name')
                                 ->required()
                                 ->maxLength(255)
@@ -59,22 +59,22 @@ class LeadResource extends Resource
                         ]),
                     Forms\Components\Grid::make(2)
                         ->schema([
-                            Forms\Components\Select::make('customer_id')
+                        Forms\Components\Select::make('customer_id')
                                 ->label('Linked Customer')
-                                ->relationship('customer', 'name')
-                                ->searchable()
+                            ->relationship('customer', 'name')
+                            ->searchable()
                                 ->createOptionForm([
                                     Forms\Components\TextInput::make('name')->required(),
                                     Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
                                 ])
-                                ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
-                            Forms\Components\Select::make('platform')
+                            ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
+                        Forms\Components\Select::make('platform')
                                 ->label('Source Platform')
-                                ->options([
-                                    'facebook' => 'Facebook',
-                                    'whatsapp' => 'WhatsApp',
-                                    'email' => 'Email',
-                                ])
+                            ->options([
+                                'facebook' => 'Facebook',
+                                'whatsapp' => 'WhatsApp',
+                                'email' => 'Email',
+                            ])
                                 ->required()
                                 ->native(false),
                         ]),
@@ -86,32 +86,32 @@ class LeadResource extends Resource
                         ->label('Customer Message')
                         ->rows(3)
                         ->placeholder('Original customer message or inquiry'),
-                    Forms\Components\Hidden::make('created_by')
-                        ->default(fn() => auth()->id()),
-                ])
+                        Forms\Components\Hidden::make('created_by')
+                            ->default(fn() => auth()->id()),
+                    ])
                 ->collapsed(false)
                 ->compact(),
 
             // Contact Information Section
-            Forms\Components\Section::make('Contact Information')
+                Forms\Components\Section::make('Contact Information')
                 ->description('Customer contact details')
                 ->schema([
                     Forms\Components\Grid::make(2)
-                        ->schema([
-                            Forms\Components\Select::make('contact_method')
+                    ->schema([
+                        Forms\Components\Select::make('contact_method')
                                 ->label('Contact Method')
-                                ->options([
-                                    'phone' => 'Phone',
-                                    'email' => 'Email',
-                                    'whatsapp' => 'WhatsApp',
-                                    'facebook' => 'Facebook',
+                            ->options([
+                                'phone' => 'Phone',
+                                'email' => 'Email',
+                                'whatsapp' => 'WhatsApp',
+                                'facebook' => 'Facebook',
                                 ])
                                 ->native(false),
                             Forms\Components\TextInput::make('contact_value')
                                 ->label('Contact Value')
                                 ->placeholder('Enter phone, email, or contact ID'),
                         ]),
-                ])
+                    ])
                 ->collapsed(false)
                 ->compact(),
 
@@ -180,26 +180,26 @@ class LeadResource extends Resource
                 ->compact(),
 
             // Assignment & Status Section (Only visible in edit/view)
-            Forms\Components\Section::make('Assignment & Status')
+                Forms\Components\Section::make('Assignment & Status')
                 ->description('Lead assignment and current status')
                 ->schema([
                     Forms\Components\Grid::make(3)
-                        ->schema([
-                            Forms\Components\Select::make('assigned_to')
+                    ->schema([
+                        Forms\Components\Select::make('assigned_to')
                                 ->label('Assigned Sales Rep')
-                                ->relationship('assignedUser', 'name')
-                                ->searchable()
+                            ->relationship('assignedUser', 'name')
+                            ->searchable()
                                 ->placeholder('Select sales representative'),
-                            Forms\Components\Select::make('assigned_operator')
+                        Forms\Components\Select::make('assigned_operator')
                                 ->label('Assigned Operator')
-                                ->relationship('assignedOperator', 'name')
-                                ->searchable()
+                            ->relationship('assignedOperator', 'name')
+                            ->searchable()
                                 ->placeholder('Select operations staff'),
-                            Forms\Components\Select::make('status')
+                        Forms\Components\Select::make('status')
                                 ->label('Lead Status')
-                                ->options(LeadStatus::options())
-                                ->required()
-                                ->default(LeadStatus::NEW->value)
+                            ->options(LeadStatus::options())
+                            ->required()
+                            ->default(LeadStatus::NEW->value)
                                 ->native(false),
                         ]),
                 ])
@@ -212,7 +212,7 @@ class LeadResource extends Resource
                 ->description('Timestamps and system data')
                 ->schema([
                     Forms\Components\Grid::make(2)
-                        ->schema([
+                    ->schema([
                             Forms\Components\DateTimePicker::make('created_at')
                                 ->label('Created At')
                                 ->disabled()

@@ -1,0 +1,334 @@
+@import 'tailwindcss';
+
+/* 
+ * Filament Minimal Theme
+ * A clean, minimalist theme for Filament applications
+ * Using correct Filament v3 classes
+ */
+
+@theme {
+    /* Typography */
+    --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    
+    /* Base Colors */
+    --color-slate-50: 248 250 252;
+    --color-slate-100: 241 245 249;
+    --color-slate-200: 226 232 240;
+    --color-slate-300: 203 213 225;
+    --color-slate-400: 148 163 184;
+    --color-slate-500: 100 116 139;
+    --color-slate-600: 71 85 105;
+    --color-slate-700: 51 65 85;
+    --color-slate-800: 30 41 59;
+    --color-slate-900: 15 23 42;
+    --color-slate-950: 2 6 23;
+    
+    /* Primary Colors - Modern Blue */
+    --color-primary-50: 239 246 255;
+    --color-primary-100: 219 234 254;
+    --color-primary-200: 191 219 254;
+    --color-primary-300: 147 197 253;
+    --color-primary-400: 96 165 250;
+    --color-primary-500: 59 130 246;
+    --color-primary-600: 37 99 235;
+    --color-primary-700: 29 78 216;
+    --color-primary-800: 30 64 175;
+    --color-primary-900: 30 58 138;
+    --color-primary-950: 23 37 84;
+    
+    /* Success Colors */
+    --color-success-50: 240 253 244;
+    --color-success-100: 220 252 231;
+    --color-success-200: 187 247 208;
+    --color-success-300: 134 239 172;
+    --color-success-400: 74 222 128;
+    --color-success-500: 34 197 94;
+    --color-success-600: 22 163 74;
+    --color-success-700: 21 128 61;
+    --color-success-800: 22 101 52;
+    --color-success-900: 20 83 45;
+    --color-success-950: 5 46 22;
+    
+    /* Warning Colors */
+    --color-warning-50: 255 251 235;
+    --color-warning-100: 254 243 199;
+    --color-warning-200: 253 230 138;
+    --color-warning-300: 252 211 77;
+    --color-warning-400: 251 191 36;
+    --color-warning-500: 245 158 11;
+    --color-warning-600: 217 119 6;
+    --color-warning-700: 180 83 9;
+    --color-warning-800: 146 64 14;
+    --color-warning-900: 120 53 15;
+    --color-warning-950: 69 26 3;
+    
+    /* Danger Colors */
+    --color-danger-50: 254 242 242;
+    --color-danger-100: 254 226 226;
+    --color-danger-200: 254 202 202;
+    --color-danger-300: 252 165 165;
+    --color-danger-400: 248 113 113;
+    --color-danger-500: 239 68 68;
+    --color-danger-600: 220 38 38;
+    --color-danger-700: 185 28 28;
+    --color-danger-800: 153 27 27;
+    --color-danger-900: 127 29 29;
+    --color-danger-950: 69 10 10;
+}
+
+/* Base Layout with correct classes */
+html {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.fi-body {
+    background-color: rgb(248 250 252) !important;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Login page specific styling */
+.fi-simple-layout {
+    background-color: rgb(248 250 252) !important;
+}
+
+.fi-simple-main-ctn {
+    background-color: transparent !important;
+}
+
+.fi-simple-main {
+    background-color: rgb(255 255 255) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgb(226 232 240) !important;
+    border-radius: 0.75rem !important;
+}
+
+.fi-simple-page {
+    background-color: transparent !important;
+}
+
+.fi-simple-header {
+    border-bottom: 1px solid rgb(241 245 249) !important;
+    padding-bottom: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.fi-logo {
+    color: rgb(37 99 235) !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+}
+
+.fi-simple-header-heading {
+    font-size: 1.875rem !important;
+    font-weight: 700 !important;
+    color: rgb(15 23 42) !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Form styling with correct classes */
+.fi-form {
+    background-color: transparent !important;
+}
+
+.fi-fo-field-wrp {
+    margin-bottom: 1rem !important;
+}
+
+.fi-fo-field-wrp-label .text-sm {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: rgb(51 65 85) !important;
+}
+
+/* Input styling */
+input[type="email"],
+input[type="password"],
+input[type="text"],
+textarea,
+select {
+    border-color: rgb(203 213 225) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(15 23 42) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease-in-out !important;
+    padding: 0.75rem !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+    border-color: rgb(59 130 246) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+/* Button styling */
+button[type="submit"],
+.fi-btn,
+button[class*="fi-btn"] {
+    background-color: rgb(37 99 235) !important;
+    color: rgb(255 255 255) !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+button[type="submit"]:hover,
+.fi-btn:hover,
+button[class*="fi-btn"]:hover {
+    background-color: rgb(29 78 216) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    border-color: rgb(203 213 225) !important;
+    border-radius: 0.25rem !important;
+    color: rgb(37 99 235) !important;
+}
+
+/* Links */
+a {
+    color: rgb(37 99 235) !important;
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: rgb(29 78 216) !important;
+    text-decoration: underline !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .fi-body {
+        background-color: rgb(2 6 23) !important;
+    }
+    
+    .fi-simple-layout {
+        background-color: rgb(2 6 23) !important;
+    }
+    
+    .fi-simple-main {
+        background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-simple-header {
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-logo {
+        color: rgb(147 197 253) !important;
+    }
+    
+    .fi-simple-header-heading {
+        color: rgb(248 250 252) !important;
+    }
+    
+    .fi-fo-field-wrp-label .text-sm {
+        color: rgb(203 213 225) !important;
+    }
+    
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    textarea,
+    select {
+        border-color: rgb(51 65 85) !important;
+        background-color: rgb(15 23 42) !important;
+        color: rgb(248 250 252) !important;
+    }
+    
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+        border-color: rgb(59 130 246) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+}
+
+/* Additional styling for overall theme consistency */
+.fi-sidebar {
+    background-color: rgb(255 255 255) !important;
+    border-right: 1px solid rgb(226 232 240) !important;
+}
+
+.fi-header {
+    background-color: rgb(255 255 255) !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+}
+
+.fi-table {
+    background-color: rgb(255 255 255) !important;
+    border: 1px solid rgb(226 232 240) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .fi-sidebar {
+        background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-header {
+        background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+    
+    .fi-table {
+        background-color: rgb(15 23 42) !important;
+        border-color: rgb(30 41 59) !important;
+    }
+}
+
+/* Enhanced accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Typography improvements */
+.text-sm,
+small {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+}
+
+.text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+}
+
+.text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+}
+
+/* Font weight consistency */
+.font-bold {
+    font-weight: 700 !important;
+}
+
+.font-medium {
+    font-weight: 500 !important;
+}
+
+.font-normal {
+    font-weight: 400 !important;
+} 

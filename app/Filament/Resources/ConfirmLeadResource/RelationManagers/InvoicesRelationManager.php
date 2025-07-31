@@ -232,10 +232,10 @@ class InvoicesRelationManager extends RelationManager
                 $ownerRecord = $this->getOwnerRecord();
                 $invoices = $ownerRecord->invoices;
                 $totalInvoiceAmount = $invoices->sum('total_amount');
-                $paidInvoiceAmount = $invoices->where('status', 'paid')->sum('total_amount');
+                $paidInvoiceAmount = $invoices->where('customer_payment_status', 'paid')->sum('total_amount');
                 $unpaidInvoiceAmount = $totalInvoiceAmount - $paidInvoiceAmount;
-                $paidCount = $invoices->where('status', 'paid')->count();
-                $unpaidCount = $invoices->whereIn('status', ['pending', 'partial'])->count();
+                $paidCount = $invoices->where('customer_payment_status', 'paid')->count();
+                $unpaidCount = $invoices->whereIn('customer_payment_status', ['pending', 'partial'])->count();
                 
                 return "Invoices - Total: $" . number_format($totalInvoiceAmount, 2) . 
                        " | Paid: $" . number_format($paidInvoiceAmount, 2) . " ({$paidCount})" .

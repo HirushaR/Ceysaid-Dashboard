@@ -63,7 +63,7 @@ class ConfirmLeadResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\LeadCostsRelationManager::class,
+            RelationManagers\InvoicesRelationManager::class,
         ];
     }
 
@@ -139,13 +139,19 @@ class ConfirmLeadResource extends Resource
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                     
-                Tables\Columns\TextColumn::make('leadCosts.amount')
+                Tables\Columns\TextColumn::make('total_invoice_amount')
                     ->label('Revenue')
                     ->money('USD')
                     ->sortable()
                     ->alignRight()
                     ->width('140px')
-                    ->placeholder('No cost set'),
+                    ->placeholder('No invoice set')
+                    ->getStateUsing(function ($record) {
+                        return $record->invoices->sum('total_amount');
+                    })
+                    ->url(fn($record) => static::getUrl('view', ['record' => $record]))
+                    ->color('info')
+                    ->tooltip('Click to view invoice details'),
                     
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
@@ -200,7 +206,7 @@ class ConfirmLeadResource extends Resource
                     
                 Tables\Filters\Filter::make('has_revenue')
                     ->toggle()
-                    ->query(fn (Builder $query): Builder => $query->whereHas('leadCosts'))
+                    ->query(fn (Builder $query): Builder => $query->whereHas('invoices'))
                     ->label('Has Revenue'),
                     
                 Tables\Filters\Filter::make('revenue_range')
@@ -218,14 +224,14 @@ class ConfirmLeadResource extends Resource
                         return $query
                             ->when(
                                 $data['revenue_from'],
-                                fn (Builder $query, $amount): Builder => $query->whereHas('leadCosts', function (Builder $query) use ($amount) {
-                                    $query->where('amount', '>=', $amount);
+                                fn (Builder $query, $amount): Builder => $query->whereHas('invoices', function (Builder $query) use ($amount) {
+                                    $query->where('total_amount', '>=', $amount);
                                 })
                             )
                             ->when(
                                 $data['revenue_to'],
-                                fn (Builder $query, $amount): Builder => $query->whereHas('leadCosts', function (Builder $query) use ($amount) {
-                                    $query->where('amount', '<=', $amount);
+                                fn (Builder $query, $amount): Builder => $query->whereHas('invoices', function (Builder $query) use ($amount) {
+                                    $query->where('total_amount', '<=', $amount);
                                 })
                             );
                     }),
@@ -366,40 +372,7 @@ class ConfirmLeadResource extends Resource
                     ->columns(2)
                     ->collapsible(),
 
-                Forms\Components\Section::make('Lead Costs')
-                    ->schema([
-                        Forms\Components\Repeater::make('leadCosts')
-                            ->relationship('leadCosts')
-                            ->schema([
-                                Forms\Components\TextInput::make('invoice_number')
-                                    ->label('Invoice Number')
-                                    ->required(),
-                                Forms\Components\TextInput::make('amount')
-                                    ->label('Amount')
-                                    ->numeric()
-                                    ->step(0.01)
-                                    ->prefix('$')
-                                    ->required(),
-                                Forms\Components\Textarea::make('details')
-                                    ->label('Details')
-                                    ->rows(2),
-                                Forms\Components\TextInput::make('vendor_bill')
-                                    ->label('Vendor Bill'),
-                                Forms\Components\TextInput::make('vendor_amount')
-                                    ->label('Vendor Amount')
-                                    ->numeric()
-                                    ->step(0.01)
-                                    ->prefix('$'),
-                                Forms\Components\Toggle::make('is_paid')
-                                    ->label('Is Paid')
-                                    ->default(false),
-                            ])
-                            ->createItemButtonLabel('Add Cost')
-                            ->reorderable(false)
-                            ->columns(2)
-                            ->disabled(fn($context) => $context === 'view'),
-                    ])
-                    ->collapsible(),
+
 
                 Forms\Components\Section::make('Attachments')
                     ->schema([

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\ConfirmLeadResource\Pages;
 
 use App\Filament\Resources\ConfirmLeadResource;
+use App\Models\Invoice;
+use App\Models\VendorBill;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -14,237 +16,7 @@ class ViewConfirmLead extends ViewRecord
 {
     protected static string $resource = ConfirmLeadResource::class;
 
-    public function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist
-            ->schema([
-                // Header section with key info
-                Components\Section::make('Lead Overview')
-                    ->schema([
-                        Components\Grid::make(3)
-                            ->schema([
-                                Components\TextEntry::make('reference_id')
-                                    ->label('Reference ID')
-                                    ->badge()
-                                    ->color('gray'),
-                                Components\TextEntry::make('status')
-                                    ->label('Status')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'new' => 'gray',
-                                        'assigned_to_sales' => 'info',
-                                        'assigned_to_operations' => 'warning',
-                                        'info_gather_complete' => 'success',
-                                        'pricing_in_progress' => 'primary',
-                                        'sent_to_customer' => 'accent',
-                                        'confirmed' => 'brand',
-                                        'mark_closed' => 'danger',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => \App\Enums\LeadStatus::tryFrom($state)?->label() ?? $state),
-                                Components\TextEntry::make('priority')
-                                    ->label('Priority')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'low' => 'gray',
-                                        'medium' => 'warning',
-                                        'high' => 'danger',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => ucfirst($state ?? 'medium')),
-                            ]),
-                    ])
-                    ->columns(1),
 
-                // Customer Information
-                Components\Section::make('Customer Information')
-                    ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('customer_name')
-                                    ->label('Customer Name')
-                                    ->size(Components\TextEntry\TextEntrySize::Large)
-                                    ->weight('bold'),
-                                Components\TextEntry::make('platform')
-                                    ->label('Source Platform')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'facebook' => 'info',
-                                        'whatsapp' => 'success',
-                                        'email' => 'warning',
-                                        default => 'gray',
-                                    }),
-                            ]),
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('contact_method')
-                                    ->label('Contact Method')
-                                    ->formatStateUsing(fn ($state) => ucfirst($state ?? 'Not specified')),
-                                Components\TextEntry::make('contact_value')
-                                    ->label('Contact Value')
-                                    ->placeholder('Not provided')
-                                    ->copyable(),
-                            ]),
-                        Components\TextEntry::make('message')
-                            ->label('Customer Message')
-                            ->placeholder('No message provided')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-
-                // Travel Details
-                Components\Section::make('Travel Information')
-                    ->schema([
-                        Components\Grid::make(3)
-                            ->schema([
-                                Components\TextEntry::make('destination')
-                                    ->label('Destination')
-                                    ->placeholder('Not specified'),
-                                Components\TextEntry::make('country')
-                                    ->label('Country')
-                                    ->placeholder('Not specified'),
-                                Components\TextEntry::make('subject')
-                                    ->label('Trip Subject')
-                                    ->placeholder('Not specified'),
-                            ]),
-                        Components\Grid::make(3)
-                            ->schema([
-                                Components\TextEntry::make('arrival_date')
-                                    ->label('Arrival Date')
-                                    ->date('M j, Y')
-                                    ->placeholder('Not set'),
-                                Components\TextEntry::make('depature_date')
-                                    ->label('Departure Date')
-                                    ->date('M j, Y')
-                                    ->placeholder('Not set'),
-                                Components\TextEntry::make('number_of_days')
-                                    ->label('Duration')
-                                    ->suffix(' days')
-                                    ->placeholder('Not specified'),
-                            ]),
-                        Components\Grid::make(3)
-                            ->schema([
-                                Components\TextEntry::make('number_of_adults')
-                                    ->label('Adults')
-                                    ->placeholder('0'),
-                                Components\TextEntry::make('number_of_children')
-                                    ->label('Children')
-                                    ->placeholder('0'),
-                                Components\TextEntry::make('number_of_infants')
-                                    ->label('Infants')
-                                    ->placeholder('0'),
-                            ]),
-                        Components\TextEntry::make('tour')
-                            ->label('Tour Requirements')
-                            ->placeholder('No requirements specified')
-                            ->columnSpanFull(),
-                        Components\TextEntry::make('tour_details')
-                            ->label('Detailed Tour Information')
-                            ->placeholder('No details provided')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(3),
-
-                // Assignment Information
-                Components\Section::make('Assignment & Team')
-                    ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('assignedUser.name')
-                                    ->label('Assigned Sales Rep')
-                                    ->placeholder('Unassigned')
-                                    ->badge()
-                                    ->color('info'),
-                                Components\TextEntry::make('assignedOperator.name')
-                                    ->label('Assigned Operator')
-                                    ->placeholder('Unassigned')
-                                    ->badge()
-                                    ->color('success'),
-                            ]),
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('creator.name')
-                                    ->label('Created By')
-                                    ->placeholder('Unknown'),
-                                Components\TextEntry::make('customer.name')
-                                    ->label('Linked Customer')
-                                    ->placeholder('No customer link'),
-                            ]),
-                    ])
-                    ->columns(2)
-                    ->collapsed(),
-
-                // Service Status Information
-                Components\Section::make('Service Status')
-                    ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('air_ticket_status')
-                                    ->label('Air Ticket')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'completed' => 'success',
-                                        'in_progress' => 'warning',
-                                        'pending' => 'gray',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state ?? 'pending'))),
-                                Components\TextEntry::make('hotel_status')
-                                    ->label('Hotel')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'completed' => 'success',
-                                        'in_progress' => 'warning',
-                                        'pending' => 'gray',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state ?? 'pending'))),
-                            ]),
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('visa_status')
-                                    ->label('Visa')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'completed' => 'success',
-                                        'in_progress' => 'warning',
-                                        'pending' => 'gray',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state ?? 'pending'))),
-                                Components\TextEntry::make('land_package_status')
-                                    ->label('Land Package')
-                                    ->badge()
-                                    ->color(fn (?string $state): string => match ($state) {
-                                        'completed' => 'success',
-                                        'in_progress' => 'warning',
-                                        'pending' => 'gray',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state ?? 'pending'))),
-                            ]),
-                    ])
-                    ->columns(2)
-                    ->collapsed(),
-
-                // System Information
-                Components\Section::make('System Information')
-                    ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('created_at')
-                                    ->label('Created At')
-                                    ->dateTime('M j, Y \a\t g:i A'),
-                                Components\TextEntry::make('updated_at')
-                                    ->label('Last Updated')
-                                    ->dateTime('M j, Y \a\t g:i A'),
-                            ]),
-                    ])
-                    ->columns(2)
-                    ->collapsed(),
-            ])
-            ->columns(1);
-    }
 
     protected function getHeaderActions(): array
     {
@@ -253,44 +25,156 @@ class ViewConfirmLead extends ViewRecord
                 ->label('Edit')
                 ->icon('heroicon-o-pencil')
                 ->button(),
-            Action::make('add_cost')
-                ->label('Add Cost')
+
+            Action::make('create_invoice')
+                ->label('Create Invoice')
                 ->icon('heroicon-o-currency-dollar')
                 ->color('success')
                 ->button()
                 ->form([
-                    Forms\Components\TextInput::make('invoice_number')
-                        ->label('Invoice Number')
-                        ->required(),
-                    Forms\Components\TextInput::make('amount')
-                        ->label('Amount')
-                        ->numeric()
-                        ->step(0.01)
-                        ->prefix('$')
-                        ->required(),
-                    Forms\Components\Textarea::make('details')
-                        ->label('Details')
-                        ->rows(3),
-                    Forms\Components\TextInput::make('vendor_bill')
-                        ->label('Vendor Bill'),
-                    Forms\Components\TextInput::make('vendor_amount')
-                        ->label('Vendor Amount')
-                        ->numeric()
-                        ->step(0.01)
-                        ->prefix('$'),
-                    Forms\Components\Toggle::make('is_paid')
-                        ->label('Is Paid')
-                        ->default(false),
+                    Forms\Components\Section::make('Invoice Information')
+                        ->schema([
+                            Forms\Components\TextInput::make('invoice_number')
+                                ->label('Invoice Number')
+                                ->required()
+                                ->unique('invoices', 'invoice_number')
+                                ->maxLength(255)
+                                ->placeholder('e.g., INV20252345'),
+                            Forms\Components\TextInput::make('total_amount')
+                                ->label('Total Amount')
+                                ->required()
+                                ->numeric()
+                                ->step(0.01)
+                                ->prefix('$'),
+                            Forms\Components\Textarea::make('description')
+                                ->label('Description')
+                                ->rows(3)
+                                ->placeholder('Brief description of the invoice')
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2),
+
+                    Forms\Components\Section::make('Payment Information')
+                        ->schema([
+                            Forms\Components\Select::make('status')
+                                ->label('Payment Status')
+                                ->options([
+                                    'pending' => 'Pending',
+                                    'partial' => 'Partially Paid',
+                                    'paid' => 'Fully Paid',
+                                ])
+                                ->default('pending')
+                                ->required()
+                                ->live(),
+                            Forms\Components\TextInput::make('payment_amount')
+                                ->label('Payment Amount')
+                                ->numeric()
+                                ->step(0.01)
+                                ->prefix('$')
+                                ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
+                            Forms\Components\DatePicker::make('payment_date')
+                                ->label('Payment Date')
+                                ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
+                            Forms\Components\TextInput::make('receipt_number')
+                                ->label('Receipt Number')
+                                ->maxLength(255)
+                                ->placeholder('e.g., RC202534')
+                                ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
+                        ])
+                        ->columns(2),
+
+                    Forms\Components\Section::make('Vendor Bills')
+                        ->schema([
+                            Forms\Components\Repeater::make('vendor_bills')
+                                ->schema([
+                                    Forms\Components\TextInput::make('vendor_name')
+                                        ->label('Vendor Name')
+                                        ->required()
+                                        ->placeholder('e.g., IATA, TRAVEL BUDDY, MALAYSIA E VISA'),
+                                    Forms\Components\TextInput::make('vendor_bill_number')
+                                        ->label('Vendor Bill Number')
+                                        ->required()
+                                        ->placeholder('e.g., XO20252345'),
+                                    Forms\Components\TextInput::make('bill_amount')
+                                        ->label('Amount')
+                                        ->required()
+                                        ->numeric()
+                                        ->step(0.01)
+                                        ->prefix('$'),
+                                    Forms\Components\Select::make('service_type')
+                                        ->label('Service Type')
+                                        ->options([
+                                            'AIR TICKET' => 'Air Ticket',
+                                            'HOTEL' => 'Hotel',
+                                            'VISA' => 'Visa',
+                                            'LAND PACKAGE' => 'Land Package',
+                                            'INSURANCE' => 'Insurance',
+                                            'OTHER' => 'Other',
+                                        ])
+                                        ->required()
+                                        ->searchable(),
+                                    Forms\Components\Textarea::make('service_details')
+                                        ->label('Service Details')
+                                        ->rows(2)
+                                        ->placeholder('Additional details about the service')
+                                        ->columnSpanFull(),
+                                    Forms\Components\Select::make('payment_status')
+                                        ->label('Payment Status')
+                                        ->options([
+                                            'pending' => 'Pending',
+                                            'paid' => 'Paid',
+                                        ])
+                                        ->default('pending')
+                                        ->required(),
+                                ])
+                                ->createItemButtonLabel('Add Vendor Bill')
+                                ->reorderable(false)
+                                ->columns(2)
+                                ->collapsible()
+                                ->cloneable()
+                                ->defaultItems(0),
+                        ])
+                        ->description('Add vendor bills for expenses related to this invoice (optional)')
+                        ->collapsible()
+                        ->collapsed(),
+
+                    Forms\Components\Section::make('Additional Notes')
+                        ->schema([
+                            Forms\Components\Textarea::make('notes')
+                                ->label('Notes')
+                                ->rows(3)
+                                ->columnSpanFull(),
+                        ])
+                        ->collapsible(),
                 ])
                 ->action(function (array $data) {
-                    $this->record->leadCosts()->create($data);
+                    // Extract vendor bills data
+                    $vendorBillsData = $data['vendor_bills'] ?? [];
+                    unset($data['vendor_bills']);
+                    
+                    // Create the invoice first
+                    $invoice = $this->record->invoices()->create($data);
+                    
+                    // Create vendor bills if any were provided
+                    if (!empty($vendorBillsData)) {
+                        foreach ($vendorBillsData as $vendorBillData) {
+                            $invoice->vendorBills()->create($vendorBillData);
+                        }
+                    }
+                    
+                    $vendorBillsCount = count($vendorBillsData);
+                    $vendorBillsText = $vendorBillsCount > 0 ? " with {$vendorBillsCount} vendor bill(s)" : "";
+                    
                     Notification::make()
                         ->success()
-                        ->title('Cost added successfully.')
+                        ->title('Invoice created successfully')
+                        ->body("Invoice {$invoice->invoice_number} has been created for this lead{$vendorBillsText}.")
                         ->send();
                 })
-                ->modalHeading('Add Lead Cost')
-                ->modalButton('Add Cost'),
+                ->modalHeading('Create Invoice')
+                ->modalButton('Create Invoice')
+                ->modalWidth('4xl'),
+
             Action::make('attach_documents')
                 ->label('Attach Documents')
                 ->icon('heroicon-o-paper-clip')

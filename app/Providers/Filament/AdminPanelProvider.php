@@ -116,7 +116,7 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->renderHook(
                 'panels::styles.before',
-                fn () => '<link rel="stylesheet" href="' . asset('build/assets/minimal-theme-B729io4P.css') . '">'
+                fn () => '<link rel="stylesheet" href="' . asset('build/assets/minimal-theme-BBFZb6P1.css') . '">'
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

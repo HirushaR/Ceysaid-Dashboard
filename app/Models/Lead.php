@@ -76,4 +76,14 @@ class Lead extends Model
     {
         return $this->hasMany(LeadCost::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function vendorBills()
+    {
+        return $this->hasManyThrough(VendorBill::class, Invoice::class);
+    }
 }

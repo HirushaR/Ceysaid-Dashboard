@@ -9,7 +9,7 @@ on:
 env:
   EB_APPLICATION_NAME: ${{ secrets.EB_APPLICATION_NAME }}
   EB_ENVIRONMENT_NAME: ${{ secrets.EB_ENVIRONMENT_NAME }}
-  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_REGION: ap-south-1
 
 jobs:
   test:
@@ -120,7 +120,7 @@ jobs:
         
         AWS_ACCESS_KEY_ID=
         AWS_SECRET_ACCESS_KEY=
-        AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}
+        AWS_DEFAULT_REGION=ap-south-1
         AWS_BUCKET=
         AWS_URL=
         
@@ -136,19 +136,25 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: ap-south-1
         
     - name: Deploy to Elastic Beanstalk
       run: |
         VERSION_LABEL="v$(date +%Y%m%d-%H%M%S)"
         
-        aws s3 cp deployment.zip s3://elasticbeanstalk-$AWS_REGION-$AWS_ACCOUNT_ID/
+        # Create S3 bucket if it doesn't exist
+        aws s3 mb s3://ceysaid-deployments-ap-south-1 --region ap-south-1 || true
         
+        # Upload deployment package
+        aws s3 cp deployment.zip s3://ceysaid-deployments-ap-south-1/
+        
+        # Create application version
         aws elasticbeanstalk create-application-version \
           --application-name $EB_APPLICATION_NAME \
           --version-label $VERSION_LABEL \
-          --source-bundle S3Bucket="elasticbeanstalk-$AWS_REGION-$AWS_ACCOUNT_ID",S3Key="deployment.zip"
+          --source-bundle S3Bucket="ceysaid-deployments-ap-south-1",S3Key="deployment.zip"
         
+        # Deploy to environment
         aws elasticbeanstalk update-environment \
           --environment-name $EB_ENVIRONMENT_NAME \
           --version-label $VERSION_LABEL

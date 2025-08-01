@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  EB_APPLICATION_NAME: ${{ secrets.EB_APPLICATION_NAME }}
-  EB_ENVIRONMENT_NAME: ${{ secrets.EB_ENVIRONMENT_NAME }}
+  EB_APPLICATION_NAME: Ceysaid-dev-env
+  EB_ENVIRONMENT_NAME: ceysaid-dev-app
   AWS_REGION: ap-south-1
 
 jobs:

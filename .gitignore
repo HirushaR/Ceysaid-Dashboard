@@ -23,3 +23,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 OLD_Nova
+
+# AWS Elastic Beanstalk deployment
+beanstalk-deploy/
+.elasticbeanstalk/

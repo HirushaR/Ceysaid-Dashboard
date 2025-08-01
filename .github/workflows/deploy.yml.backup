@@ -35,13 +35,10 @@ jobs:
       run: composer install --prefer-dist --no-interaction --ignore-platform-reqs
         
     - name: Install NPM dependencies
-      run: |
-        rm -rf node_modules package-lock.json
-        npm install --legacy-peer-deps
+      run: npm install --legacy-peer-deps
       
     - name: Build assets
-      run: |
-        npm run build || (rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm run build)
+      run: npm run build
       
     - name: Run tests
       run: |
@@ -65,13 +62,11 @@ jobs:
         
     - name: Install dependencies
       run: |
-        composer install --prefer-dist --no-interaction --ignore-platform-reqs --no-dev --optimize-autoloader
-        rm -rf node_modules package-lock.json
+        composer install --prefer-dist --no-interaction --ignore-platform-reqs --no-dev --optimize-autoloader --ignore-platform-reqs
         npm install --legacy-peer-deps
         
     - name: Build assets
-      run: |
-        npm run build || (rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm run build)
+      run: npm run build
       
     - name: Create deployment package
       run: |
@@ -171,4 +166,4 @@ jobs:
     - name: Health check
       run: |
         sleep 30
-        curl -f http://$EB_URL || exit 1
+        curl -f http://$EB_URL || exit 1 

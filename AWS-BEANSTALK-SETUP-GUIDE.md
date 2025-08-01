@@ -131,7 +131,7 @@ This guide will walk you through setting up AWS Elastic Beanstalk for your Larav
    ```
    Application name: ceysaid-app
    Platform: PHP
-   Platform branch: PHP 8.2 running on 64bit Amazon Linux 2023
+   Platform branch: PHP 8.3 running on 64bit Amazon Linux 2023
    Platform version: 4.0.0 (latest)
    ```
 
@@ -145,7 +145,7 @@ This guide will walk you through setting up AWS Elastic Beanstalk for your Larav
 
 2. **Platform Configuration**
    ```
-   Platform: PHP 8.2
+   Platform: PHP 8.3
    Platform version: 4.0.0
    ```
 

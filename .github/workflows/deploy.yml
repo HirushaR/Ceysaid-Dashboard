@@ -32,7 +32,7 @@ jobs:
         cache: 'npm'
         
     - name: Install Composer dependencies
-      run: composer install --prefer-dist --no-interaction
+      run: composer install --prefer-dist --no-interaction --ignore-platform-reqs
         
     - name: Install NPM dependencies
       run: npm ci
@@ -62,7 +62,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        composer install --prefer-dist --no-interaction --no-dev --optimize-autoloader
+        composer install --prefer-dist --no-interaction --ignore-platform-reqs --no-dev --optimize-autoloader --ignore-platform-reqs
         npm ci
         
     - name: Build assets

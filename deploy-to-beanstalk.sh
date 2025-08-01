@@ -11,7 +11,7 @@ echo "🚀 Starting AWS Elastic Beanstalk deployment preparation..."
 APP_NAME="ceysaid-app"
 ENV_NAME="ceysaid-production"
 REGION="us-east-1"
-PLATFORM="64bit Amazon Linux 2023 v4.0.0 running PHP 8.2"
+PLATFORM="64bit Amazon Linux 2023 v4.0.0 running PHP 8.3"
 
 echo "📋 Application: $APP_NAME"
 echo "🌍 Environment: $ENV_NAME"

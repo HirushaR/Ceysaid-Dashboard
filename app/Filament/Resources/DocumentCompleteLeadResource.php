@@ -30,7 +30,7 @@ class DocumentCompleteLeadResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value);
+        return parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
     }
 
     public static function getPages(): array

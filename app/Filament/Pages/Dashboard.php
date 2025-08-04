@@ -3,12 +3,9 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
-use App\Filament\Widgets\SalesMetricsWidget;
 use App\Filament\Widgets\LeadsByStatusWidget;
 use App\Filament\Widgets\RevenueProfitTrendWidget;
 use App\Filament\Widgets\SalesKPIsWidget;
-use App\Filament\Widgets\LeadMetricsWidget;
-use App\Filament\Widgets\AllLeadMetricsWidget;
 
 class Dashboard extends BaseDashboard
 {
@@ -16,17 +13,7 @@ class Dashboard extends BaseDashboard
 
     protected function getHeaderWidgets(): array
     {
-        $user = auth()->user();
-        
-        if ($user && $user->isSales()) {
-            return [
-                SalesMetricsWidget::class,
-            ];
-        }
-        
-        return [
-            AllLeadMetricsWidget::class,
-        ];
+        return [];
     }
 
     protected function getFooterWidgets(): array
@@ -35,9 +22,9 @@ class Dashboard extends BaseDashboard
         
         if ($user && $user->isSales()) {
             return [
-                SalesKPIsWidget::class,
-                LeadsByStatusWidget::class,
-                RevenueProfitTrendWidget::class,
+                // SalesKPIsWidget::class,
+                // LeadsByStatusWidget::class,
+                // RevenueProfitTrendWidget::class,
             ];
         }
         

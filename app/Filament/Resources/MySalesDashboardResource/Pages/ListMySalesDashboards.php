@@ -4,7 +4,6 @@ namespace App\Filament\Resources\MySalesDashboardResource\Pages;
 
 use App\Filament\Resources\MySalesDashboardResource;
 use App\Filament\Resources\LeadResource;
-use App\Filament\Widgets\SalesMetricsWidget;
 use App\Filament\Widgets\LeadsByStatusWidget;
 use App\Filament\Widgets\RevenueProfitTrendWidget;
 use App\Filament\Widgets\SalesKPIsWidget;
@@ -32,9 +31,7 @@ class ListMySalesDashboards extends ListRecords
 
     protected function getHeaderWidgets(): array
     {
-        return [
-            SalesMetricsWidget::class,
-        ];
+        return [];
     }
 
     protected function getFooterWidgets(): array

@@ -123,18 +123,12 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 \App\Filament\Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-                    ->widgets([
-            Widgets\AccountWidget::class,
-            Widgets\FilamentInfoWidget::class,
-            \App\Filament\Widgets\LeadMetricsWidget::class,
-            \App\Filament\Widgets\SalesMetricsWidget::class,
-            \App\Filament\Widgets\AllLeadMetricsWidget::class,
-            \App\Filament\Widgets\QuickLeaveRequestWidget::class,
-            \App\Filament\Widgets\LeaveRequestWidget::class,
-            \App\Filament\Widgets\LeadsByStatusWidget::class,
-            \App\Filament\Widgets\RevenueProfitTrendWidget::class,
-            \App\Filament\Widgets\SalesKPIsWidget::class,
+            ->widgets([
+                \App\Filament\Widgets\LeadsByStatusWidget::class,
+                \App\Filament\Widgets\RevenueProfitTrendWidget::class,
+                \App\Filament\Widgets\SalesKPIsWidget::class,
+                \App\Filament\Widgets\QuickLeaveRequestWidget::class,
+                \App\Filament\Widgets\LeaveRequestWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

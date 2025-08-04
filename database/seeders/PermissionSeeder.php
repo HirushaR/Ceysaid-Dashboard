@@ -68,7 +68,7 @@ class PermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create($permission);
+            Permission::firstOrCreate(['name' => $permission['name']], $permission);
         }
 
         // Create permission groups
@@ -109,6 +109,8 @@ class PermissionSeeder extends Seeder
                 'description' => 'Access for sales team members',
                 'permissions' => [
                     'leads.view', 'leads.create', 'leads.edit',
+                    'invoices.view', 'invoices.create', 'invoices.edit',
+                    'vendor_bills.view', 'vendor_bills.create', 'vendor_bills.edit',
                     'dashboard.my_sales', 'dashboard.visa_leads', 'dashboard.confirm_leads'
                 ]
             ],
@@ -137,10 +139,10 @@ class PermissionSeeder extends Seeder
             $permissions = $groupData['permissions'];
             unset($groupData['permissions']);
             
-            $group = PermissionGroup::create($groupData);
+            $group = PermissionGroup::firstOrCreate(['name' => $groupData['name']], $groupData);
             
             $permissionIds = Permission::whereIn('name', $permissions)->pluck('id');
-            $group->permissions()->attach($permissionIds);
+            $group->permissions()->sync($permissionIds);
         }
     }
 } 

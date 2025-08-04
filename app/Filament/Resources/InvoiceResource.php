@@ -23,6 +23,12 @@ class InvoiceResource extends Resource
     protected static ?string $label = 'Invoice';
     protected static ?string $pluralLabel = 'Invoices';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->isAccount();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

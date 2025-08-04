@@ -24,7 +24,7 @@ class AllLeadDashboardResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && $user->isOperation();
+        return $user && $user->isAccount();
     }
 
     public static function getEloquentQuery(): Builder

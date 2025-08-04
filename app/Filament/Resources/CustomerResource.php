@@ -21,6 +21,12 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationGroup = 'Data Management';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->isAdmin();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -23,6 +23,12 @@ class VendorBillResource extends Resource
     protected static ?string $label = 'Vendor Bill';
     protected static ?string $pluralLabel = 'Vendor Bills';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->isAccount();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

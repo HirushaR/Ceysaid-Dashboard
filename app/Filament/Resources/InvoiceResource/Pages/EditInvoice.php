@@ -14,6 +14,12 @@ class EditInvoice extends EditRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasPermission('invoices.edit') || $user->isAccount() || $user->isAdmin());
+    }
+
     protected function getHeaderActions(): array
     {
         return [

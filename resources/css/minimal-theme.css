@@ -185,7 +185,9 @@ button[class*="fi-btn"] {
 button[type="submit"]:hover,
 .fi-btn:hover,
 button[class*="fi-btn"]:hover {
-    background-color: rgb(29 78 216) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(37 99 235) !important;
+    border: 2px solid rgb(37 99 235) !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -198,7 +200,9 @@ button[class*="fi-btn"][class*="gray"] {
 
 .fi-btn--color-gray:hover,
 button[class*="fi-btn"][class*="gray"]:hover {
-    background-color: rgb(71 85 105) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(100 116 139) !important;
+    border: 2px solid rgb(100 116 139) !important;
 }
 
 /* Success button styling */
@@ -210,7 +214,9 @@ button[class*="fi-btn"][class*="success"] {
 
 .fi-btn--color-success:hover,
 button[class*="fi-btn"][class*="success"]:hover {
-    background-color: rgb(22 163 74) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(34 197 94) !important;
+    border: 2px solid rgb(34 197 94) !important;
 }
 
 /* Danger button styling */
@@ -222,7 +228,9 @@ button[class*="fi-btn"][class*="danger"] {
 
 .fi-btn--color-danger:hover,
 button[class*="fi-btn"][class*="danger"]:hover {
-    background-color: rgb(220 38 38) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(239 68 68) !important;
+    border: 2px solid rgb(239 68 68) !important;
 }
 
 /* Warning button styling */
@@ -234,7 +242,9 @@ button[class*="fi-btn"][class*="warning"] {
 
 .fi-btn--color-warning:hover,
 button[class*="fi-btn"][class*="warning"]:hover {
-    background-color: rgb(217 119 6) !important;
+    background-color: rgb(255 255 255) !important;
+    color: rgb(245 158 11) !important;
+    border: 2px solid rgb(245 158 11) !important;
 }
 
 /* Checkbox styling */
@@ -728,7 +738,44 @@ a:hover {
     .fi-main-ctn,
     .fi-page,
     .fi-page-content {
-        background-color: rgb(15 23 42) !important;
+        background-color: rgb(2 6 23) !important;
+    }
+    
+    /* Dark mode button styles */
+    button[type="submit"]:hover,
+    .fi-btn:hover,
+    button[class*="fi-btn"]:hover {
+        background-color: rgb(255 255 255) !important;
+        color: rgb(37 99 235) !important;
+        border: 2px solid rgb(37 99 235) !important;
+    }
+    
+    .fi-btn--color-gray:hover,
+    button[class*="fi-btn"][class*="gray"]:hover {
+        background-color: rgb(255 255 255) !important;
+        color: rgb(100 116 139) !important;
+        border: 2px solid rgb(100 116 139) !important;
+    }
+    
+    .fi-btn--color-success:hover,
+    button[class*="fi-btn"][class*="success"]:hover {
+        background-color: rgb(255 255 255) !important;
+        color: rgb(34 197 94) !important;
+        border: 2px solid rgb(34 197 94) !important;
+    }
+    
+    .fi-btn--color-danger:hover,
+    button[class*="fi-btn"][class*="danger"]:hover {
+        background-color: rgb(255 255 255) !important;
+        color: rgb(239 68 68) !important;
+        border: 2px solid rgb(239 68 68) !important;
+    }
+    
+    .fi-btn--color-warning:hover,
+    button[class*="fi-btn"][class*="warning"]:hover {
+        background-color: rgb(255 255 255) !important;
+        color: rgb(245 158 11) !important;
+        border: 2px solid rgb(245 158 11) !important;
     }
 }
 

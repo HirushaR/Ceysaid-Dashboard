@@ -14,6 +14,12 @@ class ViewInvoice extends ViewRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasPermission('invoices.view') || $user->isAccount() || $user->isAdmin());
+    }
+
     protected function getHeaderActions(): array
     {
         return [

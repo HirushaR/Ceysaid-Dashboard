@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Filament\Resources\LeadResource\RelationManagers;
 use App\Models\Lead;
+use App\Traits\HasResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -21,17 +22,13 @@ use App\Enums\Priority;
 
 class LeadResource extends Resource
 {
+    use HasResourcePermissions;
+
     protected static ?string $model = Lead::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Dashboard';
-
-    public static function canViewAny(): bool
-    {
-        $user = auth()->user();
-        return $user && ($user->isSales() || $user->isMarketing() || $user->isOperation() || $user->isAdmin());
-    }
 
     public static function form(Form $form): Form
     {

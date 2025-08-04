@@ -197,7 +197,7 @@ class ViewLead extends ViewRecord
             \Filament\Actions\EditAction::make()
                 ->label('Edit')
                 ->icon('heroicon-o-pencil')
-                ->button(),
+                ->button(),          
             \Filament\Actions\Action::make('assign_to_me')
                 ->label('Assign to Me')
                 ->icon('heroicon-o-user-plus')
@@ -213,7 +213,8 @@ class ViewLead extends ViewRecord
                         ->title('Lead assigned to you and status updated.')
                         ->send();
                 }),
-            \Filament\Actions\Action::make('delete')
+            
+                \Filament\Actions\Action::make('delete')
                 ->label('Delete')
                 ->icon('heroicon-o-trash')
                 ->color('danger')

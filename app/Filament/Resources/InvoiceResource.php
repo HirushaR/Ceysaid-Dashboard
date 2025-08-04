@@ -13,21 +13,18 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Traits\HasResourcePermissions;
 
 class InvoiceResource extends Resource
 {
+    use HasResourcePermissions;
+
     protected static ?string $model = Invoice::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Finance';
     protected static ?string $label = 'Invoice';
     protected static ?string $pluralLabel = 'Invoices';
-
-    public static function canViewAny(): bool
-    {
-        $user = auth()->user();
-        return $user && $user->isAccount();
-    }
 
     public static function form(Form $form): Form
     {

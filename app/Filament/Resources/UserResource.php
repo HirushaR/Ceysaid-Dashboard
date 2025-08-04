@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use App\Models\PermissionGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
@@ -26,7 +28,32 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user() && (auth()->user()->isHR() || auth()->user()->isAdmin());
+        $user = auth()->user();
+        return $user && ($user->hasPermission('users.view') || $user->isHR() || $user->isAdmin());
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasPermission('users.create') || $user->isHR() || $user->isAdmin());
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = auth()->user();
+        
+        // Prevent users from editing themselves
+        if ($user && $user->id === $record->id) {
+            return false;
+        }
+        
+        return $user && ($user->hasPermission('users.edit') || $user->isHR() || $user->isAdmin());
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasPermission('users.delete') || $user->isHR() || $user->isAdmin());
     }
 
     public static function form(Form $form): Form
@@ -50,9 +77,11 @@ class UserResource extends Resource
                                 'operation' => 'Operation',
                                 'hr' => 'HR',
                                 'admin' => 'Admin',
+                                'account' => 'Account',
                             ])
                             ->required()
-                            ->default('marketing'),
+                            ->default('marketing')
+                            ->helperText('Legacy role field - permissions are now managed separately'),
                         Forms\Components\TextInput::make('password')
                             ->password()
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
@@ -62,6 +91,27 @@ class UserResource extends Resource
                             ->helperText('Leave blank to keep current password'),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Quick Permission Assignment')
+                    ->schema([
+                        Forms\Components\Select::make('permission_groups')
+                            ->label('Permission Groups')
+                            ->options(PermissionGroup::all()->pluck('display_name', 'id'))
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Select permission groups...')
+                            ->helperText('Select permission groups to quickly assign common permission sets. Each group contains multiple related permissions. You can view detailed permissions in the "User Permissions" tab after saving.')
+                            ->afterStateHydrated(function ($state, $record) {
+                                if ($record && $record->exists) {
+                                    return $record->permissionGroups->pluck('id')->toArray();
+                                }
+                                return [];
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 
@@ -84,8 +134,16 @@ class UserResource extends Resource
                         'primary' => 'marketing',
                         'success' => 'sales', 
                         'warning' => 'operation',
+                        'secondary' => 'account',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->sortable(),
+                    
+                Tables\Columns\TextColumn::make('permissions_count')
+                    ->label('Active Permissions')
+                    ->counts('permissions')
+                    ->badge()
+                    ->color('info')
                     ->sortable(),
                     
                 Tables\Columns\IconColumn::make('email_verified_at')
@@ -124,6 +182,7 @@ class UserResource extends Resource
                         'marketing' => 'Marketing',
                         'sales' => 'Sales',
                         'operation' => 'Operation',
+                        'account' => 'Account',
                     ])
                     ->label('Role'),
                 Tables\Filters\TernaryFilter::make('email_verified_at')
@@ -131,6 +190,9 @@ class UserResource extends Resource
                     ->trueLabel('Verified')
                     ->falseLabel('Unverified')
                     ->nullable(),
+                Tables\Filters\Filter::make('has_permissions')
+                    ->label('Has Permissions')
+                    ->query(fn ($query) => $query->whereHas('permissions')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -139,7 +201,12 @@ class UserResource extends Resource
                 Tables\Actions\EditAction::make()
                     ->button()
                     ->size('sm')
-                    ->color('gray'),
+                    ->color('gray')
+                    ->authorize(fn ($record) => auth()->user() && (
+                        auth()->user()->hasPermission('users.edit') || 
+                        auth()->user()->isHR() || 
+                        auth()->user()->isAdmin()
+                    ) && auth()->user()->id !== $record->id),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -154,6 +221,7 @@ class UserResource extends Resource
     {
         return [
             RelationManagers\LeavesRelationManager::class,
+            RelationManagers\UserPermissionsRelationManager::class,
         ];
     }
 

@@ -13,21 +13,18 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Traits\HasResourcePermissions;
 
 class VendorBillResource extends Resource
 {
+    use HasResourcePermissions;
+
     protected static ?string $model = VendorBill::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
     protected static ?string $navigationGroup = 'Finance';
     protected static ?string $label = 'Vendor Bill';
     protected static ?string $pluralLabel = 'Vendor Bills';
-
-    public static function canViewAny(): bool
-    {
-        $user = auth()->user();
-        return $user && $user->isAccount();
-    }
 
     public static function form(Form $form): Form
     {

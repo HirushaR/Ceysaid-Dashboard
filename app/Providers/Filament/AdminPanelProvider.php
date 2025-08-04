@@ -132,6 +132,9 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Widgets\AllLeadMetricsWidget::class,
             \App\Filament\Widgets\QuickLeaveRequestWidget::class,
             \App\Filament\Widgets\LeaveRequestWidget::class,
+            \App\Filament\Widgets\LeadsByStatusWidget::class,
+            \App\Filament\Widgets\RevenueProfitTrendWidget::class,
+            \App\Filament\Widgets\SalesKPIsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

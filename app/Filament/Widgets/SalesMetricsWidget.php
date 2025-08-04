@@ -7,6 +7,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Lead;
 use App\Models\Customer;
 use App\Models\LeadCost;
+use App\Models\Invoice;
 use App\Enums\LeadStatus;
 use Carbon\Carbon;
 
@@ -58,43 +59,84 @@ class SalesMetricsWidget extends BaseWidget
             ? (($currentYearCustomers - $lastYearCustomers) / $lastYearCustomers) * 100 
             : ($currentYearCustomers > 0 ? 100 : 0);
 
-        // Get revenue from lead costs
-        $currentYearRevenue = LeadCost::whereHas('lead', function($query) use ($user) {
+        // Get revenue from invoices (more accurate than lead costs)
+        $currentYearRevenue = Invoice::whereHas('lead', function($query) use ($user) {
             $query->where('assigned_to', $user ? $user->id : null)
                 ->whereYear('created_at', Carbon::now()->year);
             if ($this->filter && $this->filter !== 'all') {
                 $query->where('status', $this->filter);
             }
-        })->sum('amount');
+        })->sum('total_amount');
 
-        $lastYearRevenue = LeadCost::whereHas('lead', function($query) use ($user) {
+        $lastYearRevenue = Invoice::whereHas('lead', function($query) use ($user) {
             $query->where('assigned_to', $user ? $user->id : null)
                 ->whereYear('created_at', Carbon::now()->subYear()->year);
             if ($this->filter && $this->filter !== 'all') {
                 $query->where('status', $this->filter);
             }
-        })->sum('amount');
+        })->sum('total_amount');
 
         // Calculate revenue percentage change
         $revenueChange = $lastYearRevenue > 0 
             ? (($currentYearRevenue - $lastYearRevenue) / $lastYearRevenue) * 100 
             : ($currentYearRevenue > 0 ? 100 : 0);
 
+        // Get profits from invoices
+        $currentYearProfit = Invoice::whereHas('lead', function($query) use ($user) {
+            $query->where('assigned_to', $user ? $user->id : null)
+                ->whereYear('created_at', Carbon::now()->year);
+            if ($this->filter && $this->filter !== 'all') {
+                $query->where('status', $this->filter);
+            }
+        })->get()->sum('profit');
+
+        $lastYearProfit = Invoice::whereHas('lead', function($query) use ($user) {
+            $query->where('assigned_to', $user ? $user->id : null)
+                ->whereYear('created_at', Carbon::now()->subYear()->year);
+            if ($this->filter && $this->filter !== 'all') {
+                $query->where('status', $this->filter);
+            }
+        })->get()->sum('profit');
+
+        // Calculate profit percentage change
+        $profitChange = $lastYearProfit > 0 
+            ? (($currentYearProfit - $lastYearProfit) / $lastYearProfit) * 100 
+            : ($currentYearProfit > 0 ? 100 : 0);
+
+        // Get leads by status for current year
+        $leadsByStatus = Lead::where('assigned_to', $user ? $user->id : null)
+            ->whereYear('created_at', Carbon::now()->year)
+            ->when($this->filter && $this->filter !== 'all', fn($q) => $q->where('status', $this->filter))
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        // Get confirmed leads count (most important for sales)
+        $confirmedLeads = $leadsByStatus[LeadStatus::CONFIRMED->value] ?? 0;
+        $closedLeads = $leadsByStatus[LeadStatus::MARK_CLOSED->value] ?? 0;
+        $totalConfirmedClosed = $confirmedLeads + $closedLeads;
+
         return [
-            Stat::make('Leads', number_format($currentYearLeads))
+            Stat::make('Total Leads', number_format($currentYearLeads))
                 ->description(sprintf('%+.1f%% from last year', $leadsChange))
                 ->descriptionIcon($leadsChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($leadsChange >= 0 ? 'success' : 'danger'),
                 
-            Stat::make('Customers', number_format($currentYearCustomers))
-                ->description(sprintf('%+.1f%% from last year', $customersChange))
-                ->descriptionIcon($customersChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($customersChange >= 0 ? 'success' : 'danger'),
+            Stat::make('Confirmed/Closed', number_format($totalConfirmedClosed))
+                ->description(sprintf('%d confirmed, %d closed', $confirmedLeads, $closedLeads))
+                ->descriptionIcon('heroicon-m-check-circle')
+                ->color('success'),
                 
             Stat::make('Revenue', '$' . number_format($currentYearRevenue, 2))
                 ->description(sprintf('%+.1f%% from last year', $revenueChange))
                 ->descriptionIcon($revenueChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueChange >= 0 ? 'success' : 'danger'),
+                
+            Stat::make('Profit', '$' . number_format($currentYearProfit, 2))
+                ->description(sprintf('%+.1f%% from last year', $profitChange))
+                ->descriptionIcon($profitChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->color($profitChange >= 0 ? 'success' : 'danger'),
         ];
     }
 
@@ -103,6 +145,9 @@ class SalesMetricsWidget extends BaseWidget
         return [
             'all' => 'All',
             LeadStatus::ASSIGNED_TO_SALES->value => 'Open',
+            LeadStatus::INFO_GATHER_COMPLETE->value => 'Info Complete',
+            LeadStatus::PRICING_IN_PROGRESS->value => 'Pricing',
+            LeadStatus::SENT_TO_CUSTOMER->value => 'Sent to Customer',
             LeadStatus::CONFIRMED->value => 'Confirmed',
             LeadStatus::MARK_CLOSED->value => 'Closed',
         ];

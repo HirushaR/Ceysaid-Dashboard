@@ -5,6 +5,9 @@ namespace App\Filament\Resources\MySalesDashboardResource\Pages;
 use App\Filament\Resources\MySalesDashboardResource;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Widgets\SalesMetricsWidget;
+use App\Filament\Widgets\LeadsByStatusWidget;
+use App\Filament\Widgets\RevenueProfitTrendWidget;
+use App\Filament\Widgets\SalesKPIsWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -31,6 +34,15 @@ class ListMySalesDashboards extends ListRecords
     {
         return [
             SalesMetricsWidget::class,
+        ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            SalesKPIsWidget::class,
+            LeadsByStatusWidget::class,
+            RevenueProfitTrendWidget::class,
         ];
     }
 

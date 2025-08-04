@@ -4,7 +4,6 @@ namespace App\Filament\Resources\AllLeadDashboardResource\Pages;
 
 use App\Filament\Resources\AllLeadDashboardResource;
 use App\Filament\Resources\LeadResource;
-use App\Filament\Widgets\AllLeadMetricsWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -29,9 +28,7 @@ class ListAllLeadDashboards extends ListRecords
 
     protected function getHeaderWidgets(): array
     {
-        return [
-            AllLeadMetricsWidget::class,
-        ];
+        return [];
     }
 
     public function getTabs(): array

@@ -110,7 +110,7 @@ class AdminPanelProvider extends PanelProvider
                 ],
             ])
             ->font('Inter')
-            ->brandName('Ceysaid')
+            ->brandName('TravelSync')
             ->favicon('/favicon.ico')
             ->darkMode(true)
             ->sidebarCollapsibleOnDesktop()

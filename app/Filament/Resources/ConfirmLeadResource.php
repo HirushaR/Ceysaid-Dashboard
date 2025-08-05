@@ -57,7 +57,30 @@ class ConfirmLeadResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
+        $user = auth()->user();
+        $query = parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
+        
+        // Filter based on user role and associations
+        if ($user) {
+            if ($user->isAdmin()) {
+                // Admin sees all leads
+                return $query;
+            } elseif ($user->isSales()) {
+                // Sales users see leads they are assigned to or created
+                return $query->where(function (Builder $query) use ($user) {
+                    $query->where('assigned_to', $user->id)
+                          ->orWhere('created_by', $user->id);
+                });
+            } elseif ($user->isOperation()) {
+                // Operation users see leads they are assigned as operators or created
+                return $query->where(function (Builder $query) use ($user) {
+                    $query->where('assigned_operator', $user->id)
+                          ->orWhere('created_by', $user->id);
+                });
+            }
+        }
+        
+        return $query;
     }
 
     public static function getRelations(): array

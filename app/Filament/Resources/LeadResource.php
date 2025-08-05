@@ -19,6 +19,7 @@ use App\Enums\LeadStatus;
 use App\Enums\ServiceStatus;
 use App\Enums\Platform;
 use App\Enums\Priority;
+use Illuminate\Database\Eloquent\Model;
 
 class LeadResource extends Resource
 {
@@ -29,6 +30,76 @@ class LeadResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Dashboard';
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only show to sales users
+        if (!$user->isSales()) {
+            return false;
+        }
+        
+        $resourceName = static::getResourceName();
+        return $user->canViewResource($resourceName);
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only allow sales users to create leads
+        if (!$user->isSales()) {
+            return false;
+        }
+        
+        $resourceName = static::getResourceName();
+        return $user->canCreateResource($resourceName);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only allow sales users to edit leads
+        if (!$user->isSales()) {
+            return false;
+        }
+        
+        $resourceName = static::getResourceName();
+        return $user->canEditResource($resourceName);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only allow sales users to delete leads
+        if (!$user->isSales()) {
+            return false;
+        }
+        
+        $resourceName = static::getResourceName();
+        return $user->canDeleteResource($resourceName);
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only allow sales users to view leads
+        if (!$user->isSales()) {
+            return false;
+        }
+        
+        $resourceName = static::getResourceName();
+        return $user->canViewResource($resourceName);
+    }
 
     public static function form(Form $form): Form
     {

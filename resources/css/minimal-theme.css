@@ -113,9 +113,17 @@ html {
 }
 
 .fi-logo {
-    color: rgb(37 99 235) !important;
+    color: rgb(30 58 138) !important;
     font-weight: 700 !important;
     font-size: 1.5rem !important;
+}
+
+/* Admin panel logo image sizing */
+.fi-logo img {
+    height: 4rem !important;
+    width: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
 }
 
 .fi-simple-header-heading {
@@ -285,7 +293,15 @@ a:hover {
     }
     
     .fi-logo {
+        height: 4rem;
         color: rgb(147 197 253) !important;
+    }
+    
+    .fi-logo img {
+        height: 4rem !important;
+        width: auto !important;
+        max-width: 100% !important;
+        object-fit: contain !important;
     }
     
     .fi-simple-header-heading {
@@ -344,25 +360,32 @@ a:hover {
 }
 
 .fi-sidebar-nav-item-link[aria-current="page"] {
-    background: linear-gradient(135deg, rgb(59 130 246) 0%, rgb(37 99 235) 100%) !important;
+    background: linear-gradient(135deg, rgb(59 130 246) 0%, rgb(30 58 138) 100%) !important;
     color: rgb(255 255 255) !important;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3) !important;
 }
 
 /* Sidebar header styling */
 .fi-sidebar-header {
-    /* background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(29 78 216) 100%) !important; */
-    color: rgb(29 78 216) !important;
+    /* background: linear-gradient(135deg, rgb(30 58 138) 0%, rgb(23 37 84) 100%) !important; */
+    color: rgb(23 37 84) !important;
     /* margin: -1rem -1rem 1rem -1rem !important; */
     padding: 1.5rem 1rem !important;
     border-radius: 0 0 1rem 0 !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2) !important;
 }
 
 .fi-sidebar-header .fi-logo {
-    color: rgb(29 78 216) !important;
+    color: rgb(23 37 84) !important;
     font-weight: 700 !important;
     text-shadow: none !important;
+}
+
+.fi-sidebar-header .fi-logo img {
+    height: 4rem !important;
+    width: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
 }
 
 .fi-header {
@@ -665,6 +688,13 @@ a:hover {
     .fi-sidebar-header .fi-logo {
         color: rgb(147 197 253) !important;
         text-shadow: none !important;
+    }
+    
+    .fi-sidebar-header .fi-logo img {
+        height: 4rem !important;
+        width: auto !important;
+        max-width: 100% !important;
+        object-fit: contain !important;
     }
     
     .fi-sidebar-nav-item-link:hover {

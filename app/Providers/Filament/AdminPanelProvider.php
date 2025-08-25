@@ -111,7 +111,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Inter')
             ->brandName('TravelSync')
-            ->favicon('/favicon.ico')
+            ->favicon('/favicon.svg')
             ->darkMode(true)
             ->sidebarCollapsibleOnDesktop()
             ->renderHook(

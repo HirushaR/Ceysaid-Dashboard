@@ -7,6 +7,9 @@
 
 @theme {
     --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --color-primary: 30 58 138;
+    --color-primary-light: 59 130 246;
+    --color-accent: 212 165 116;
 }
 
 /* Additional minimal theme enhancements */

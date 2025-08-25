@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Ceysaid - Business Management System</title>
+        <title>TravelSync - Business Management System</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -49,10 +49,38 @@
             }
 
             .logo {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                text-decoration: none;
+            }
+            
+            .logo img {
+                height: 4rem;
+                width: auto;
+            }
+            
+            .logo-text {
                 font-size: 1.5rem;
                 font-weight: 700;
-                color: #2563eb;
+                color: #1e3a8a;
+            }
+            
+            .btn-primary {
+                background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 0.5rem;
                 text-decoration: none;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: inline-block;
+            }
+            
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(30, 58, 138, 0.3);
             }
 
             .nav-links {
@@ -305,8 +333,8 @@
 
             /* Icons */
             .icon {
-                width: 1.5rem;
-                height: 1.5rem;
+                width: auto;
+                height: 4rem;
                 fill: currentColor;
             }
         </style>
@@ -316,7 +344,9 @@
         <header class="header">
             <div class="container">
                 <div class="header-content">
-                    <a href="#" class="logo">Ceysaid</a>
+                    <a href="#" class="logo">
+                        <img src="/logo.jpg" alt="TravelSync Logo" />                        
+                    </a>
                     <nav class="nav-links">
                         <a href="#features" class="nav-link">Features</a>
                         <a href="#about" class="nav-link">About</a>
@@ -334,7 +364,7 @@
         <section class="hero">
             <div class="container">
                 <h1>Streamline Your Business Operations</h1>
-                <p>Ceysaid is a comprehensive business management system that helps you manage leads, customers, invoices, and operations efficiently. Take control of your business with our powerful tools.</p>
+                <p>TravelSync is a comprehensive business management system that helps you manage leads, customers, invoices, and operations efficiently. Take control of your business with our powerful tools.</p>
                 <div class="hero-buttons">
                     <a href="#features" class="btn-secondary">Learn More</a>
                     @auth
@@ -442,7 +472,7 @@
         <section class="cta">
             <div class="container">
                 <h2>Ready to Transform Your Business?</h2>
-                <p>Join businesses that are already using Ceysaid to streamline their operations and increase productivity.</p>
+                <p>Join businesses that are already using TravelSync to streamline their operations and increase productivity.</p>
                 <div class="cta-buttons">
                     @auth
                         <a href="{{ url('/admin') }}" class="btn-white">Access Dashboard</a>
@@ -457,7 +487,7 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="container">
-                <p>&copy; {{ date('Y') }} Ceysaid. All rights reserved. | Professional Business Management System</p>
+                <p>&copy; {{ date('Y') }} TravelSync. All rights reserved. | Professional Business Management System</p>
             </div>
         </footer>
     </body>

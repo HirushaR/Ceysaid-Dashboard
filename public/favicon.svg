@@ -1,0 +1,33 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- TRAVEL letters in outlined squares (scaled down) -->
+  <!-- T -->
+  <rect x="2" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="4" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">T</text>
+  
+  <!-- R -->
+  <rect x="7" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="9" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">R</text>
+  
+  <!-- A -->
+  <rect x="12" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="14" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">A</text>
+  
+  <!-- V -->
+  <rect x="17" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="19" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">V</text>
+  
+  <!-- E -->
+  <rect x="22" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="24" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">E</text>
+  
+  <!-- L -->
+  <rect x="27" y="2" width="4" height="4" fill="none" stroke="#D4A574" stroke-width="0.5"/>
+  <text x="29" y="5" font-family="Arial, sans-serif" font-size="2" font-weight="bold" text-anchor="middle" fill="#1e3a8a">L</text>
+  
+  <!-- Horizontal line above SYNC -->
+  <line x1="2" y1="12" x2="14" y2="12" stroke="#1e3a8a" stroke-width="0.5"/>
+  <line x1="18" y1="12" x2="30" y2="12" stroke="#1e3a8a" stroke-width="0.5"/>
+  
+  <!-- SYNC text -->
+  <text x="16" y="18" font-family="Arial, sans-serif" font-size="2" font-weight="normal" text-anchor="middle" fill="#1e3a8a">SYNC</text>
+</svg>

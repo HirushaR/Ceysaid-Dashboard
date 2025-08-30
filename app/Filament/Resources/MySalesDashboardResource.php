@@ -31,7 +31,10 @@ class MySalesDashboardResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && $user->isSales();
+        if (!$user) return false;
+        
+        // Only sales users can view this resource (admin users are excluded)
+        return $user->isSales();
     }
 
     private static function getAttachmentFileUpload(): Forms\Components\FileUpload

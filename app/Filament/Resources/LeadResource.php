@@ -36,6 +36,9 @@ class LeadResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can view all resources
+        if ($user->isAdmin()) return true;
+        
         // Only show to sales users
         if (!$user->isSales()) {
             return false;
@@ -49,6 +52,9 @@ class LeadResource extends Resource
     {
         $user = auth()->user();
         if (!$user) return false;
+        
+        // Admin users can create all resources
+        if ($user->isAdmin()) return true;
         
         // Only allow sales users to create leads
         if (!$user->isSales()) {
@@ -64,6 +70,9 @@ class LeadResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can edit all resources
+        if ($user->isAdmin()) return true;
+        
         // Only allow sales users to edit leads
         if (!$user->isSales()) {
             return false;
@@ -78,6 +87,9 @@ class LeadResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can delete all resources
+        if ($user->isAdmin()) return true;
+        
         // Only allow sales users to delete leads
         if (!$user->isSales()) {
             return false;
@@ -91,6 +103,9 @@ class LeadResource extends Resource
     {
         $user = auth()->user();
         if (!$user) return false;
+        
+        // Admin users can view all resources
+        if ($user->isAdmin()) return true;
         
         // Only allow sales users to view leads
         if (!$user->isSales()) {

@@ -12,6 +12,9 @@ trait HasResourcePermissions
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can view all resources
+        if ($user->isAdmin()) return true;
+        
         $resourceName = static::getResourceName();
         return $user->canViewResource($resourceName);
     }
@@ -20,6 +23,9 @@ trait HasResourcePermissions
     {
         $user = auth()->user();
         if (!$user) return false;
+        
+        // Admin users can create all resources
+        if ($user->isAdmin()) return true;
         
         $resourceName = static::getResourceName();
         return $user->canCreateResource($resourceName);
@@ -30,6 +36,9 @@ trait HasResourcePermissions
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can edit all resources
+        if ($user->isAdmin()) return true;
+        
         $resourceName = static::getResourceName();
         return $user->canEditResource($resourceName);
     }
@@ -39,6 +48,9 @@ trait HasResourcePermissions
         $user = auth()->user();
         if (!$user) return false;
         
+        // Admin users can delete all resources
+        if ($user->isAdmin()) return true;
+        
         $resourceName = static::getResourceName();
         return $user->canDeleteResource($resourceName);
     }
@@ -47,6 +59,9 @@ trait HasResourcePermissions
     {
         $user = auth()->user();
         if (!$user) return false;
+        
+        // Admin users can view all resources
+        if ($user->isAdmin()) return true;
         
         $resourceName = static::getResourceName();
         return $user->canViewResource($resourceName);

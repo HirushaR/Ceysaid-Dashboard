@@ -24,7 +24,10 @@ class AllLeadDashboardResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && $user->isOperation();
+        if (!$user) return false;
+        
+        // Only operation users can view this resource (admin users are excluded)
+        return $user->isOperation();
     }
 
     public static function getEloquentQuery(): Builder

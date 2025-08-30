@@ -24,25 +24,45 @@ class PermissionResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && $user->hasPermission('permissions.view');
+        if (!$user) return false;
+        
+        // Admin users can view all resources
+        if ($user->isAdmin()) return true;
+        
+        return $user->hasPermission('permissions.view');
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return $user && $user->hasPermission('permissions.create');
+        if (!$user) return false;
+        
+        // Admin users can create all resources
+        if ($user->isAdmin()) return true;
+        
+        return $user->hasPermission('permissions.create');
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        return $user && $user->hasPermission('permissions.edit');
+        if (!$user) return false;
+        
+        // Admin users can edit all resources
+        if ($user->isAdmin()) return true;
+        
+        return $user->hasPermission('permissions.edit');
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        return $user && $user->hasPermission('permissions.delete');
+        if (!$user) return false;
+        
+        // Admin users can delete all resources
+        if ($user->isAdmin()) return true;
+        
+        return $user->hasPermission('permissions.delete');
     }
 
     public static function form(Form $form): Form

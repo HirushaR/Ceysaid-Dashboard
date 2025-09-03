@@ -16,12 +16,13 @@ class OperationKPIWidget extends BaseWidget
     
     protected static ?int $sort = 1;
 
+
     protected function getStats(): array
     {
         $user = Auth::user();
         
         // Only show this widget to operation users and admins
-        if (!$user || (!$user->isOperation() && !$user->isAdmin())) {
+        if (!$user || (!$user->isOperation())) {
             return [];
         }
 

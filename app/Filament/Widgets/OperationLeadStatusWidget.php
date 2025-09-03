@@ -130,7 +130,7 @@ class OperationLeadStatusWidget extends ChartWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return $user && ($user->isOperation() || $user->isAdmin());
+        return $user && ($user->isOperation());
     }
 
     private function getColorValue(string $color): string

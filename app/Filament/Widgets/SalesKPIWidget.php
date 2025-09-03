@@ -21,7 +21,7 @@ class SalesKPIWidget extends BaseWidget
         $user = Auth::user();
         
         // Only show this widget to sales users and admins
-        if (!$user || (!$user->isSales() && !$user->isAdmin())) {
+        if (!$user || (!$user->isSales() )) {
             return [];
         }
 

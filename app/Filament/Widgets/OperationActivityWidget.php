@@ -146,6 +146,6 @@ class OperationActivityWidget extends ChartWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return $user && ($user->isOperation() || $user->isAdmin());
+        return $user && ($user->isOperation());
     }
 }

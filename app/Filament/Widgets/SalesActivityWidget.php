@@ -129,6 +129,6 @@ class SalesActivityWidget extends ChartWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return $user && ($user->isSales() || $user->isAdmin());
+        return $user && ($user->isSales());
     }
 }

@@ -20,7 +20,7 @@ class SalesLeadStatusWidget extends ChartWidget
         $user = Auth::user();
         
         // Only show this widget to sales users and admins
-        if (!$user || (!$user->isSales() && !$user->isAdmin())) {
+        if (!$user || (!$user->isSales())) {
             return [
                 'datasets' => [],
                 'labels' => [],
@@ -122,7 +122,7 @@ class SalesLeadStatusWidget extends ChartWidget
     public static function canView(): bool
     {
         $user = Auth::user();
-        return $user && ($user->isSales() || $user->isAdmin());
+        return $user && ($user->isSales());
     }
 
     private function getColorValue(string $color): string

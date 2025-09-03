@@ -11,6 +11,7 @@ use App\Filament\Resources\AllLeadDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use Illuminate\Database\Eloquent\Model;
 
 class AllLeadDashboardResource extends Resource
 {
@@ -26,19 +27,70 @@ class AllLeadDashboardResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         
-        // Only operation users can view this resource (admin users are excluded)
-        return $user->isOperation();
+        // Admin and operation users can view this resource
+        return $user->isAdmin() || $user->isOperation();
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Admin users can create leads
+        return $user->isAdmin();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Admin users can edit all leads
+        if ($user->isAdmin()) return true;
+        
+        // Operation users can edit leads assigned to them
+        return $user->isOperation() && $record->assigned_operator === $user->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Only admin users can delete leads
+        return $user->isAdmin();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Admin users can view all leads
+        if ($user->isAdmin()) return true;
+        
+        // Operation users can view leads assigned to them
+        return $user->isOperation() && $record->assigned_operator === $user->id;
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value);
+        $user = auth()->user();
+        $query = parent::getEloquentQuery();
+        
+        // Admin users can see all leads, operation users see only INFO_GATHER_COMPLETE
+        if (!$user || !$user->isAdmin()) {
+            $query->where('status', \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value);
+        }
+        
+        return $query;
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListAllLeadDashboards::route('/'),
+            'create' => Pages\CreateAllLeadDashboard::route('/create'),
             'view' => Pages\ViewAllLeadDashboard::route('/{record}'),
             'edit' => Pages\EditAllLeadDashboard::route('/{record}/edit'),
         ];
@@ -133,8 +185,17 @@ class AllLeadDashboardResource extends Resource
                     ->button()
                     ->size('sm')
                     ->color('gray'),
+                Tables\Actions\DeleteAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('danger')
+                    ->visible(fn() => auth()->user()?->isAdmin()),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->visible(fn() => auth()->user()?->isAdmin()),
+            ])
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

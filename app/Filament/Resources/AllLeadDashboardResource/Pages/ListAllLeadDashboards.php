@@ -46,25 +46,37 @@ class ListAllLeadDashboards extends ListRecords
                 ->badge($baseQuery()->where('status', LeadStatus::NEW->value)->count())
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::NEW->value)),
 
-            'sales' => Tab::make('In Sales')
+            'assigned_to_sales' => Tab::make('Assigned to Sales')
                 ->badge($baseQuery()->where('status', LeadStatus::ASSIGNED_TO_SALES->value)->count())
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::ASSIGNED_TO_SALES->value)),
 
-            'operations' => Tab::make('In Operations')
+            'assigned_to_operations' => Tab::make('Assigned to Operations')
                 ->badge($baseQuery()->where('status', LeadStatus::ASSIGNED_TO_OPERATIONS->value)->count())
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::ASSIGNED_TO_OPERATIONS->value)),
 
-            'pricing' => Tab::make('Pricing')
+            'info_gather_complete' => Tab::make('Info Gather Complete')
+                ->badge($baseQuery()->where('status', LeadStatus::INFO_GATHER_COMPLETE->value)->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::INFO_GATHER_COMPLETE->value)),
+         
+            'pricing_in_progress' => Tab::make('Pricing In Progress')
                 ->badge($baseQuery()->where('status', LeadStatus::PRICING_IN_PROGRESS->value)->count())
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::PRICING_IN_PROGRESS->value)),
+
+            'sent_to_customer' => Tab::make('Sent to Customer')
+                ->badge($baseQuery()->where('status', LeadStatus::SENT_TO_CUSTOMER->value)->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::SENT_TO_CUSTOMER->value)),
+
+            'operation_complete' => Tab::make('Operation Complete')
+                ->badge($baseQuery()->where('status', LeadStatus::OPERATION_COMPLETE->value)->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::OPERATION_COMPLETE->value)),
 
             'confirmed' => Tab::make('Confirmed')
                 ->badge($baseQuery()->where('status', LeadStatus::CONFIRMED->value)->count())
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::CONFIRMED->value)),
 
-            'closed' => Tab::make('Closed')
-                ->badge($baseQuery()->where('status', LeadStatus::MARK_CLOSED->value)->count())
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::MARK_CLOSED->value)),
+            'document_upload_complete' => Tab::make('Document Upload Complete')
+                ->badge($baseQuery()->where('status', LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value)->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value)),
         ];
     }
 } 

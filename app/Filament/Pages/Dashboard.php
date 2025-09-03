@@ -16,7 +16,8 @@ class Dashboard extends BaseDashboard
     protected function getHeaderWidgets(): array
     {
         return [
-           
+            // \App\Filament\Widgets\LeadsByStatusWidget::class,
+            // \App\Filament\Widgets\LeadsByDateWidget::class,
         ];
     }
 

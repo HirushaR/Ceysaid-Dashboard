@@ -13,20 +13,30 @@ class SalesKPIsWidget extends BaseWidget
 {
     public function getHeading(): string
     {
-        return 'Key Performance Indicators';
+        $user = auth()->user();
+        if (!$user || !$user->isSales()) {
+            return "";
+        }
+        return 'Sales Performance Indicators';
     }
 
     protected function getStats(): array
     {
         $user = auth()->user();
+        
+        // Only show data for sales users
+        if (!$user || !$user->isSales()) {
+            return [];
+        }
+        
         $currentYear = Carbon::now()->year;
         
         // Get current year data for the specific user
-        $leadsQuery = Lead::where('assigned_to', $user ? $user->id : null)
+        $leadsQuery = Lead::where('assigned_to', $user->id)
             ->whereYear('created_at', $currentYear);
         
         $invoicesQuery = Invoice::whereHas('lead', function($query) use ($user, $currentYear) {
-            $query->where('assigned_to', $user ? $user->id : null)
+            $query->where('assigned_to', $user->id)
                 ->whereYear('created_at', $currentYear);
         });
 
@@ -55,7 +65,7 @@ class SalesKPIsWidget extends BaseWidget
         $monthlyRevenue = $totalRevenue / 12;
         
         // Get leads by status for this month for this user
-        $thisMonthLeads = Lead::where('assigned_to', $user ? $user->id : null)
+        $thisMonthLeads = Lead::where('assigned_to', $user->id)
             ->whereYear('created_at', Carbon::now()->year)
             ->whereMonth('created_at', Carbon::now()->month)
             ->count();

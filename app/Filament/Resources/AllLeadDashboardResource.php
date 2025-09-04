@@ -48,8 +48,10 @@ class AllLeadDashboardResource extends Resource
         // Admin users can edit all leads
         if ($user->isAdmin()) return true;
         
-        // Operation users can edit leads assigned to them
-        return $user->isOperation() && $record->assigned_operator === $user->id;
+        // Operation users can edit all leads in the dashboard (they have leads.edit permission)
+        if ($user->isOperation()) return true;
+        
+        return false;
     }
 
     public static function canDelete(Model $record): bool
@@ -69,8 +71,10 @@ class AllLeadDashboardResource extends Resource
         // Admin users can view all leads
         if ($user->isAdmin()) return true;
         
-        // Operation users can view leads assigned to them
-        return $user->isOperation() && $record->assigned_operator === $user->id;
+        // Operation users can view all leads in the dashboard (they have dashboard.all_leads permission)
+        if ($user->isOperation()) return true;
+        
+        return false;
     }
 
     public static function getEloquentQuery(): Builder

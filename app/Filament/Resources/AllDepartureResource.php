@@ -33,7 +33,7 @@ class AllDepartureResource extends Resource
         if (!$user) return false;
         
         // Admin and call center users can view this resource
-        return $user->isAdmin() || $user->isCallCenter();
+        return $user->isCallCenter();
     }
 
     public static function canCreate(): bool
@@ -56,7 +56,7 @@ class AllDepartureResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         
-        return $user->isAdmin() || $user->isCallCenter();
+        return  $user->isCallCenter();
     }
 
     public static function getEloquentQuery(): Builder
@@ -66,10 +66,9 @@ class AllDepartureResource extends Resource
         // Show confirmed leads where departure_date is 2 days before current date
         // and don't have a pre-departure call assigned yet
         $twoDaysFromNow = Carbon::now()->addDays(2)->format('Y-m-d');
-        
         return $query
             ->where('status', LeadStatus::CONFIRMED->value)
-            ->where('depature_date', '<=', $twoDaysFromNow)
+            ->where('depature_date', $twoDaysFromNow)
             ->whereDoesntHave('preDepartureCall');
     }
 

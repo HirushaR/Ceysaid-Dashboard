@@ -63,13 +63,13 @@ class AllArrivalResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // Show confirmed leads where arrival_date is 2 days after current date
+        // Show confirmed leads where arrival_date is 2 days ago or earlier
         // and don't have a post-arrival call assigned yet
-        $twoDaysFromNow = Carbon::now()->addDays(2)->format('Y-m-d');
+        $twoDaysAgo = Carbon::now()->subDays(2)->format('Y-m-d');
         
         return $query
             ->where('status', LeadStatus::CONFIRMED->value)
-            ->where('arrival_date', '>=', $twoDaysFromNow)
+            ->where('arrival_date', '<=', $twoDaysAgo)
             ->whereDoesntHave('postArrivalCall');
     }
 

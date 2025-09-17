@@ -198,33 +198,93 @@ class CallCenterCallResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('lead.customer_name')
                             ->label('Customer Name')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\TextInput::make('lead.destination')
                             ->label('Destination')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\DatePicker::make('lead.arrival_date')
                             ->label('Arrival Date')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\DatePicker::make('lead.depature_date')
                             ->label('Departure Date')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\TextInput::make('lead.number_of_adults')
                             ->label('Number of Adults')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\TextInput::make('lead.number_of_children')
                             ->label('Number of Children')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\TextInput::make('lead.contact_value')
                             ->label('Contact')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                         Forms\Components\Textarea::make('lead.tour_details')
                             ->label('Tour Details')
-                            ->disabled(),
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
                     ->collapsed(false)
                     ->compact(),
-
-                // Call Management Section
+                                // Call Checklist Section
+                                Forms\Components\Section::make('Call Checklist')
+                                ->schema([
+                                    Forms\Components\CheckboxList::make('call_checklist_completed')
+                                        ->label('Checklist Items')
+                                        ->options(function ($record) {
+                                            $callType = $record?->call_type ?? 'pre_departure';
+                                            
+                                            if ($callType === 'post_arrival') {
+                                                // Post-Arrival Call Checklist
+                                                return [
+                                                    'confirmed_safe_arrival' => 'Confirmed safe arrival',
+                                                    'confirmed_accommodation' => 'Confirmed accommodation details',
+                                                    'confirmed_pickup_arrangement' => 'Confirmed pickup arrangement',
+                                                    'provided_local_contact' => 'Provided local contact information',
+                                                    'confirmed_tour_schedule' => 'Confirmed tour schedule',
+                                                    'reminded_emergency_procedures' => 'Reminded about emergency procedures',
+                                                    'confirmed_special_needs' => 'Confirmed any special needs',
+                                                    'provided_destination_tips' => 'Provided destination tips and information',
+                                                    'confirmed_next_contact' => 'Confirmed next contact time',
+                                                    'addressed_concerns' => 'Addressed any immediate concerns',
+                                                    'confirmed_documentation' => 'Confirmed all documentation is in order',
+                                                    'provided_weather_info' => 'Provided weather information',
+                                                ];
+                                            } else {
+                                                // Pre-Departure Call Checklist
+                                                return [
+                                                    'confirmed_departure_details' => 'Confirmed departure details',
+                                                    'confirmed_passenger_count' => 'Confirmed passenger count',
+                                                    'confirmed_contact_info' => 'Confirmed contact information',
+                                                    'reminded_documents' => 'Reminded about required documents',
+                                                    'reminded_visa' => 'Reminded about visa requirements',
+                                                    'reminded_insurance' => 'Reminded about travel insurance',
+                                                    'reminded_currency' => 'Reminded about currency exchange',
+                                                    'confirmed_pickup' => 'Confirmed pickup arrangements',
+                                                    'confirmed_hotel' => 'Confirmed hotel details',
+                                                    'provided_emergency_contact' => 'Provided emergency contact information',
+                                                    'confirmed_special_requirements' => 'Confirmed any special requirements',
+                                                    'reminded_packing_list' => 'Reminded about packing essentials',
+                                                ];
+                                            }
+                                        })
+                                        ->columns(2)
+                                        ->helperText(function ($record) {
+                                            $callType = $record?->call_type ?? 'pre_departure';
+                                            return $callType === 'post_arrival' 
+                                                ? 'Check all items that were completed during the post-arrival call'
+                                                : 'Check all items that were completed during the pre-departure call';
+                                        }),
+                                ])
+                                ->collapsed(false)
+                                ->compact(),
+                
+                    // Call Management Section
                 Forms\Components\Section::make('Call Management')
                     ->schema([
                         Forms\Components\Select::make('call_type')
@@ -257,30 +317,7 @@ class CallCenterCallResource extends Resource
                     ->collapsed(false)
                     ->compact(),
 
-                // Call Checklist Section
-                Forms\Components\Section::make('Call Checklist')
-                    ->schema([
-                        Forms\Components\CheckboxList::make('call_checklist_completed')
-                            ->label('Checklist Items')
-                            ->options([
-                                'confirmed_arrival' => 'Confirmed arrival details',
-                                'confirmed_departure' => 'Confirmed departure details',
-                                'confirmed_passenger_count' => 'Confirmed passenger count',
-                                'confirmed_contact_info' => 'Confirmed contact information',
-                                'reminded_documents' => 'Reminded about required documents',
-                                'reminded_visa' => 'Reminded about visa requirements',
-                                'reminded_insurance' => 'Reminded about travel insurance',
-                                'reminded_currency' => 'Reminded about currency exchange',
-                                'confirmed_pickup' => 'Confirmed pickup arrangements',
-                                'confirmed_hotel' => 'Confirmed hotel details',
-                                'provided_emergency_contact' => 'Provided emergency contact information',
-                                'confirmed_special_requirements' => 'Confirmed any special requirements',
-                            ])
-                            ->columns(2)
-                            ->helperText('Check all items that were completed during the call'),
-                    ])
-                    ->collapsed(false)
-                    ->compact(),
+
             ]);
     }
 }

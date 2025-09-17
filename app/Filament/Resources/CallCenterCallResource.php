@@ -1,0 +1,286 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\CallCenterCallResource\Pages;
+use App\Models\CallCenterCall;
+use App\Traits\HasResourcePermissions;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+
+class CallCenterCallResource extends Resource
+{
+    use HasResourcePermissions;
+
+    protected static ?string $model = CallCenterCall::class;
+    protected static ?string $navigationIcon = 'heroicon-o-phone';
+    protected static ?string $navigationLabel = 'My Assigned Calls';
+    protected static ?string $label = 'My Assigned Call';
+    protected static ?string $pluralLabel = 'My Assigned Calls';
+    protected static ?string $navigationGroup = 'Call Center';
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        return $user->isAdmin() || $user->isCallCenter();
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Calls are created through assignment actions
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        if ($user->isAdmin()) return true;
+        
+        return $user->isCallCenter() && $record->assigned_call_center_user === $user->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false; // Calls should not be deleted
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        if ($user->isAdmin()) return true;
+        
+        return $user->isCallCenter() && $record->assigned_call_center_user === $user->id;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+        
+        if ($user->isAdmin()) {
+            return $query;
+        }
+        
+        return $query->where('assigned_call_center_user', $user->id);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListCallCenterCalls::route('/'),
+            'view' => Pages\ViewCallCenterCall::route('/{record}'),
+            'edit' => Pages\EditCallCenterCall::route('/{record}/edit'),
+        ];
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('lead.reference_id')
+                    ->label('Reference ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('gray'),
+                    
+                Tables\Columns\TextColumn::make('lead.customer_name')
+                    ->label('Customer')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('medium'),
+                    
+                Tables\Columns\BadgeColumn::make('call_type')
+                    ->label('Call Type')
+                    ->formatStateUsing(fn ($state) => CallCenterCall::getCallTypes()[$state] ?? $state)
+                    ->colors([
+                        'info' => CallCenterCall::CALL_TYPE_PRE_DEPARTURE,
+                        'success' => CallCenterCall::CALL_TYPE_POST_ARRIVAL,
+                    ]),
+                    
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn ($state) => CallCenterCall::getStatuses()[$state] ?? $state)
+                    ->colors([
+                        'gray' => CallCenterCall::STATUS_PENDING,
+                        'warning' => CallCenterCall::STATUS_ASSIGNED,
+                        'info' => CallCenterCall::STATUS_CALLED,
+                        'danger' => CallCenterCall::STATUS_NOT_ANSWERED,
+                        'success' => CallCenterCall::STATUS_COMPLETED,
+                    ]),
+                    
+                Tables\Columns\TextColumn::make('lead.arrival_date')
+                    ->label('Arrival Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->color('success'),
+                    
+                Tables\Columns\TextColumn::make('lead.depature_date')
+                    ->label('Departure Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->color('warning'),
+                    
+                Tables\Columns\TextColumn::make('lead.destination')
+                    ->label('Destination')
+                    ->searchable()
+                    ->badge()
+                    ->color('info'),
+                    
+                Tables\Columns\TextColumn::make('call_attempts')
+                    ->label('Call Attempts')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'warning' : 'gray'),
+                    
+                Tables\Columns\TextColumn::make('last_call_attempt')
+                    ->label('Last Call')
+                    ->dateTime('M j, Y H:i')
+                    ->sortable()
+                    ->since()
+                    ->placeholder('Never called')
+                    ->color('gray'),
+            ])
+            ->defaultSort('status', 'asc')
+            ->filters([
+                Tables\Filters\SelectFilter::make('call_type')
+                    ->options(CallCenterCall::getCallTypes())
+                    ->label('Call Type'),
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(CallCenterCall::getStatuses())
+                    ->label('Status'),
+                Tables\Filters\SelectFilter::make('lead.destination')
+                    ->options(function () {
+                        return \App\Models\Lead::whereNotNull('destination')
+                            ->distinct()
+                            ->pluck('destination', 'destination')
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->label('Destination'),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->button()
+                    ->size('sm'),
+                Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('gray'),
+            ])
+            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                // Lead Information Section
+                Forms\Components\Section::make('Lead Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('lead.customer_name')
+                            ->label('Customer Name')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('lead.destination')
+                            ->label('Destination')
+                            ->disabled(),
+                        Forms\Components\DatePicker::make('lead.arrival_date')
+                            ->label('Arrival Date')
+                            ->disabled(),
+                        Forms\Components\DatePicker::make('lead.depature_date')
+                            ->label('Departure Date')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('lead.number_of_adults')
+                            ->label('Number of Adults')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('lead.number_of_children')
+                            ->label('Number of Children')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('lead.contact_value')
+                            ->label('Contact')
+                            ->disabled(),
+                        Forms\Components\Textarea::make('lead.tour_details')
+                            ->label('Tour Details')
+                            ->disabled(),
+                    ])
+                    ->collapsed(false)
+                    ->compact(),
+
+                // Call Management Section
+                Forms\Components\Section::make('Call Management')
+                    ->schema([
+                        Forms\Components\Select::make('call_type')
+                            ->label('Call Type')
+                            ->options(CallCenterCall::getCallTypes())
+                            ->disabled(),
+                        
+                        Forms\Components\Select::make('status')
+                            ->label('Call Status')
+                            ->options(CallCenterCall::getStatuses())
+                            ->required()
+                            ->native(false),
+                        
+                        Forms\Components\Textarea::make('call_notes')
+                            ->label('Call Notes')
+                            ->rows(4)
+                            ->placeholder('Enter call details, customer responses, and any important information...'),
+                        
+                        Forms\Components\TextInput::make('call_attempts')
+                            ->label('Call Attempts')
+                            ->numeric()
+                            ->disabled()
+                            ->helperText('Automatically updated when call status changes'),
+                        
+                        Forms\Components\DateTimePicker::make('last_call_attempt')
+                            ->label('Last Call Attempt')
+                            ->disabled()
+                            ->helperText('Automatically updated when call status changes'),
+                    ])
+                    ->collapsed(false)
+                    ->compact(),
+
+                // Call Checklist Section
+                Forms\Components\Section::make('Call Checklist')
+                    ->schema([
+                        Forms\Components\CheckboxList::make('call_checklist_completed')
+                            ->label('Checklist Items')
+                            ->options([
+                                'confirmed_arrival' => 'Confirmed arrival details',
+                                'confirmed_departure' => 'Confirmed departure details',
+                                'confirmed_passenger_count' => 'Confirmed passenger count',
+                                'confirmed_contact_info' => 'Confirmed contact information',
+                                'reminded_documents' => 'Reminded about required documents',
+                                'reminded_visa' => 'Reminded about visa requirements',
+                                'reminded_insurance' => 'Reminded about travel insurance',
+                                'reminded_currency' => 'Reminded about currency exchange',
+                                'confirmed_pickup' => 'Confirmed pickup arrangements',
+                                'confirmed_hotel' => 'Confirmed hotel details',
+                                'provided_emergency_contact' => 'Provided emergency contact information',
+                                'confirmed_special_requirements' => 'Confirmed any special requirements',
+                            ])
+                            ->columns(2)
+                            ->helperText('Check all items that were completed during the call'),
+                    ])
+                    ->collapsed(false)
+                    ->compact(),
+            ]);
+    }
+}

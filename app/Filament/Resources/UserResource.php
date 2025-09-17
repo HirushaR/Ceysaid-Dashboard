@@ -78,6 +78,7 @@ class UserResource extends Resource
                                 'hr' => 'HR',
                                 'admin' => 'Admin',
                                 'account' => 'Account',
+                                'call_center' => 'Call Center',
                             ])
                             ->required()
                             ->default('marketing')
@@ -135,6 +136,7 @@ class UserResource extends Resource
                         'success' => 'sales', 
                         'warning' => 'operation',
                         'secondary' => 'account',
+                        'info' => 'call_center',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state))
                     ->sortable(),
@@ -183,6 +185,7 @@ class UserResource extends Resource
                         'sales' => 'Sales',
                         'operation' => 'Operation',
                         'account' => 'Account',
+                        'call_center' => 'Call Center',
                     ])
                     ->label('Role'),
                 Tables\Filters\TernaryFilter::make('email_verified_at')

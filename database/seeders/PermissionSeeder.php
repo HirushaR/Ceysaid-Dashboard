@@ -65,6 +65,14 @@ class PermissionSeeder extends Seeder
             ['name' => 'permissions.create', 'display_name' => 'Create Permissions', 'resource' => 'permissions', 'action' => 'create', 'description' => 'Can create new permissions'],
             ['name' => 'permissions.edit', 'display_name' => 'Edit Permissions', 'resource' => 'permissions', 'action' => 'edit', 'description' => 'Can edit existing permissions'],
             ['name' => 'permissions.delete', 'display_name' => 'Delete Permissions', 'resource' => 'permissions', 'action' => 'delete', 'description' => 'Can delete permissions'],
+            
+            // Call Center Management
+            ['name' => 'call_center.all_arrival.view', 'display_name' => 'View All Arrival', 'resource' => 'call_center', 'action' => 'all_arrival_view', 'description' => 'Can view all arrival leads'],
+            ['name' => 'call_center.all_departure.view', 'display_name' => 'View All Departure', 'resource' => 'call_center', 'action' => 'all_departure_view', 'description' => 'Can view all departure leads'],
+            ['name' => 'call_center.my_assigned.view', 'display_name' => 'View My Assigned Leads', 'resource' => 'call_center', 'action' => 'my_assigned_view', 'description' => 'Can view assigned leads'],
+            ['name' => 'call_center.leads.assign', 'display_name' => 'Assign Leads', 'resource' => 'call_center', 'action' => 'leads_assign', 'description' => 'Can assign leads to call center users'],
+            ['name' => 'call_center.leads.call', 'display_name' => 'Make Calls', 'resource' => 'call_center', 'action' => 'leads_call', 'description' => 'Can make calls and update call status'],
+            ['name' => 'call_center.leads.update_status', 'display_name' => 'Update Call Status', 'resource' => 'call_center', 'action' => 'leads_update_status', 'description' => 'Can update call center lead status'],
         ];
 
         foreach ($permissions as $permission) {
@@ -131,6 +139,16 @@ class PermissionSeeder extends Seeder
                     'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete',
                     'vendor_bills.view', 'vendor_bills.create', 'vendor_bills.edit', 'vendor_bills.delete',
                     'dashboard.all_leads'
+                ]
+            ],
+            [
+                'name' => 'call_center_access',
+                'display_name' => 'Call Center Access',
+                'description' => 'Full access to call center features',
+                'permissions' => [
+                    'call_center.all_arrival.view', 'call_center.all_departure.view', 'call_center.my_assigned.view',
+                    'call_center.leads.assign', 'call_center.leads.call', 'call_center.leads.update_status',
+                    'leads.view', 'leads.edit'
                 ]
             ],
         ];

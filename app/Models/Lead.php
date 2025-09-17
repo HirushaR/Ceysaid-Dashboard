@@ -62,6 +62,21 @@ class Lead extends Model
         return $this->belongsTo(User::class, 'assigned_operator');
     }
 
+    public function callCenterCalls()
+    {
+        return $this->hasMany(CallCenterCall::class);
+    }
+
+    public function preDepartureCall()
+    {
+        return $this->hasOne(CallCenterCall::class)->where('call_type', CallCenterCall::CALL_TYPE_PRE_DEPARTURE);
+    }
+
+    public function postArrivalCall()
+    {
+        return $this->hasOne(CallCenterCall::class)->where('call_type', CallCenterCall::CALL_TYPE_POST_ARRIVAL);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

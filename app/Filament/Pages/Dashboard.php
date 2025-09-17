@@ -15,10 +15,19 @@ class Dashboard extends BaseDashboard
 
     protected function getHeaderWidgets(): array
     {
-        return [
+        $user = auth()->user();
+        
+        $widgets = [
             // \App\Filament\Widgets\LeadsByStatusWidget::class,
             // \App\Filament\Widgets\LeadsByDateWidget::class,
         ];
+        
+        // Add call center stats widget for call center users and admins
+        // if ($user && ($user->isCallCenter())) {
+        //     $widgets[] = \App\Filament\Widgets\CallCenterStatsWidget::class;
+        // }
+        
+        return $widgets;
     }
 
     protected function getFooterWidgets(): array

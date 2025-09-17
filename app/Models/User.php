@@ -73,6 +73,10 @@ class User extends Authenticatable
     {
         return $this->role === 'hr';
     }
+    public function isCallCenter(): bool
+    {
+        return $this->role === 'call_center';
+    }
 
     // Permission relationships
     public function permissions()

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CallCenterCallResource\Pages;
 use App\Models\CallCenterCall;
 use App\Traits\HasResourcePermissions;
+use App\Enums\ServiceStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -156,6 +157,26 @@ class CallCenterCallResource extends Resource
                     ->since()
                     ->placeholder('Never called')
                     ->color('gray'),
+                    
+                Tables\Columns\BadgeColumn::make('lead.air_ticket_status')
+                    ->label('Air Ticket')
+                    ->formatStateUsing(fn ($state) => ServiceStatus::tryFrom($state ?? 'pending')?->getLabel() ?? 'Pending')
+                    ->colors(ServiceStatus::colorMap()),
+                    
+                Tables\Columns\BadgeColumn::make('lead.hotel_status')
+                    ->label('Hotel')
+                    ->formatStateUsing(fn ($state) => ServiceStatus::tryFrom($state ?? 'pending')?->getLabel() ?? 'Pending')
+                    ->colors(ServiceStatus::colorMap()),
+                    
+                Tables\Columns\BadgeColumn::make('lead.visa_status')
+                    ->label('Visa')
+                    ->formatStateUsing(fn ($state) => ServiceStatus::tryFrom($state ?? 'pending')?->getLabel() ?? 'Pending')
+                    ->colors(ServiceStatus::colorMap()),
+                    
+                Tables\Columns\BadgeColumn::make('lead.land_package_status')
+                    ->label('Land Package')
+                    ->formatStateUsing(fn ($state) => ServiceStatus::tryFrom($state ?? 'pending')?->getLabel() ?? 'Pending')
+                    ->colors(ServiceStatus::colorMap()),
             ])
             ->defaultSort('status', 'asc')
             ->filters([
@@ -174,6 +195,18 @@ class CallCenterCallResource extends Resource
                     })
                     ->searchable()
                     ->label('Destination'),
+                Tables\Filters\SelectFilter::make('lead.air_ticket_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Air Ticket Status'),
+                Tables\Filters\SelectFilter::make('lead.hotel_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Hotel Status'),
+                Tables\Filters\SelectFilter::make('lead.visa_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Visa Status'),
+                Tables\Filters\SelectFilter::make('lead.land_package_status')
+                    ->options(ServiceStatus::options())
+                    ->label('Land Package Status'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -231,6 +264,46 @@ class CallCenterCallResource extends Resource
                     ])
                     ->collapsed(false)
                     ->compact(),
+
+                    Forms\Components\Section::make('Service Status')
+                    ->schema([
+                        Forms\Components\TextInput::make('lead.air_ticket_status')
+                            ->label('Air Ticket Status')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $status = $record?->lead?->air_ticket_status ?? 'pending';
+                                return ServiceStatus::tryFrom($status)?->getLabel() ?? 'Pending';
+                            }),
+                        Forms\Components\TextInput::make('lead.hotel_status')
+                            ->label('Hotel Status')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $status = $record?->lead?->hotel_status ?? 'pending';
+                                return ServiceStatus::tryFrom($status)?->getLabel() ?? 'Pending';
+                            }),
+                        Forms\Components\TextInput::make('lead.visa_status')
+                            ->label('Visa Status')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $status = $record?->lead?->visa_status ?? 'pending';
+                                return ServiceStatus::tryFrom($status)?->getLabel() ?? 'Pending';
+                            }),
+                        Forms\Components\TextInput::make('lead.land_package_status')
+                            ->label('Land Package Status')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $status = $record?->lead?->land_package_status ?? 'pending';
+                                return ServiceStatus::tryFrom($status)?->getLabel() ?? 'Pending';
+                            }),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+
                                 // Call Checklist Section
                                 Forms\Components\Section::make('Call Checklist')
                                 ->schema([

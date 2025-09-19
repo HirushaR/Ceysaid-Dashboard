@@ -397,7 +397,9 @@ class ConfirmLeadResource extends Resource
 
 
 
-                Forms\Components\Section::make('Attachments')
+                
+                
+                    Forms\Components\Section::make('Attachments')
                     ->schema([
                         Forms\Components\Repeater::make('attachments')
                             ->relationship('attachments')

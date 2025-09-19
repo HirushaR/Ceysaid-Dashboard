@@ -5,15 +5,17 @@ namespace App\Enums;
 enum ServiceStatus: string
 {
     case PENDING = 'pending';
-    case NOT_REQUIRED = 'not_required';
+    case IN_PROGRESS = 'in_progress';
     case DONE = 'done';
+    case CANCELLED = 'cancelled';
 
     public static function options(): array
     {
         return [
             self::PENDING->value => 'Pending',
-            self::NOT_REQUIRED->value => 'Not Required',
+            self::IN_PROGRESS->value => 'In Progress',
             self::DONE->value => 'Done',
+            self::CANCELLED->value => 'Cancelled',
         ];
     }
 
@@ -21,17 +23,19 @@ enum ServiceStatus: string
     {
         return match ($this) {
             self::PENDING => 'Pending',
-            self::NOT_REQUIRED => 'Not Required',
+            self::IN_PROGRESS => 'In Progress',
             self::DONE => 'Done',
+            self::CANCELLED => 'Cancelled',
         };
     }
 
     public function color(): string
     {
         return match($this) {
-            self::PENDING => 'warning',
-            self::NOT_REQUIRED => 'gray',
+            self::PENDING => 'gray',
+            self::IN_PROGRESS => 'warning',
             self::DONE => 'success',
+            self::CANCELLED => 'danger',
         };
     }
 
@@ -39,8 +43,9 @@ enum ServiceStatus: string
     {
         return [
             self::PENDING->value => self::PENDING->color(),
-            self::NOT_REQUIRED->value => self::NOT_REQUIRED->color(),
+            self::IN_PROGRESS->value => self::IN_PROGRESS->color(),
             self::DONE->value => self::DONE->color(),
+            self::CANCELLED->value => self::CANCELLED->color(),
         ];
     }
 } 

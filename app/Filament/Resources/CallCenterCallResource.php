@@ -125,17 +125,17 @@ class CallCenterCallResource extends Resource
                         'success' => CallCenterCall::STATUS_COMPLETED,
                     ]),
                     
-                Tables\Columns\TextColumn::make('lead.arrival_date')
-                    ->label('Arrival Date')
-                    ->date('M j, Y')
-                    ->sortable()
-                    ->color('success'),
                     
                 Tables\Columns\TextColumn::make('lead.depature_date')
                     ->label('Departure Date')
                     ->date('M j, Y')
                     ->sortable()
                     ->color('warning'),
+                Tables\Columns\TextColumn::make('lead.arrival_date')
+                    ->label('Arrival Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->color('success'),
                     
                 Tables\Columns\TextColumn::make('lead.destination')
                     ->label('Destination')

@@ -99,18 +99,17 @@ class AllArrivalResource extends Resource
                     ->searchable()
                     ->weight('medium')
                     ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
-                    
-                Tables\Columns\TextColumn::make('arrival_date')
-                    ->label('Arrival Date')
-                    ->date('M j, Y')
-                    ->sortable()
-                    ->color('success'),
-                    
+                                                       
                 Tables\Columns\TextColumn::make('depature_date')
                     ->label('Departure Date')
                     ->date('M j, Y')
                     ->sortable()
                     ->color('warning'),
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Arrival Date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->color('success'),
                     
                 Tables\Columns\TextColumn::make('destination')
                     ->label('Destination')

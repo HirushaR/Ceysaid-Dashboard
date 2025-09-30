@@ -6,6 +6,9 @@
  * Using correct Filament v3 classes
  */
 
+/* Guava Calendar Plugin Styles */
+@source '../../../../vendor/guava/calendar/resources/**/*';
+
 @theme {
     /* Typography */
     --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;

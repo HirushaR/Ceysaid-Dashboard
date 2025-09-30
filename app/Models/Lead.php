@@ -101,4 +101,47 @@ class Lead extends Model
     {
         return $this->hasManyThrough(VendorBill::class, Invoice::class);
     }
+
+    // Analytics Scopes
+    public function scopeForDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
+    }
+
+    public function scopeBySalesUser($query, $userId)
+    {
+        return $query->where('assigned_to', $userId);
+    }
+
+    public function scopeByLeadSource($query, $source)
+    {
+        return $query->where('platform', $source);
+    }
+
+    public function scopeByPipelineStage($query, $stage)
+    {
+        return $query->where('status', $stage);
+    }
+
+    public function scopeConverted($query)
+    {
+        return $query->whereIn('status', ['confirmed', 'document_upload_complete']);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNotIn('status', ['mark_closed', 'operation_complete']);
+    }
+
+    public function scopeByDestination($query, $destination)
+    {
+        return $query->where('destination', $destination);
+    }
+
+    public function scopeWithRevenue($query)
+    {
+        return $query->whereHas('invoices', function ($q) {
+            $q->where('status', 'paid');
+        });
+    }
 }

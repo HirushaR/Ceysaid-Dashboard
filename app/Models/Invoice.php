@@ -254,4 +254,51 @@ class Invoice extends Model
     {
         $this->updateVendorPaymentStatus();
     }
+
+    // Analytics Scopes
+    public function scopeForDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('customer_payment_status', 'paid');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('customer_payment_status', 'pending');
+    }
+
+    public function scopePartial($query)
+    {
+        return $query->where('customer_payment_status', 'partial');
+    }
+
+    public function scopeBySalesUser($query, $userId)
+    {
+        return $query->whereHas('lead', function ($q) use ($userId) {
+            $q->where('assigned_to', $userId);
+        });
+    }
+
+    public function scopeWithProfit($query)
+    {
+        return $query->whereHas('vendorBills');
+    }
+
+    public function scopeByLeadSource($query, $source)
+    {
+        return $query->whereHas('lead', function ($q) use ($source) {
+            $q->where('platform', $source);
+        });
+    }
+
+    public function scopeByDestination($query, $destination)
+    {
+        return $query->whereHas('lead', function ($q) use ($destination) {
+            $q->where('destination', $destination);
+        });
+    }
 }

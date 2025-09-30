@@ -84,4 +84,60 @@ class CallCenterCall extends Model
             default => 'gray',
         };
     }
+
+    // Analytics Scopes
+    public function scopeForDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_ASSIGNED]);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', self::STATUS_COMPLETED);
+    }
+
+    public function scopeOverdue($query, $days = 2)
+    {
+        return $query->where('created_at', '<', now()->subDays($days))
+                    ->whereIn('status', [self::STATUS_PENDING, self::STATUS_ASSIGNED]);
+    }
+
+    public function scopeByOperationUser($query, $userId)
+    {
+        return $query->where('assigned_call_center_user', $userId);
+    }
+
+    public function scopeByCallType($query, $type)
+    {
+        return $query->where('call_type', $type);
+    }
+
+    public function scopePreDeparture($query)
+    {
+        return $query->where('call_type', self::CALL_TYPE_PRE_DEPARTURE);
+    }
+
+    public function scopePostArrival($query)
+    {
+        return $query->where('call_type', self::CALL_TYPE_POST_ARRIVAL);
+    }
+
+    public function scopeByLeadSource($query, $source)
+    {
+        return $query->whereHas('lead', function ($q) use ($source) {
+            $q->where('platform', $source);
+        });
+    }
+
+    public function scopeByDestination($query, $destination)
+    {
+        return $query->whereHas('lead', function ($q) use ($destination) {
+            $q->where('destination', $destination);
+        });
+    }
 }

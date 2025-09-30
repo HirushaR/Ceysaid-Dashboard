@@ -123,6 +123,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')           
             ->pages([
                 \App\Filament\Pages\Dashboard::class,
+                \App\Filament\Pages\AnalyticsDashboard::class,
             ])
             
             ->middleware([

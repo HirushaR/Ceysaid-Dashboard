@@ -22,9 +22,9 @@ class AllDepartureResource extends Resource
 
     protected static ?string $model = Lead::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'All Departure';
-    protected static ?string $label = 'All Departure';
-    protected static ?string $pluralLabel = 'All Departure';
+    protected static ?string $navigationLabel = 'Upcoming Departures';
+    protected static ?string $label = 'Upcoming Departure';
+    protected static ?string $pluralLabel = 'Upcoming Departures';
     protected static ?string $navigationGroup = 'Call Center';
 
     public static function canViewAny(): bool
@@ -63,13 +63,16 @@ class AllDepartureResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // Show confirmed leads where departure_date is 2 days before current date
-        // and don't have a pre-departure call assigned yet
-        $twoDaysFromNow = Carbon::now()->addDays(2)->format('Y-m-d');
+        // Show confirmed leads with departure dates within the next 5 days
+        // that don't have a pre-departure call assigned yet
+        $today = Carbon::now()->format('Y-m-d');
+        $fiveDaysFromNow = Carbon::now()->addDays(5)->format('Y-m-d');
+        
         return $query
             ->where('status', LeadStatus::CONFIRMED->value)
-            ->where('depature_date', $twoDaysFromNow)
-            ->whereDoesntHave('preDepartureCall');
+            ->whereBetween('depature_date', [$today, $fiveDaysFromNow])
+            ->whereDoesntHave('preDepartureCall')
+            ->orderBy('depature_date', 'asc');
     }
 
     public static function getPages(): array
@@ -83,6 +86,7 @@ class AllDepartureResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Confirmed leads departing within the next 5 days that need pre-departure calls')
             ->columns([
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')

@@ -22,9 +22,9 @@ class AllArrivalResource extends Resource
 
     protected static ?string $model = Lead::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'All Arrival';
-    protected static ?string $label = 'All Arrival';
-    protected static ?string $pluralLabel = 'All Arrival';
+    protected static ?string $navigationLabel = 'Recent Arrivals';
+    protected static ?string $label = 'Recent Arrival';
+    protected static ?string $pluralLabel = 'Recent Arrivals';
     protected static ?string $navigationGroup = 'Call Center';
 
     public static function canViewAny(): bool
@@ -63,14 +63,15 @@ class AllArrivalResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // Show confirmed leads where arrival_date is 2 days ago or earlier
+        // Show confirmed leads that have arrived (arrival_date is today or in the past)
         // and don't have a post-arrival call assigned yet
-        $twoDaysAgo = Carbon::now()->subDays(2)->format('Y-m-d');
+        $today = Carbon::now()->format('Y-m-d');
         
         return $query
             ->where('status', LeadStatus::CONFIRMED->value)
-            ->where('arrival_date', '<=', $twoDaysAgo)
-            ->whereDoesntHave('postArrivalCall');
+            ->where('arrival_date', '<=', $today)
+            ->whereDoesntHave('postArrivalCall')
+            ->orderBy('arrival_date', 'desc');
     }
 
     public static function getPages(): array
@@ -84,6 +85,7 @@ class AllArrivalResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Confirmed leads that have arrived and need post-arrival calls')
             ->columns([
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')

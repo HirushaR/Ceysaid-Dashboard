@@ -70,7 +70,7 @@ class MigrateLeadCostsToInvoices extends Command
             }
 
             if ($dryRun) {
-                $this->line("Would migrate: Lead {$leadCost->lead->reference_id} - Invoice {$leadCost->invoice_number} (\${$leadCost->amount})");
+                $this->line("Would migrate: Lead {$leadCost->lead->reference_id} - Invoice {$leadCost->invoice_number} (LKR {$leadCost->amount})");
                 continue;
             }
 

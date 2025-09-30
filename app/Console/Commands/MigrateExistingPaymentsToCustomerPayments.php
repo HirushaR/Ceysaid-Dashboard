@@ -72,9 +72,9 @@ class MigrateExistingPaymentsToCustomerPayments extends Command
                 if (!$isDryRun) {
                     CustomerPayment::create($paymentData);
                     // The CustomerPayment model will automatically update the invoice status
-                    $this->info("✅ Migrated payment for invoice {$invoice->invoice_number}: $" . number_format($invoice->payment_amount, 2));
+                    $this->info("✅ Migrated payment for invoice {$invoice->invoice_number}: LKR " . number_format($invoice->payment_amount, 2));
                 } else {
-                    $this->info("📋 Would migrate payment for invoice {$invoice->invoice_number}: $" . number_format($invoice->payment_amount, 2));
+                    $this->info("📋 Would migrate payment for invoice {$invoice->invoice_number}: LKR " . number_format($invoice->payment_amount, 2));
                 }
 
                 $migratedCount++;

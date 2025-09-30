@@ -85,12 +85,12 @@ class SalesKPIWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger')),
                 
-            Stat::make('Total Revenue', 'Rp ' . number_format($totalRevenue, 0, ',', '.'))
+            Stat::make('Total Revenue', 'LKR ' . number_format($totalRevenue, 0, ',', '.'))
                 ->description('From all converted leads')
-                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->descriptionIcon('heroicon-m-currency-rupee')
                 ->color('success'),
                 
-            Stat::make('This Month Revenue', 'Rp ' . number_format($thisMonthRevenue, 0, ',', '.'))
+            Stat::make('This Month Revenue', 'LKR ' . number_format($thisMonthRevenue, 0, ',', '.'))
                 ->description($now->format('F Y'))
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('info'),

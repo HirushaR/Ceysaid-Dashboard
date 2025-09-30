@@ -28,7 +28,7 @@ class ViewConfirmLead extends ViewRecord
 
             Action::make('create_invoice')
                 ->label('Create Invoice')
-                ->icon('heroicon-o-currency-dollar')
+                ->icon('heroicon-o-currency-rupee')
                 ->color('success')
                 ->button()
                 ->form([

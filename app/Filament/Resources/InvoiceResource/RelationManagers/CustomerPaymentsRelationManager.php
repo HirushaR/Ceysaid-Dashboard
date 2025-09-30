@@ -39,7 +39,7 @@ class CustomerPaymentsRelationManager extends RelationManager
                                         $remainingBalance = $invoice->total_amount - $existingPayments;
                                         
                                         if ($value > $remainingBalance) {
-                                            $fail("Payment amount cannot exceed remaining balance of $" . number_format($remainingBalance, 2));
+                                            $fail("Payment amount cannot exceed remaining balance of LKR " . number_format($remainingBalance, 2));
                                         }
                                     };
                                 }
@@ -47,7 +47,7 @@ class CustomerPaymentsRelationManager extends RelationManager
                             ->helperText(function () {
                                 $invoice = $this->getOwnerRecord();
                                 $remainingBalance = $invoice->customer_balance_amount;
-                                return "Remaining balance: $" . number_format($remainingBalance, 2);
+                                return "Remaining balance: LKR " . number_format($remainingBalance, 2);
                             }),
                         Forms\Components\DatePicker::make('payment_date')
                             ->label('Payment Date')
@@ -95,7 +95,7 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ->weight('medium'),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold')
@@ -176,9 +176,9 @@ class CustomerPaymentsRelationManager extends RelationManager
                 $balance = $invoice->customer_balance_amount;
                 $paymentCount = $invoice->customerPayments->count();
                 
-                $heading = "Customer Payments - Total: $" . number_format($totalAmount, 2) . 
-                           " | Paid: $" . number_format($totalPaid, 2) . " ({$paymentCount} payments)" .
-                           " | Balance: $" . number_format($balance, 2);
+                $heading = "Customer Payments - Total: LKR " . number_format($totalAmount, 2) . 
+                           " | Paid: LKR " . number_format($totalPaid, 2) . " ({$paymentCount} payments)" .
+                           " | Balance: LKR " . number_format($balance, 2);
                 
                 if ($balance <= 0) {
                     $heading .= " ✅ FULLY PAID";

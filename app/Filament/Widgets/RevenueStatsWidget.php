@@ -48,22 +48,22 @@ class RevenueStatsWidget extends BaseWidget
             ->sum('amount');
 
         return [
-            Stat::make('Total Revenue', '$' . number_format($totalRevenue, 2))
+            Stat::make('Total Revenue', 'LKR ' . number_format($totalRevenue, 2))
                 ->description('All time')
-                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->descriptionIcon('heroicon-m-currency-rupee')
                 ->color('success'),
                 
-            Stat::make('This Month', '$' . number_format($thisMonthRevenue, 2))
+            Stat::make('This Month', 'LKR ' . number_format($thisMonthRevenue, 2))
                 ->description($now->format('F Y'))
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('primary'),
                 
-            Stat::make('This Week', '$' . number_format($thisWeekRevenue, 2))
+            Stat::make('This Week', 'LKR ' . number_format($thisWeekRevenue, 2))
                 ->description($now->startOfWeek()->format('M j') . ' - ' . $now->endOfWeek()->format('M j'))
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color('info'),
                 
-            Stat::make('Today', '$' . number_format($todayRevenue, 2))
+            Stat::make('Today', 'LKR ' . number_format($todayRevenue, 2))
                 ->description($now->format('l, M j'))
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),

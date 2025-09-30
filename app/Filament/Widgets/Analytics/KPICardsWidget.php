@@ -143,7 +143,7 @@ class KPICardsWidget extends BaseWidget
         $previousRevenue = $previousQuery->sum('total_amount');
         $change = $previousRevenue > 0 ? (($totalRevenue - $previousRevenue) / $previousRevenue) * 100 : 0;
 
-        return Stat::make('Total Revenue', '$' . number_format($totalRevenue, 2))
+        return Stat::make('Total Revenue', 'LKR ' . number_format($totalRevenue, 2))
             ->description($this->getChangeDescription($change))
             ->descriptionIcon($change >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
             ->color($change >= 0 ? 'success' : 'danger')

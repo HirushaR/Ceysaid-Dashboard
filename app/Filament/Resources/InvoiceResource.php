@@ -85,9 +85,9 @@ class InvoiceResource extends Resource
                                 $balance = $record->customer_balance_amount;
                                 $paymentCount = $record->customerPayments->count();
                                 
-                                return "Total Invoice: $" . number_format($totalAmount, 2) . 
-                                       " | Paid: $" . number_format($totalPaid, 2) . " ({$paymentCount} payments)" .
-                                       " | Balance: $" . number_format($balance, 2);
+                                return "Total Invoice: LKR " . number_format($totalAmount, 2) . 
+                                       " | Paid: LKR " . number_format($totalPaid, 2) . " ({$paymentCount} payments)" .
+                                       " | Balance: LKR " . number_format($balance, 2);
                             })
                             ->helperText('Manage individual payments in the Customer Payments tab below'),
                     ])
@@ -116,7 +116,7 @@ class InvoiceResource extends Resource
                                 $paidBills = $record->vendorBills->where('payment_status', 'paid')->count();
                                 $totalAmount = $record->total_vendor_bills_amount;
                                 
-                                return "Bills: {$paidBills}/{$totalBills} paid | Total: $" . number_format($totalAmount, 2);
+                                return "Bills: {$paidBills}/{$totalBills} paid | Total: LKR " . number_format($totalAmount, 2);
                             })
                             ->helperText('Manage individual vendor bills in the Vendor Bills tab below'),
                     ])
@@ -157,19 +157,19 @@ class InvoiceResource extends Resource
                     ->limit(30),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Invoice Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('total_vendor_bills_amount')
                     ->label('Vendor Bills')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->getStateUsing(fn($record) => $record->total_vendor_bills_amount),
                 Tables\Columns\TextColumn::make('profit')
                     ->label('Profit')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->getStateUsing(fn($record) => $record->profit)
@@ -203,14 +203,14 @@ class InvoiceResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('total_customer_payments_amount')
                     ->label('Customer Paid')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->getStateUsing(fn($record) => $record->total_customer_payments_amount)
-                    ->placeholder('$0.00'),
+                    ->placeholder('LKR 0.00'),
                 Tables\Columns\TextColumn::make('customer_balance_amount')
                     ->label('Balance Due')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->getStateUsing(fn($record) => $record->customer_balance_amount)

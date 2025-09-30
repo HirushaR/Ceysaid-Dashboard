@@ -51,17 +51,17 @@ class ViewInvoice extends ViewRecord
                                         return function (string $attribute, $value, \Closure $fail) {
                                             $remainingBalance = $this->record->customer_balance_amount;
                                             if ($value > $remainingBalance) {
-                                                $fail("Payment amount cannot exceed remaining balance of $" . number_format($remainingBalance, 2));
+                                                $fail("Payment amount cannot exceed remaining balance of LKR " . number_format($remainingBalance, 2));
                                             }
                                         };
                                     }
                                 ])
                                 ->helperText(function () {
                                     $remainingBalance = $this->record->customer_balance_amount;
-                                    return "Remaining balance: $" . number_format($remainingBalance, 2);
+                                    return "Remaining balance: LKR " . number_format($remainingBalance, 2);
                                 })
                                 ->default(function () {
-                                    // Default to remaining balance if less than $100, otherwise leave empty
+                                    // Default to remaining balance if less than LKR 100, otherwise leave empty
                                     $balance = $this->record->customer_balance_amount;
                                     return $balance <= 100 ? $balance : null;
                                 }),
@@ -110,7 +110,7 @@ class ViewInvoice extends ViewRecord
                     Notification::make()
                         ->success()
                         ->title('Payment added successfully')
-                        ->body("Payment of $" . number_format($payment->amount, 2) . " has been added to invoice {$this->record->invoice_number}. " . 
+                        ->body("Payment of LKR " . number_format($payment->amount, 2) . " has been added to invoice {$this->record->invoice_number}. " . 
                                "New status: " . ucfirst($this->record->customer_payment_status))
                         ->send();
                 })

@@ -180,4 +180,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Leave::class, 'approved_by');
     }
+
+    public function leads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'assigned_to');
+    }
+
+    public function createdLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'created_by');
+    }
 }

@@ -155,7 +155,7 @@ class InvoicesRelationManager extends RelationManager
                     ->color('info'),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
@@ -186,12 +186,12 @@ class InvoicesRelationManager extends RelationManager
                         }
                         
                         return $vendorBills->map(function ($bill) {
-                            return "{$bill->vendor_name}: {$bill->vendor_bill_number} (\${$bill->bill_amount})";
+                            return "{$bill->vendor_name}: {$bill->vendor_bill_number} (LKR {$bill->bill_amount})";
                         })->join("\n");
                     }),
                 Tables\Columns\TextColumn::make('total_vendor_bills_amount')
                     ->label('Vendor Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->getStateUsing(function ($record) {
@@ -237,9 +237,9 @@ class InvoicesRelationManager extends RelationManager
                 $paidCount = $invoices->where('customer_payment_status', 'paid')->count();
                 $unpaidCount = $invoices->whereIn('customer_payment_status', ['pending', 'partial'])->count();
                 
-                return "Invoices - Total: $" . number_format($totalInvoiceAmount, 2) . 
-                       " | Paid: $" . number_format($paidInvoiceAmount, 2) . " ({$paidCount})" .
-                       " | Unpaid: $" . number_format($unpaidInvoiceAmount, 2) . " ({$unpaidCount})";
+                return "Invoices - Total: LKR " . number_format($totalInvoiceAmount, 2) . 
+                       " | Paid: LKR " . number_format($paidInvoiceAmount, 2) . " ({$paidCount})" .
+                       " | Unpaid: LKR " . number_format($unpaidInvoiceAmount, 2) . " ({$unpaidCount})";
             })
             ->actions([
                 Tables\Actions\Action::make('manage_vendor_bills')

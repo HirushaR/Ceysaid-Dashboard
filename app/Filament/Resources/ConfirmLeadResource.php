@@ -164,7 +164,7 @@ class ConfirmLeadResource extends Resource
                     
                 Tables\Columns\TextColumn::make('total_invoice_amount')
                     ->label('Revenue')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->width('140px')

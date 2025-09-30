@@ -228,13 +228,12 @@ class AnalyticsDashboard extends Page
     protected function getFooterWidgets(): array
     {
         return [
-           // \App\Filament\Widgets\LeaveCalendarWidget::class,
-            // \App\Filament\Widgets\Analytics\LeadsTrendWidget::class,
-            // \App\Filament\Widgets\Analytics\RevenueTrendWidget::class,
-            // \App\Filament\Widgets\Analytics\SalesPerformanceWidget::class,
-            // \App\Filament\Widgets\Analytics\PipelineBreakdownWidget::class,
-            // \App\Filament\Widgets\Analytics\OperationsWorkloadWidget::class,
-            
+            \App\Filament\Widgets\Analytics\SalesStaffPerformanceWidget::class,
+            \App\Filament\Widgets\Analytics\LeadsTrendWidget::class,
+            \App\Filament\Widgets\Analytics\RevenueTrendWidget::class,
+            \App\Filament\Widgets\Analytics\SalesPerformanceWidget::class,
+            \App\Filament\Widgets\Analytics\PipelineBreakdownWidget::class,
+            \App\Filament\Widgets\Analytics\OperationsWorkloadWidget::class,
         ];
     }
 }

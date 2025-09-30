@@ -100,7 +100,7 @@ class VendorBillsRelationManager extends RelationManager
                     ]),
                 Tables\Columns\TextColumn::make('bill_amount')
                     ->label('Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
@@ -157,9 +157,9 @@ class VendorBillsRelationManager extends RelationManager
                 $paidCount = $vendorBills->where('payment_status', 'paid')->count();
                 $unpaidCount = $vendorBills->where('payment_status', 'pending')->count();
                 
-                return "Vendor Bills - Total: $" . number_format($totalAmount, 2) . 
-                       " | Paid: $" . number_format($paidAmount, 2) . " ({$paidCount})" .
-                       " | Unpaid: $" . number_format($unpaidAmount, 2) . " ({$unpaidCount})";
+                return "Vendor Bills - Total: LKR " . number_format($totalAmount, 2) . 
+                       " | Paid: LKR " . number_format($paidAmount, 2) . " ({$paidCount})" .
+                       " | Unpaid: LKR " . number_format($unpaidAmount, 2) . " ({$unpaidCount})";
             })
             ->actions([
                 Tables\Actions\Action::make('mark_paid')

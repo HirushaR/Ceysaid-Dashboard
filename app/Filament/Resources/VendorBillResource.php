@@ -36,7 +36,7 @@ class VendorBillResource extends Resource
                             ->label('Invoice')
                             ->relationship('invoice', 'invoice_number')
                             ->getOptionLabelFromRecordUsing(fn (Invoice $record): string => 
-                                "{$record->invoice_number} - {$record->lead->customer_name} (\${$record->total_amount})"
+                                "{$record->invoice_number} - {$record->lead->customer_name} (LKR {$record->total_amount})"
                             )
                             ->searchable(['invoice_number'])
                             ->required()
@@ -150,7 +150,7 @@ class VendorBillResource extends Resource
                     ]),
                 Tables\Columns\TextColumn::make('bill_amount')
                     ->label('Amount')
-                    ->money('USD')
+                    ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),

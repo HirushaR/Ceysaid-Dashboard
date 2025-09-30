@@ -114,13 +114,13 @@ class VendorBillResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->url(fn($record) => route('filament.admin.resources.invoices.view', $record->invoice))
+                    ->url(fn($record) => $record->invoice ? route('filament.admin.resources.invoices.view', ['record' => $record->invoice]) : null)
                     ->color('info'),
                 Tables\Columns\TextColumn::make('invoice.lead.reference_id')
                     ->label('Lead #')
                     ->searchable()
                     ->sortable()
-                    ->url(fn($record) => route('filament.admin.resources.leads.view', $record->invoice->lead))
+                    ->url(fn($record) => $record->invoice && $record->invoice->lead ? route('filament.admin.resources.leads.view', ['record' => $record->invoice->lead]) : null)
                     ->color('primary'),
                 Tables\Columns\TextColumn::make('invoice.lead.customer_name')
                     ->label('Customer')

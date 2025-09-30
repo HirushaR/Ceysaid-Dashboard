@@ -151,7 +151,7 @@ class InvoicesRelationManager extends RelationManager
                     ->sortable()
                     ->copyable()
                     ->weight('medium')
-                    ->url(fn($record) => route('filament.admin.resources.invoices.view', $record))
+                    ->url(fn($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null)
                     ->color('info'),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Amount')
@@ -246,7 +246,7 @@ class InvoicesRelationManager extends RelationManager
                     ->label('Vendor Bills')
                     ->icon('heroicon-o-receipt-percent')
                     ->color('info')
-                    ->url(fn ($record) => route('filament.admin.resources.invoices.view', $record))
+                    ->url(fn ($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null)
                     ->openUrlInNewTab(),
 
                 Tables\Actions\EditAction::make(),
@@ -258,6 +258,6 @@ class InvoicesRelationManager extends RelationManager
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->recordUrl(fn($record) => route('filament.admin.resources.invoices.view', $record));
+            ->recordUrl(fn($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null);
     }
 }

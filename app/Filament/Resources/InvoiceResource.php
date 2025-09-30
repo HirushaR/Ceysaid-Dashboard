@@ -147,7 +147,7 @@ class InvoiceResource extends Resource
                     ->label('Lead #')
                     ->searchable()
                     ->sortable()
-                    ->url(fn($record) => route('filament.admin.resources.leads.view', $record->lead))
+                    ->url(fn($record) => $record->lead ? route('filament.admin.resources.leads.view', ['record' => $record->lead]) : null)
                     ->color('info'),
                 Tables\Columns\TextColumn::make('lead.customer_name')
                     ->label('Customer')

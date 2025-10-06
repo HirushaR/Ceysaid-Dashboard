@@ -6,92 +6,58 @@ use App\Models\User;
 use App\Models\Lead;
 use App\Models\Invoice;
 use App\Services\DateRangeService;
-use Filament\Widgets\TableWidget;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Actions\Action;
+use Filament\Widgets\StatsOverviewWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class SalesStaffPerformanceWidget extends TableWidget
+class SalesStaffPerformanceWidget extends StatsOverviewWidget
 {
-    protected static ?string $heading = 'Sales Staff Performance';
+    protected ?string $heading = 'Sales Staff Performance';
     protected static ?int $sort = 2;
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
 
-    public function table(Table $table): Table
+    protected function getStats(): array
     {
-        return $table
-            ->query($this->getQuery())
-            ->columns([
-                TextColumn::make('name')
-                    ->label('Sales Staff')
-                    ->searchable()
-                    ->sortable()
-                    ->weight('bold'),
-                
-                TextColumn::make('total_leads')
-                    ->label('Total Leads')
-                    ->numeric()
-                    ->sortable()
-                    ->alignCenter(),
-                
-                TextColumn::make('converted_leads')
-                    ->label('Converted')
-                    ->numeric()
-                    ->sortable()
-                    ->alignCenter()
-                    ->color('success'),
-                
-                TextColumn::make('conversion_rate')
-                    ->label('Conversion Rate')
-                    ->formatStateUsing(fn ($state) => $state . '%')
-                    ->sortable()
-                    ->alignCenter()
-                    ->color(fn ($state) => $state >= 20 ? 'success' : ($state >= 10 ? 'warning' : 'danger')),
-                
-                TextColumn::make('total_revenue')
-                    ->label('Total Revenue')
-                    ->formatStateUsing(fn ($state) => 'LKR ' . number_format($state, 0, ',', '.'))
-                    ->sortable()
-                    ->alignCenter()
-                    ->color('success'),
-                
-                TextColumn::make('avg_deal_size')
-                    ->label('Avg Deal Size')
-                    ->formatStateUsing(fn ($state) => 'LKR ' . number_format($state, 0, ',', '.'))
-                    ->sortable()
-                    ->alignCenter(),
-                
-                TextColumn::make('active_leads')
-                    ->label('Active Leads')
-                    ->numeric()
-                    ->sortable()
-                    ->alignCenter()
-                    ->color('warning'),
-                
-                TextColumn::make('pending_leads')
-                    ->label('Pending')
-                    ->numeric()
-                    ->sortable()
-                    ->alignCenter()
-                    ->color('danger'),
-                
-                TextColumn::make('this_month_revenue')
-                    ->label('This Month')
-                    ->formatStateUsing(fn ($state) => 'LKR ' . number_format($state, 0, ',', '.'))
-                    ->sortable()
-                    ->alignCenter()
-                    ->color('info'),
-            ])
-            ->defaultSort('total_revenue', 'desc')
-            ->paginated(false)
-            ->striped();
+        $performanceData = $this->getPerformanceData();
+        
+        // Ensure we have an array (not a Collection)
+        if ($performanceData instanceof \Illuminate\Support\Collection) {
+            $performanceData = $performanceData->toArray();
+        }
+        
+        if (empty($performanceData)) {
+            return [
+                Stat::make('No Sales Staff', 'No data available')
+                    ->description('No sales staff found for the selected period')
+                    ->color('gray'),
+            ];
+        }
+
+        // Sort by total revenue descending
+        usort($performanceData, fn($a, $b) => $b['total_revenue'] <=> $a['total_revenue']);
+        
+        $stats = [];
+        
+        // Show top 4 performers
+        $topPerformers = array_slice($performanceData, 0, 4);
+        
+        foreach ($topPerformers as $index => $staff) {
+            $stats[] = Stat::make($staff['name'], 'LKR ' . number_format($staff['total_revenue'], 0, ',', '.'))
+                ->description(
+                    $staff['total_leads'] . ' leads • ' . 
+                    $staff['converted_leads'] . ' converted (' . $staff['conversion_rate'] . '%) • ' .
+                    'Avg: LKR ' . number_format($staff['avg_deal_size'], 0, ',', '.')
+                )
+                ->color($this->getPerformanceColor($staff['conversion_rate']))
+                ->chart($this->getMiniChart($staff));
+        }
+        
+        return $stats;
     }
 
-    protected function getQuery()
+    protected function getPerformanceData()
     {
         $analyticsPage = $this->getAnalyticsPage();
         $dateRange = $analyticsPage->getDateRange();
@@ -187,9 +153,30 @@ class SalesStaffPerformanceWidget extends TableWidget
                 ];
             }
 
-            // Convert to collection for table widget
-            return collect($performanceData);
+            // Return array for stats widget (ensure it's not a Collection)
+            return is_array($performanceData) ? $performanceData : $performanceData->toArray();
         });
+    }
+
+    protected function getPerformanceColor(float $conversionRate): string
+    {
+        if ($conversionRate >= 20) {
+            return 'success';
+        } elseif ($conversionRate >= 10) {
+            return 'warning';
+        } else {
+            return 'danger';
+        }
+    }
+
+    protected function getMiniChart(array $staff): array
+    {
+        // Simple chart data showing monthly progression
+        return [
+            $staff['this_month_revenue'] / 1000, // Convert to thousands for chart
+            $staff['total_revenue'] / 1000,
+            $staff['avg_deal_size'] / 1000,
+        ];
     }
 
     protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard

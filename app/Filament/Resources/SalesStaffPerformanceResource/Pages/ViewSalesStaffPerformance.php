@@ -12,6 +12,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Grid;
+use Illuminate\Support\HtmlString;
 use Carbon\Carbon;
 
 class ViewSalesStaffPerformance extends ViewRecord
@@ -68,6 +69,8 @@ class ViewSalesStaffPerformance extends ViewRecord
                                 
                                 TextEntry::make('converted_leads')
                                     ->label('Converted Leads')
+                                    ->label(fn () => new \Illuminate\Support\HtmlString('Converted Leads <span class="text-xs text-gray-500 cursor-help" data-tooltip="Leads that reached confirmed, operation complete, or document upload complete status">ⓘ</span>'))
+                                    ->tooltip('Leads that reached confirmed, operation complete, or document upload complete status')
                                     ->numeric()
                                     ->color('success')
                                     ->getStateUsing(function ($record) {
@@ -78,6 +81,8 @@ class ViewSalesStaffPerformance extends ViewRecord
                                 
                                 TextEntry::make('conversion_rate')
                                     ->label('Conversion Rate')
+                                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
+                                    ->tooltip('Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
                                     ->formatStateUsing(fn ($state) => $state . '%')
                                     ->color(fn ($state) => $state >= 20 ? 'success' : ($state >= 10 ? 'warning' : 'danger'))
                                     ->getStateUsing(function ($record) {

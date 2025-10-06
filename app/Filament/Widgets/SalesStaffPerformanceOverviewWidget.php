@@ -80,7 +80,8 @@ class SalesStaffPerformanceOverviewWidget extends BaseWidget
                 ->color('primary'),
                 
             Stat::make('Overall Conversion Rate', $conversionRate . '%')
-                ->description($convertedLeads . ' converted out of ' . $totalLeads . ' total leads')
+                ->description($convertedLeads . ' converted out of ' . $totalLeads . ' total leads' . 
+                             ' (Leads that reached confirmed, operation complete, or document upload complete status)')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger')),
                 

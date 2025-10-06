@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 class SalesStaffPerformanceWidget extends StatsOverviewWidget
 {
     protected ?string $heading = 'Sales Staff Performance';
+    protected ?string $description = 'Top performers showing revenue, leads, and conversion metrics. Converted Leads = confirmed/operation complete/document upload complete. Conversion Rate = (Converted Leads ÷ Total Leads) × 100';
     protected static ?int $sort = 2;
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
@@ -48,7 +49,9 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
                 ->description(
                     $staff['total_leads'] . ' leads • ' . 
                     $staff['converted_leads'] . ' converted (' . $staff['conversion_rate'] . '%) • ' .
-                    'Avg: LKR ' . number_format($staff['avg_deal_size'], 0, ',', '.')
+                    'Avg: LKR ' . number_format($staff['avg_deal_size'], 0, ',', '.') . 
+                    "\n" . 'Converted Leads: Leads that reached confirmed, operation complete, or document upload complete status' .
+                    "\n" . 'Conversion Rate: Percentage of total leads successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)'
                 )
                 ->color($this->getPerformanceColor($staff['conversion_rate']))
                 ->chart($this->getMiniChart($staff));

@@ -24,3 +24,70 @@ body {
 html {
     scroll-behavior: smooth;
 }
+
+/* Enhanced tooltip styling for info icons */
+.cursor-help[data-tooltip] {
+    position: relative;
+    transition: color 0.2s ease;
+    cursor: help;
+}
+
+.cursor-help[data-tooltip]:hover {
+    color: #3b82f6 !important;
+}
+
+.cursor-help[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-width: 300px;
+    white-space: normal;
+    text-align: center;
+    opacity: 0;
+    animation: tooltipFadeIn 0.3s ease-in-out forwards;
+    pointer-events: none;
+}
+
+.cursor-help[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+    z-index: 9999;
+    opacity: 0;
+    animation: tooltipFadeIn 0.3s ease-in-out forwards;
+    pointer-events: none;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .cursor-help[data-tooltip]:hover::after {
+        max-width: 250px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+}

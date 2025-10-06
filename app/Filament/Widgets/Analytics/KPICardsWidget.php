@@ -84,7 +84,8 @@ class KPICardsWidget extends BaseWidget
         $conversionRate = $totalLeads > 0 ? ($convertedLeads / $totalLeads) * 100 : 0;
 
         return Stat::make('Conversion Rate', number_format($conversionRate, 1) . '%')
-            ->description($convertedLeads . ' of ' . $totalLeads . ' leads converted')
+            ->description($convertedLeads . ' of ' . $totalLeads . ' leads converted' . 
+                         ' (Leads that reached confirmed or document upload complete status)')
             ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger'));
     }
 

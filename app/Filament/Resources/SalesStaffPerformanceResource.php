@@ -17,6 +17,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 use Carbon\Carbon;
 
 class SalesStaffPerformanceResource extends Resource
@@ -93,6 +94,8 @@ class SalesStaffPerformanceResource extends Resource
                 
                 TextColumn::make('converted_leads')
                     ->label('Converted Leads')
+                    ->label(fn () => new \Illuminate\Support\HtmlString('Converted Leads <span class="text-xs text-gray-500 cursor-help" data-tooltip="Leads that reached confirmed, operation complete, or document upload complete status">ⓘ</span>'))
+                    ->tooltip('Leads that reached confirmed, operation complete, or document upload complete status')
                     ->numeric()
                     ->alignCenter()
                     ->color('success')
@@ -108,6 +111,8 @@ class SalesStaffPerformanceResource extends Resource
                 
                 TextColumn::make('conversion_rate')
                     ->label('Conversion Rate')
+                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
+                    ->tooltip('Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
                     ->formatStateUsing(fn ($state) => $state . '%')
                     ->alignCenter()
                     ->color(fn ($state) => $state >= 20 ? 'success' : ($state >= 10 ? 'warning' : 'danger'))

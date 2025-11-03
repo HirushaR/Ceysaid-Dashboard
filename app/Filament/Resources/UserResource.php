@@ -82,7 +82,24 @@ class UserResource extends Resource
                             ])
                             ->required()
                             ->default('marketing')
-                            ->helperText('Legacy role field - permissions are now managed separately'),
+                            ->helperText('Legacy role field - permissions are now managed separately')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                // Reset manager checkbox if role is not eligible
+                                $manageableRoles = ['sales', 'call_center', 'operation', 'account', 'hr'];
+                                if (!in_array($state, $manageableRoles)) {
+                                    $set('is_manager', false);
+                                }
+                            }),
+                        Forms\Components\Toggle::make('is_manager')
+                            ->label('Manager')
+                            ->helperText('Enable this user to view and manage team members with the same role')
+                            ->visible(function (Forms\Get $get) {
+                                $role = $get('role');
+                                $manageableRoles = ['sales', 'call_center', 'operation', 'account', 'hr'];
+                                return in_array($role, $manageableRoles);
+                            })
+                            ->default(false),
                         Forms\Components\TextInput::make('password')
                             ->password()
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
@@ -140,6 +157,16 @@ class UserResource extends Resource
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state))
                     ->sortable(),
+                    
+                Tables\Columns\IconColumn::make('is_manager')
+                    ->label('Manager')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-shield-check')
+                    ->falseIcon('heroicon-o-user')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->sortable()
+                    ->toggleable(),
                     
                 Tables\Columns\TextColumn::make('permissions_count')
                     ->label('Active Permissions')

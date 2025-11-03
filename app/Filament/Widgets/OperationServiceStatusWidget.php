@@ -46,7 +46,7 @@ class OperationServiceStatusWidget extends ChartWidget
                 ->where($field, ServiceStatus::DONE->value)
                 ->count();
             $notRequired = Lead::where('assigned_operator', $userId)
-                ->where($field, ServiceStatus::NOT_REQUIRED->value)
+                ->where($field, 'not_required')
                 ->count();
                 
             $pendingData[] = $pending;

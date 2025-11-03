@@ -39,6 +39,11 @@ class LeadResource extends Resource
         // Admin users can view all resources
         if ($user->isAdmin()) return true;
         
+        // Managers can view leads assigned to their team members
+        if ($user->isManager()) {
+            return true;
+        }
+        
         // Only show to sales users
         if (!$user->isSales()) {
             return false;
@@ -106,6 +111,25 @@ class LeadResource extends Resource
         
         // Admin users can view all resources
         if ($user->isAdmin()) return true;
+        
+        // Managers can view leads assigned to their team members
+        if ($user->isManager()) {
+            $teamMemberIds = $user->teamMembers()->pluck('id')->toArray();
+            
+            // Check if lead is assigned to any team member
+            if (in_array($record->assigned_to, $teamMemberIds)) {
+                return true;
+            }
+            if (in_array($record->assigned_operator, $teamMemberIds)) {
+                return true;
+            }
+            // Check call center assignments
+            if ($record->callCenterCalls()
+                ->whereIn('assigned_call_center_user', $teamMemberIds)
+                ->exists()) {
+                return true;
+            }
+        }
         
         // Only allow sales users to view leads
         if (!$user->isSales()) {
@@ -316,11 +340,36 @@ class LeadResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
         $user = auth()->user();
+        $query = parent::getEloquentQuery();
+        
+        // If user is a manager (and not admin), filter to show only leads assigned to their team members
+        if ($user && $user->isManager() && !$user->isAdmin()) {
+            $teamMemberIds = $user->teamMembers()->pluck('id')->toArray();
+            
+            if (empty($teamMemberIds)) {
+                // No team members, return empty query
+                return $query->whereRaw('1 = 0');
+            }
+            
+            // Get leads assigned to team members via:
+            // 1. assigned_to (sales)
+            // 2. assigned_operator (operation)
+            // 3. call_center_calls.assigned_call_center_user (call center)
+            return $query->where(function (Builder $q) use ($teamMemberIds) {
+                $q->whereIn('assigned_to', $teamMemberIds)
+                  ->orWhereIn('assigned_operator', $teamMemberIds)
+                  ->orWhereHas('callCenterCalls', function ($subQuery) use ($teamMemberIds) {
+                      $subQuery->whereIn('assigned_call_center_user', $teamMemberIds);
+                  });
+            });
+        }
+        
+        // Original logic for sales users
         if ($user && $user->isSales()) {
             $query->whereNull('assigned_to');
         }
+        
         return $query;
     }
 

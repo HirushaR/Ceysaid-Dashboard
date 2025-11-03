@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_manager',
     ];
 
     /**
@@ -45,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_manager' => 'boolean',
         ];
     }
 
@@ -76,6 +78,42 @@ class User extends Authenticatable
     public function isCallCenter(): bool
     {
         return $this->role === 'call_center';
+    }
+
+    // Manager helpers
+    public function isManager(): bool
+    {
+        return $this->is_manager === true;
+    }
+
+    public function canManageRole(string $role): bool
+    {
+        // Managers can only manage users with the same role
+        return $this->isManager() && $this->role === $role;
+    }
+
+    public function getManageableRoles(): array
+    {
+        // Roles that can have managers
+        return ['sales', 'call_center', 'operation', 'account', 'hr'];
+    }
+
+    public function isEligibleForManager(): bool
+    {
+        // Only specific roles can be managers
+        return in_array($this->role, $this->getManageableRoles());
+    }
+
+    // Get team members (users with same role, excluding self)
+    public function teamMembers()
+    {
+        if (!$this->isManager()) {
+            return static::whereRaw('1 = 0'); // Return empty query
+        }
+
+        return static::where('role', $this->role)
+            ->where('id', '!=', $this->id)
+            ->where('is_manager', false);
     }
 
     // Permission relationships
@@ -184,6 +222,50 @@ class User extends Authenticatable
     public function leads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Lead::class, 'assigned_to');
+    }
+
+    public function operatorLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'assigned_operator');
+    }
+
+    public function callCenterCalls(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CallCenterCall::class, 'assigned_call_center_user');
+    }
+
+    // Get leads through call center calls (for call center users)
+    public function callCenterLeads()
+    {
+        return Lead::whereHas('callCenterCalls', function ($query) {
+            $query->where('assigned_call_center_user', $this->id);
+        });
+    }
+
+    // Get all leads (assigned_to, assigned_operator, or via call_center_calls) based on role
+    public function getAllLeads()
+    {
+        if ($this->isCallCenter()) {
+            return $this->callCenterLeads();
+        }
+        if ($this->isOperation()) {
+            return $this->operatorLeads();
+        }
+        return $this->leads();
+    }
+
+    // Check if a lead is assigned to this user (through any method)
+    public function hasLeadAssigned(Lead $lead): bool
+    {
+        if ($this->isCallCenter()) {
+            return $lead->callCenterCalls()
+                ->where('assigned_call_center_user', $this->id)
+                ->exists();
+        }
+        if ($this->isOperation()) {
+            return $lead->assigned_operator === $this->id;
+        }
+        return $lead->assigned_to === $this->id;
     }
 
     public function createdLeads(): \Illuminate\Database\Eloquent\Relations\HasMany

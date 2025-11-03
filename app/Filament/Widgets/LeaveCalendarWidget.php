@@ -8,6 +8,7 @@ use Guava\Calendar\ValueObjects\FetchInfo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Auth;
 
 class LeaveCalendarWidget extends CalendarWidget
 {
@@ -16,6 +17,11 @@ class LeaveCalendarWidget extends CalendarWidget
     protected static ?int $sort = 1;
     
     protected string $calendarView = 'dayGridMonth';
+
+    public static function canView(): bool
+    {
+        return Auth::user()?->isAdmin() ?? false;
+    }
 
     public function getEvents(array $fetchInfo = []): Collection|array
     {

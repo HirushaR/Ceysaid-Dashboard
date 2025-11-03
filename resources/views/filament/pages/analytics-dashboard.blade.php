@@ -29,9 +29,13 @@
             @endforeach
         </div>
 
-        <!-- Leave Calendar (Full Width) -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-            @livewire(\App\Filament\Widgets\LeaveCalendarWidget::class)
-        </div>
+        <!-- Leave Calendar (Full Width) - Admin Only -->
+        @auth
+            @if(auth()->user()->isAdmin())
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                    @livewire(\App\Filament\Widgets\LeaveCalendarWidget::class)
+                </div>
+            @endif
+        @endauth
     </div>
 </x-filament-panels::page>

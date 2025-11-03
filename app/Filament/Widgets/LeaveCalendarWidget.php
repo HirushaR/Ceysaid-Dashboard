@@ -55,7 +55,8 @@ class LeaveCalendarWidget extends CalendarWidget
 
     public function refreshEvents(): void
     {
-        $this->refreshEvents();
+        // Livewire will automatically re-render the widget when this action completes,
+        // which will call getEvents() again to fetch fresh data from the database
         
         \Filament\Notifications\Notification::make()
             ->title('Calendar Refreshed')

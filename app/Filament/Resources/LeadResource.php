@@ -107,37 +107,90 @@ class LeadResource extends Resource
     public static function canView(Model $record): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
+        
+        \Log::info('LeadResource::canView called', [
+            'record_id' => $record->id,
+            'user_id' => $user?->id,
+            'user_email' => $user?->email,
+            'user_role' => $user?->role,
+            'record_created_by' => $record->created_by,
+            'record_assigned_to' => $record->assigned_to,
+        ]);
+        
+        if (!$user) {
+            \Log::info('LeadResource::canView - No user, denying');
+            return false;
+        }
         
         // Admin users can view all resources
-        if ($user->isAdmin()) return true;
+        if ($user->isAdmin()) {
+            \Log::info('LeadResource::canView - User is admin, allowing');
+            return true;
+        }
         
         // Managers can view leads assigned to their team members
         if ($user->isManager()) {
             $teamMemberIds = $user->teamMembers()->pluck('id')->toArray();
             
+            \Log::info('LeadResource::canView - User is manager', [
+                'team_member_ids' => $teamMemberIds,
+            ]);
+            
             // Check if lead is assigned to any team member
             if (in_array($record->assigned_to, $teamMemberIds)) {
+                \Log::info('LeadResource::canView - Lead assigned to team member, allowing');
                 return true;
             }
             if (in_array($record->assigned_operator, $teamMemberIds)) {
+                \Log::info('LeadResource::canView - Lead operator is team member, allowing');
                 return true;
             }
             // Check call center assignments
             if ($record->callCenterCalls()
                 ->whereIn('assigned_call_center_user', $teamMemberIds)
                 ->exists()) {
+                \Log::info('LeadResource::canView - Lead has call center assignment to team member, allowing');
                 return true;
             }
         }
         
         // Only allow sales users to view leads
         if (!$user->isSales()) {
+            \Log::info('LeadResource::canView - User is not sales, denying');
             return false;
         }
         
-        $resourceName = static::getResourceName();
-        return $user->canViewResource($resourceName);
+        // Sales users can always view leads they created (if they can create, they can view their own)
+        if ($record->created_by === $user->id) {
+            \Log::info('LeadResource::canView - Lead created by user, allowing');
+            return true;
+        }
+        
+        // Sales users can view leads assigned to them (if they have view permission)
+        if ($record->assigned_to === $user->id) {
+            $resourceName = static::getResourceName();
+            $hasPermission = $user->canViewResource($resourceName);
+            \Log::info('LeadResource::canView - Lead assigned to user', [
+                'has_permission' => $hasPermission,
+                'resource_name' => $resourceName,
+            ]);
+            return $hasPermission;
+        }
+        
+        // For unassigned leads, check permission
+        if ($record->assigned_to === null) {
+            $resourceName = static::getResourceName();
+            $hasPermission = $user->canViewResource($resourceName);
+            \Log::info('LeadResource::canView - Lead is unassigned', [
+                'has_permission' => $hasPermission,
+                'resource_name' => $resourceName,
+            ]);
+            return $hasPermission;
+        }
+        
+        // Otherwise, deny access
+        \Log::info('LeadResource::canView - No matching condition, denying');
+        return false;
     }
 
     public static function form(Form $form): Form
@@ -343,12 +396,38 @@ class LeadResource extends Resource
         $user = auth()->user();
         $query = parent::getEloquentQuery();
         
+        \Log::info('LeadResource::getEloquentQuery called', [
+            'user_id' => $user?->id,
+            'user_email' => $user?->email,
+            'user_role' => $user?->role,
+            'is_manager' => $user?->isManager(),
+            'is_admin' => $user?->isAdmin(),
+            'is_sales' => $user?->isSales(),
+        ]);
+        
         // If user is a manager (and not admin), filter to show only leads assigned to their team members
+        // OR leads they created themselves (if they're also a sales user)
         if ($user && $user->isManager() && !$user->isAdmin()) {
             $teamMemberIds = $user->teamMembers()->pluck('id')->toArray();
             
+            \Log::info('LeadResource::getEloquentQuery - Manager filtering', [
+                'team_member_ids' => $teamMemberIds,
+                'manager_id' => $user->id,
+                'is_also_sales' => $user->isSales(),
+            ]);
+            
             if (empty($teamMemberIds)) {
+                // No team members, but if they're a sales user, show their own leads
+                if ($user->isSales()) {
+                    \Log::info('LeadResource::getEloquentQuery - Manager with no team, but is sales - showing own leads');
+                    return $query->where(function (Builder $q) use ($user) {
+                        $q->whereNull('assigned_to')
+                          ->orWhere('assigned_to', $user->id)
+                          ->orWhere('created_by', $user->id);
+                    });
+                }
                 // No team members, return empty query
+                \Log::info('LeadResource::getEloquentQuery - No team members, returning empty query');
                 return $query->whereRaw('1 = 0');
             }
             
@@ -356,20 +435,59 @@ class LeadResource extends Resource
             // 1. assigned_to (sales)
             // 2. assigned_operator (operation)
             // 3. call_center_calls.assigned_call_center_user (call center)
-            return $query->where(function (Builder $q) use ($teamMemberIds) {
+            // 4. If manager is also a sales user, include leads they created or assigned to themselves
+            $filteredQuery = $query->where(function (Builder $q) use ($teamMemberIds, $user) {
                 $q->whereIn('assigned_to', $teamMemberIds)
                   ->orWhereIn('assigned_operator', $teamMemberIds)
                   ->orWhereHas('callCenterCalls', function ($subQuery) use ($teamMemberIds) {
                       $subQuery->whereIn('assigned_call_center_user', $teamMemberIds);
                   });
+                
+                // If manager is also a sales user, include their own leads
+                if ($user->isSales()) {
+                    $q->orWhere('created_by', $user->id)
+                      ->orWhere('assigned_to', $user->id)
+                      ->orWhereNull('assigned_to');
+                }
             });
+            
+            \Log::info('LeadResource::getEloquentQuery - Manager query built', [
+                'sql' => $filteredQuery->toSql(),
+                'bindings' => $filteredQuery->getBindings(),
+            ]);
+            
+            return $filteredQuery;
         }
         
-        // Original logic for sales users
+        // Logic for sales users: show unassigned leads, leads assigned to them, or leads they created
         if ($user && $user->isSales()) {
-            $query->whereNull('assigned_to');
+            \Log::info('LeadResource::getEloquentQuery - Sales user filtering', [
+                'user_id' => $user->id,
+            ]);
+            
+            $filteredQuery = $query->where(function (Builder $q) use ($user) {
+                $q->whereNull('assigned_to')
+                  ->orWhere('assigned_to', $user->id)
+                  ->orWhere('created_by', $user->id);
+            });
+            
+            \Log::info('LeadResource::getEloquentQuery - Sales query built', [
+                'sql' => $filteredQuery->toSql(),
+                'bindings' => $filteredQuery->getBindings(),
+            ]);
+            
+            // Test if lead 1867 would be found
+            $testLead = $filteredQuery->find(1867);
+            \Log::info('LeadResource::getEloquentQuery - Test find lead 1867', [
+                'found' => $testLead ? 'Yes' : 'No',
+                'lead_created_by' => $testLead?->created_by,
+                'lead_assigned_to' => $testLead?->assigned_to,
+            ]);
+            
+            return $filteredQuery;
         }
         
+        \Log::info('LeadResource::getEloquentQuery - No filtering applied, returning base query');
         return $query;
     }
 

@@ -11,6 +11,12 @@ class EditLead extends EditRecord
 {
     protected static string $resource = LeadResource::class;
 
+    protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
+    {
+        // Use the resource's query to ensure proper filtering
+        return static::getResource()::getEloquentQuery()->findOrFail($key);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

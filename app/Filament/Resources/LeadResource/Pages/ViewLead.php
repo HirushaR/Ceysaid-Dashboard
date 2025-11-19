@@ -12,6 +12,52 @@ class ViewLead extends ViewRecord
 {
     protected static string $resource = LeadResource::class;
     
+    public static function canAccess(array $parameters = []): bool
+    {
+        \Log::info('ViewLead::canAccess called', [
+            'parameters' => $parameters,
+            'user_id' => auth()->id(),
+            'user_email' => auth()->user()?->email,
+        ]);
+        
+        // Let Filament handle the authorization through canView
+        return true;
+    }
+    
+    protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
+    {
+        \Log::info('ViewLead::resolveRecord called', [
+            'key' => $key,
+            'user_id' => auth()->id(),
+            'user_email' => auth()->user()?->email,
+        ]);
+        
+        try {
+            $query = static::getResource()::getEloquentQuery();
+            \Log::info('ViewLead::resolveRecord - Query built', [
+                'query_sql' => $query->toSql(),
+                'query_bindings' => $query->getBindings(),
+            ]);
+            
+            $record = $query->findOrFail($key);
+            
+            \Log::info('ViewLead::resolveRecord - Record found', [
+                'record_id' => $record->id,
+                'created_by' => $record->created_by,
+                'assigned_to' => $record->assigned_to,
+            ]);
+            
+            return $record;
+        } catch (\Exception $e) {
+            \Log::error('ViewLead::resolveRecord - Error', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+    
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist

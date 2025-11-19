@@ -65,8 +65,13 @@ class ViewLead extends ViewRecord
                 // Header section with key info
                 Components\Section::make('Lead Overview')
                     ->schema([
-                        Components\Grid::make(3)
+                        Components\Grid::make(4)
                             ->schema([
+                                Components\TextEntry::make('id')
+                                    ->label('Lead ID')
+                                    ->badge()
+                                    ->color('primary')
+                                    ->weight('bold'),
                                 Components\TextEntry::make('reference_id')
                                     ->label('Reference ID')
                                     ->badge()

@@ -87,6 +87,15 @@ class AllArrivalResource extends Resource
         return $table
             ->heading('Confirmed leads that have arrived and need post-arrival calls')
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('primary')
+                    ->weight('bold'),
+                    
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()

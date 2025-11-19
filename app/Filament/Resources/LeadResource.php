@@ -207,8 +207,13 @@ class LeadResource extends Resource
             Forms\Components\Section::make('Basic Information')
                 ->description('Core lead details and customer information')
             ->schema([
-                    Forms\Components\Grid::make(2)
+                    Forms\Components\Grid::make(3)
                     ->schema([
+                            Forms\Components\TextInput::make('id')
+                                ->label('Lead ID')
+                                ->disabled()
+                                ->helperText('Database ID')
+                                ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
                             Forms\Components\TextInput::make('reference_id')
                                 ->label('Reference ID')
                                 ->disabled()
@@ -217,7 +222,8 @@ class LeadResource extends Resource
                                 ->label('Customer Name')
                                 ->required()
                                 ->maxLength(255)
-                                ->placeholder('Enter customer name'),
+                                ->placeholder('Enter customer name')
+                                ->columnSpan(2),
                         ]),
                     Forms\Components\Grid::make(2)
                         ->schema([
@@ -495,6 +501,15 @@ class LeadResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('primary')
+                    ->weight('bold'),
+                    
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()

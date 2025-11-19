@@ -88,6 +88,15 @@ class AllDepartureResource extends Resource
         return $table
             ->heading('Confirmed leads departing within the next 5 days that need pre-departure calls')
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                    ->color('primary')
+                    ->weight('bold'),
+                    
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()

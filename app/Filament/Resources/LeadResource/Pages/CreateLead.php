@@ -17,4 +17,9 @@ class CreateLead extends CreateRecord
         var_dump($user);
         return $user && ($user->isMarketing() || $user->isAdmin());
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

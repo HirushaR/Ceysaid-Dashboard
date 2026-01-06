@@ -272,4 +272,31 @@ class User extends Authenticatable
     {
         return $this->hasMany(Lead::class, 'created_by');
     }
+
+    /**
+     * Get remaining leave balances for the current calendar year
+     */
+    public function getRemainingLeaves(?int $year = null): array
+    {
+        $service = app(\App\Services\LeaveAllocationService::class);
+        return $service->getRemainingLeaves($this, $year);
+    }
+
+    /**
+     * Get used leave balances for the current calendar year
+     */
+    public function getUsedLeaves(?int $year = null): array
+    {
+        $service = app(\App\Services\LeaveAllocationService::class);
+        return $service->getUsedLeaves($this, $year);
+    }
+
+    /**
+     * Get leave allocations
+     */
+    public function getLeaveAllocations(): array
+    {
+        $service = app(\App\Services\LeaveAllocationService::class);
+        return $service->getAllocations();
+    }
 }

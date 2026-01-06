@@ -192,6 +192,50 @@ class UserResource extends Resource
                     ])
                     ->badge()
                     ->color('info'),
+                
+                Tables\Columns\TextColumn::make('leave_balance_casual')
+                    ->label('Casual')
+                    ->getStateUsing(function ($record) {
+                        $remaining = $record->getRemainingLeaves();
+                        return $remaining['casual'] . ' / 7';
+                    })
+                    ->badge()
+                    ->color(fn ($record) => $record->getRemainingLeaves()['casual'] > 0 ? 'success' : 'danger')
+                    ->sortable(false)
+                    ->toggleable(),
+                
+                Tables\Columns\TextColumn::make('leave_balance_sick')
+                    ->label('Sick')
+                    ->getStateUsing(function ($record) {
+                        $remaining = $record->getRemainingLeaves();
+                        return $remaining['sick'] . ' / 7';
+                    })
+                    ->badge()
+                    ->color(fn ($record) => $record->getRemainingLeaves()['sick'] > 0 ? 'success' : 'danger')
+                    ->sortable(false)
+                    ->toggleable(),
+                
+                Tables\Columns\TextColumn::make('leave_balance_annual')
+                    ->label('Annual')
+                    ->getStateUsing(function ($record) {
+                        $remaining = $record->getRemainingLeaves();
+                        return $remaining['annual'] . ' / 14';
+                    })
+                    ->badge()
+                    ->color(fn ($record) => $record->getRemainingLeaves()['annual'] > 0 ? 'success' : 'danger')
+                    ->sortable(false)
+                    ->toggleable(),
+                
+                Tables\Columns\TextColumn::make('leave_balance_total')
+                    ->label('Total Remaining')
+                    ->getStateUsing(function ($record) {
+                        $remaining = $record->getRemainingLeaves();
+                        return $remaining['total'] . ' / 28';
+                    })
+                    ->badge()
+                    ->color(fn ($record) => $record->getRemainingLeaves()['total'] > 0 ? 'success' : 'danger')
+                    ->weight('medium')
+                    ->sortable(false),
                     
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Joined')

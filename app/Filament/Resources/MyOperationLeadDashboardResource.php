@@ -11,6 +11,7 @@ use App\Filament\Resources\MyOperationLeadDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\Platform;
 use App\Enums\ServiceStatus;
 
 class MyOperationLeadDashboardResource extends Resource
@@ -144,11 +145,7 @@ class MyOperationLeadDashboardResource extends Resource
                     ->options(LeadStatus::options())
                     ->label('Lead Status'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')

@@ -11,6 +11,7 @@ use App\Filament\Resources\AllLeadDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\Platform;
 use Illuminate\Database\Eloquent\Model;
 
 class AllLeadDashboardResource extends Resource
@@ -150,12 +151,8 @@ class AllLeadDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
                     ->badge()
-                    ->colors([
-                        'info' => 'facebook',
-                        'success' => 'whatsapp', 
-                        'warning' => 'email',
-                    ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->colors(Platform::colorMap())
+                    ->formatStateUsing(fn ($state) => Platform::tryFrom($state)?->label() ?? ucfirst($state)),
                     
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
@@ -171,11 +168,7 @@ class AllLeadDashboardResource extends Resource
                     ->options(LeadStatus::options())
                     ->label('Lead Status'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')

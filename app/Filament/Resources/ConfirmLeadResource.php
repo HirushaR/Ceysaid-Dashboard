@@ -12,6 +12,7 @@ use App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\Platform;
 use App\Enums\ServiceStatus;
 
 class ConfirmLeadResource extends Resource
@@ -221,11 +222,7 @@ class ConfirmLeadResource extends Resource
                     ->options(ServiceStatus::options())
                     ->label('Land Package Status'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')

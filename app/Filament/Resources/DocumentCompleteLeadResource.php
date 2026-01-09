@@ -11,6 +11,7 @@ use App\Filament\Resources\DocumentCompleteLeadResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\Platform;
 use App\Enums\ServiceStatus;
 
 class DocumentCompleteLeadResource extends Resource
@@ -225,11 +226,7 @@ class DocumentCompleteLeadResource extends Resource
                     ->options(ServiceStatus::options())
                     ->label('Land Package Status'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')

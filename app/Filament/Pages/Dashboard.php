@@ -34,11 +34,14 @@ class Dashboard extends BaseDashboard
     {
         $user = auth()->user();
         
+        $widgets = [
+            \App\Filament\Widgets\RemainingLeavesWidget::class,
+        ];
+        
         if ($user && ($user->isSales() || $user->isAdmin())) {
-            return [               
-            ];
+            // Add other widgets here if needed
         }
         
-        return [];
+        return $widgets;
     }
 } 

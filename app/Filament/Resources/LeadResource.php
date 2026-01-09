@@ -238,11 +238,7 @@ class LeadResource extends Resource
                             ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
                         Forms\Components\Select::make('platform')
                                 ->label('Source Platform')
-                            ->options([
-                                'facebook' => 'Facebook',
-                                'whatsapp' => 'WhatsApp',
-                                'email' => 'Email',
-                            ])
+                            ->options(Platform::options())
                                 ->required()
                                 ->native(false),
                         ]),

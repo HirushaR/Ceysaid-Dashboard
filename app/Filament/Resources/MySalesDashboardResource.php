@@ -11,6 +11,7 @@ use App\Filament\Resources\MySalesDashboardResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Enums\LeadStatus;
+use App\Enums\Platform;
 use App\Enums\ServiceStatus;
 
 class MySalesDashboardResource extends Resource
@@ -115,12 +116,8 @@ class MySalesDashboardResource extends Resource
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
                     ->badge()
-                    ->colors([
-                        'info' => 'facebook',
-                        'success' => 'whatsapp', 
-                        'warning' => 'email',
-                    ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->colors(Platform::colorMap())
+                    ->formatStateUsing(fn ($state) => Platform::tryFrom($state)?->label() ?? ucfirst($state))
                     ->alignCenter()
                     ->width('120px'),
                     
@@ -140,11 +137,7 @@ class MySalesDashboardResource extends Resource
                     ->options(LeadStatus::options())
                     ->label('Lead Status'),
                 Tables\Filters\SelectFilter::make('platform')
-                    ->options([
-                        'facebook' => 'Facebook',
-                        'whatsapp' => 'WhatsApp',
-                        'email' => 'Email',
-                    ])
+                    ->options(Platform::options())
                     ->label('Platform'),
                 Tables\Filters\SelectFilter::make('assigned_operator')
                     ->relationship('assignedOperator', 'name')

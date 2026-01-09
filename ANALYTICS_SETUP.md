@@ -139,7 +139,7 @@ REDIS_PORT=6379
 Set your application timezone in `config/app.php`:
 
 ```php
-'timezone' => 'Asia/Jakarta', // or your preferred timezone
+'timezone' => 'Asia/Colombo', // Colombo, Sri Lanka timezone
 ```
 
 ### 6. Running Tests

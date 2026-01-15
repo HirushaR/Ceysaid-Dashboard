@@ -23,6 +23,17 @@ class MySalesDashboardResource extends Resource
     protected static ?string $pluralLabel = 'My Sales Dashboard';
     protected static ?string $navigationGroup = 'Dashboard';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = \App\Helpers\NotificationHelper::getSalesNotificationCount();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'info';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
@@ -131,7 +142,7 @@ class MySalesDashboardResource extends Resource
                     ->alignCenter()
                     ->width('140px'),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())

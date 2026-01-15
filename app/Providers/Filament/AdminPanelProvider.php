@@ -125,6 +125,8 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Pages\Dashboard::class,
                 \App\Filament\Pages\AnalyticsDashboard::class,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             
             ->middleware([
                 EncryptCookies::class,

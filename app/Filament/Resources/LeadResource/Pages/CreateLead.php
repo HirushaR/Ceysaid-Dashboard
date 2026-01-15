@@ -7,9 +7,12 @@ use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\LeadStatus;
+use App\Traits\SendsLeadNotifications;
 
 class CreateLead extends CreateRecord
 {
+    use SendsLeadNotifications;
+
     protected static string $resource = LeadResource::class;
 
     public static function canCreate(): bool
@@ -42,5 +45,11 @@ class CreateLead extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function afterCreate(): void
+    {
+        // Send notifications after lead is created
+        $this->sendLeadCreatedNotifications($this->record);
     }
 }

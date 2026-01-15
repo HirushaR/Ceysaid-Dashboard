@@ -31,6 +31,17 @@ class LeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = \App\Helpers\NotificationHelper::getLeadNotificationCount();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();
@@ -566,7 +577,7 @@ class LeadResource extends Resource
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())

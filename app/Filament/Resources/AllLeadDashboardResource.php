@@ -162,7 +162,7 @@ class AllLeadDashboardResource extends Resource
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())

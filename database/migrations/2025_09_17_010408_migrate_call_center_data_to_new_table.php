@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if the call center columns still exist in leads table
+        // If they don't exist, the data was already migrated or columns were removed
+        if (!Schema::hasColumn('leads', 'assigned_call_center_user')) {
+            return;
+        }
+
         // This migration will run before removing call center fields from leads table
         // We need to create call center calls for existing leads that have call center data
         
@@ -19,16 +25,21 @@ return new class extends Migration
             ->get();
         
         foreach ($leads as $lead) {
+            // Skip if call center calls already exist for this lead
+            if (\App\Models\CallCenterCall::where('lead_id', $lead->id)->exists()) {
+                continue;
+            }
+
             // Create pre-departure call
             \App\Models\CallCenterCall::create([
                 'lead_id' => $lead->id,
                 'assigned_call_center_user' => $lead->assigned_call_center_user,
                 'call_type' => \App\Models\CallCenterCall::CALL_TYPE_PRE_DEPARTURE,
                 'status' => $lead->call_center_status ?? \App\Models\CallCenterCall::STATUS_PENDING,
-                'call_notes' => $lead->call_notes,
+                'call_notes' => $lead->call_notes ?? null,
                 'call_attempts' => $lead->call_attempts ?? 0,
-                'last_call_attempt' => $lead->last_call_attempt,
-                'call_checklist_completed' => $lead->call_checklist_completed,
+                'last_call_attempt' => $lead->last_call_attempt ?? null,
+                'call_checklist_completed' => $lead->call_checklist_completed ?? null,
             ]);
             
             // Create post-arrival call

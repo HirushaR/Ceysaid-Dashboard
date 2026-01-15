@@ -23,6 +23,17 @@ class DocumentCompleteLeadResource extends Resource
     protected static ?string $pluralLabel = 'Visa Leads';
     protected static ?string $navigationGroup = 'Dashboard';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = \App\Helpers\NotificationHelper::getVisaLeadNotificationCount();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();
@@ -237,7 +248,7 @@ class DocumentCompleteLeadResource extends Resource
                     ->relationship('assignedOperator', 'name')
                     ->searchable(),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->button()

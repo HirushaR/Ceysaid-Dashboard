@@ -24,6 +24,9 @@ class ViewAllLeadDashboard extends ViewRecord
                         ->success()
                         ->title('Lead assigned to operation.')
                         ->send();
+                    
+                    // Redirect to All Lead Dashboard
+                    return redirect()->to(AllLeadDashboardResource::getUrl('index'));
                 }),
         ];
     }

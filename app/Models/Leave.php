@@ -81,10 +81,33 @@ class Leave extends Model implements Eventable
      */
     public function toCalendarEvent(): CalendarEvent
     {
+        // Get raw date values from database - no timezone conversion
+        // Create Carbon instances in UTC timezone to prevent any timezone conversion
+        $rawStart = $this->getRawOriginal('start_date') ?? ($this->start_date ? $this->start_date->toDateString() : null);
+        $rawEnd = $this->getRawOriginal('end_date') ?? ($this->end_date ? $this->end_date->toDateString() : null);
+        
+        $startDate = null;
+        $endDate = null;
+        
+        if ($rawStart) {
+            // Create Carbon instance in UTC at midnight - this prevents timezone conversion
+            // UTC is timezone-neutral for date-only values
+            $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', $rawStart, 'UTC')
+                ->setTime(0, 0, 0);
+        }
+        
+        if ($rawEnd) {
+            // For all-day events, end date should be exclusive (next day)
+            // Create in UTC to prevent timezone conversion
+            $endDate = \Carbon\Carbon::createFromFormat('Y-m-d', $rawEnd, 'UTC')
+                ->addDay()
+                ->setTime(0, 0, 0);
+        }
+        
         return CalendarEvent::make()
             ->title($this->getCalendarEventTitle())
-            ->start($this->start_date)
-            ->end($this->end_date)
+            ->start($startDate)
+            ->end($endDate)
             ->backgroundColor($this->getCalendarEventBackgroundColor())
             ->textColor($this->getCalendarEventTextColor())
             ->allDay(true)

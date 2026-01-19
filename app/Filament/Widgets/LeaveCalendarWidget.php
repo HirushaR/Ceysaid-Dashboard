@@ -18,6 +18,12 @@ class LeaveCalendarWidget extends CalendarWidget
     protected static ?int $sort = 1;
     
     protected string $calendarView = 'dayGridMonth';
+    
+    /**
+     * Disable Filament timezone conversion to show exact dates from database
+     * Dates are created in UTC to prevent any timezone conversion
+     */
+    protected bool $useFilamentTimezone = false;
 
     public static function canView(): bool
     {

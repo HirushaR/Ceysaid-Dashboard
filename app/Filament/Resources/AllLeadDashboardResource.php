@@ -103,17 +103,46 @@ class AllLeadDashboardResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->searchable()
-                    ->copyable()
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
-                    ->color('primary')
-                    ->weight('bold'),
-                    
+        $user = auth()->user();
+        $isAdmin = $user && $user->isAdmin();
+        
+        $columns = [
+            Tables\Columns\TextColumn::make('id')
+                ->label('ID')
+                ->sortable()
+                ->searchable()
+                ->copyable()
+                ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
+                ->color('primary')
+                ->weight('bold'),
+                
+            Tables\Columns\TextColumn::make('customer_name')
+                ->label('Customer')
+                ->sortable()
+                ->searchable()
+                ->weight('medium')
+                ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
+                
+            Tables\Columns\BadgeColumn::make('status')
+                ->label('Status')
+                ->colors(LeadStatus::colorMap())
+                ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
+                
+            Tables\Columns\TextColumn::make('priority')
+                ->label('Priority')
+                ->badge()
+                ->color(fn (?string $state): string => match ($state) {
+                    'low' => 'gray',
+                    'medium' => 'warning',
+                    'high' => 'danger',
+                    default => 'gray',
+                })
+                ->formatStateUsing(fn ($state) => ucfirst($state ?? 'medium')),
+        ];
+
+        // Add additional columns for admin users only
+        if ($isAdmin) {
+            $columns = array_merge($columns, [
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()
@@ -121,18 +150,6 @@ class AllLeadDashboardResource extends Resource
                     ->copyable()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
-                    
-                Tables\Columns\TextColumn::make('customer_name')
-                    ->label('Customer')
-                    ->sortable()
-                    ->searchable()
-                    ->weight('medium')
-                    ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
-                    
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors(LeadStatus::colorMap())
-                    ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
                     
                 Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('Sales Rep')
@@ -161,19 +178,33 @@ class AllLeadDashboardResource extends Resource
                     ->since()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
-            ])
+            ]);
+        }
+        
+        return $table
+            ->columns($columns)
             ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())
                     ->label('Lead Status'),
+                Tables\Filters\SelectFilter::make('priority')
+                    ->options([
+                        'low' => 'Low',
+                        'medium' => 'Medium',
+                        'high' => 'High',
+                    ])
+                    ->label('Priority'),
+                // Only show these filters for admin users
                 Tables\Filters\SelectFilter::make('platform')
                     ->options(Platform::options())
-                    ->label('Platform'),
+                    ->label('Platform')
+                    ->visible(fn() => auth()->user()?->isAdmin()),
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->relationship('assignedUser', 'name')
                     ->label('Assigned To')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(fn() => auth()->user()?->isAdmin()),
                 Tables\Filters\SelectFilter::make('assigned_operator')
                     ->relationship('assignedOperator', 'name')
                     ->label('Assigned Operator')
@@ -181,7 +212,8 @@ class AllLeadDashboardResource extends Resource
                 Tables\Filters\SelectFilter::make('created_by')
                     ->relationship('creator', 'name')
                     ->label('Created By')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(fn() => auth()->user()?->isAdmin()),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

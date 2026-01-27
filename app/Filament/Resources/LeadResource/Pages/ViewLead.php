@@ -39,7 +39,7 @@ class ViewLead extends ViewRecord
                 'query_bindings' => $query->getBindings(),
             ]);
             
-            $record = $query->findOrFail($key);
+            $record = $query->with(['actionLogs.user'])->findOrFail($key);
             
             \Log::info('ViewLead::resolveRecord - Record found', [
                 'record_id' => $record->id,
@@ -238,6 +238,57 @@ class ViewLead extends ViewRecord
                     ])
                     ->columns(2)
                     ->collapsed(),
+
+                // Action Log (Admin Only)
+                Components\Section::make('Action Log')
+                    ->schema([
+                        Components\TextEntry::make('action_logs_table')
+                            ->label('')
+                            ->getStateUsing(function ($record) {
+                                $logs = $record->actionLogs;
+                                if ($logs->isEmpty()) {
+                                    return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No actions logged yet.</p>');
+                                }
+                                
+                                $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
+                                $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
+                                $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
+                                $html .= '<tr class="bg-gray-50 dark:bg-white/5">';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Action</span></th>';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Performed By</span></th>';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Description</span></th>';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
+                                $html .= '</tr></thead>';
+                                $html .= '<tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">';
+                                
+                                foreach ($logs as $log) {
+                                    $actionBadgeColor = match($log->action) {
+                                        'created' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
+                                        'status_changed' => 'bg-warning-50 text-warning-700 ring-warning-600/20 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/20',
+                                        'assigned' => 'bg-info-50 text-info-700 ring-info-600/20 dark:bg-info-400/10 dark:text-info-400 dark:ring-info-400/20',
+                                        'operator_assigned' => 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20',
+                                        default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
+                                    };
+                                    
+                                    $actionLabel = ucfirst(str_replace('_', ' ', $log->action));
+                                    $performedBy = $log->user ? $log->user->name : 'System';
+                                    $when = $log->created_at->format('M j, Y \a\t g:i A');
+                                    
+                                    $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
+                                    $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $actionBadgeColor . '">' . htmlspecialchars($actionLabel) . '</span></td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($performedBy) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($log->description) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '</tr>';
+                                }
+                                
+                                $html .= '</tbody></table></div>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn () => auth()->user()?->isAdmin())
+                    ->collapsed(),
             ])
             ->columns(1);
     }
@@ -256,6 +307,7 @@ class ViewLead extends ViewRecord
                 ->visible(fn() => auth()->user()?->isSales() && !$this->record->assigned_to)
                 ->action(function () {
                     $user = auth()->user();
+                    $oldAssignedTo = $this->record->assigned_to;
                     $this->record->assigned_to = $user->id;
                     $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value;
                     $this->record->save();

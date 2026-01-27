@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Lead;
 use App\Models\User;
+use App\Models\LeadActionLog;
 use App\Enums\LeadStatus;
 use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action;
@@ -25,6 +26,14 @@ class LeadObserver
             'lead_id' => $lead->id,
             'assigned_to' => $lead->assigned_to,
             'has_assigned_user' => $lead->assignedUser ? true : false,
+        ]);
+
+        // Log lead creation action
+        $this->logAction($lead, 'created', 'Lead created', [
+            'status' => $lead->status,
+            'assigned_to' => $lead->assigned_to,
+            'assigned_operator' => $lead->assigned_operator,
+            'customer_name' => $lead->customer_name,
         ]);
 
         // Note: "New Lead Assigned" notifications are handled in CreateLead::afterCreate()
@@ -78,6 +87,22 @@ class LeadObserver
      */
     private function handleAssignmentChange(Lead $lead, $oldAssignedTo, $newAssignedTo): void
     {
+        // Log assignment change
+        $oldUser = $oldAssignedTo ? User::find($oldAssignedTo) : null;
+        $newUser = $lead->assignedUser;
+        $description = $newUser 
+            ? "Assigned to {$newUser->name}" 
+            : "Assignment removed";
+        if ($oldUser && $oldUser->id !== $newAssignedTo) {
+            $description = "Reassigned from {$oldUser->name} to " . ($newUser ? $newUser->name : 'unassigned');
+        }
+        
+        $this->logAction($lead, 'assigned', $description, [
+            'assigned_to' => $oldAssignedTo,
+        ], [
+            'assigned_to' => $newAssignedTo,
+        ]);
+
         // Notify new assignee
         if ($newAssignedTo && $lead->assignedUser) {
             $refId = $lead->reference_id ?: "ID: {$lead->id}";
@@ -129,6 +154,22 @@ class LeadObserver
      */
     private function handleOperatorAssignmentChange(Lead $lead, $oldOperatorId, $newOperatorId): void
     {
+        // Log operator assignment change
+        $oldOperator = $oldOperatorId ? User::find($oldOperatorId) : null;
+        $newOperator = $lead->assignedOperator;
+        $description = $newOperator 
+            ? "Operator assigned: {$newOperator->name}" 
+            : "Operator assignment removed";
+        if ($oldOperator && $oldOperator->id !== $newOperatorId) {
+            $description = "Operator reassigned from {$oldOperator->name} to " . ($newOperator ? $newOperator->name : 'unassigned');
+        }
+        
+        $this->logAction($lead, 'operator_assigned', $description, [
+            'assigned_operator' => $oldOperatorId,
+        ], [
+            'assigned_operator' => $newOperatorId,
+        ]);
+
         // Notify new operator
         if ($newOperatorId && $lead->assignedOperator) {
             $refId = $lead->reference_id ?: "ID: {$lead->id}";
@@ -183,6 +224,13 @@ class LeadObserver
         $oldStatusLabel = LeadStatus::tryFrom($oldStatus)?->label() ?? $oldStatus;
         $newStatusLabel = LeadStatus::tryFrom($newStatus)?->label() ?? $newStatus;
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
+
+        // Log status change action
+        $this->logAction($lead, 'status_changed', "Status changed from '{$oldStatusLabel}' to '{$newStatusLabel}'", [
+            'status' => $oldStatus,
+        ], [
+            'status' => $newStatus,
+        ]);
 
         // Special handling: When status changes to "info_gather_complete", notify ALL operation users
         if ($newStatus === LeadStatus::INFO_GATHER_COMPLETE->value) {
@@ -392,6 +440,34 @@ class LeadObserver
                 'title' => $title,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Log an action to the lead action log
+     */
+    private function logAction(
+        Lead $lead,
+        string $action,
+        string $description,
+        ?array $oldValues = null,
+        ?array $newValues = null
+    ): void {
+        try {
+            LeadActionLog::create([
+                'lead_id' => $lead->id,
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'description' => $description,
+                'old_values' => $oldValues,
+                'new_values' => $newValues,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to log lead action', [
+                'lead_id' => $lead->id,
+                'action' => $action,
+                'error' => $e->getMessage(),
             ]);
         }
     }

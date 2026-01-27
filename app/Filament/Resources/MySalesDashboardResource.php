@@ -37,7 +37,9 @@ class MySalesDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        return parent::getEloquentQuery()->where('assigned_to', $user ? $user->id : null);
+        return parent::getEloquentQuery()
+            ->notArchived()
+            ->where('assigned_to', $user ? $user->id : null);
     }
 
     public static function canViewAny(): bool

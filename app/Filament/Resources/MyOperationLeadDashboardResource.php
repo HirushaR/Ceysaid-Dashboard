@@ -81,7 +81,9 @@ class MyOperationLeadDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        return parent::getEloquentQuery()->where('assigned_operator', $user ? $user->id : null);
+        return parent::getEloquentQuery()
+            ->notArchived()
+            ->where('assigned_operator', $user ? $user->id : null);
     }
 
     public static function getPages(): array

@@ -32,7 +32,37 @@ class EditLead extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\Action::make('archive')
+                ->label('Archive Lead')
+                ->icon('heroicon-o-archive-box')
+                ->color('warning')
+                ->button()
+                ->visible(fn () => auth()->user()?->isAdmin() && !$this->record->isArchived())
+                ->requiresConfirmation()
+                ->modalHeading('Archive Lead')
+                ->modalDescription('Are you sure you want to archive this lead? It will be hidden from all dashboards but can be accessed from the Archive Leads dashboard.')
+                ->action(function () {
+                    $user = auth()->user();
+                    $this->record->archived_at = now();
+                    $this->record->archived_by = $user->id;
+                    $this->record->save();
+                    
+                    // Log archive action
+                    \App\Models\LeadActionLog::create([
+                        'lead_id' => $this->record->id,
+                        'user_id' => $user->id,
+                        'action' => 'archived',
+                        'description' => 'Lead archived',
+                    ]);
+                    
+                    Notification::make()
+                        ->success()
+                        ->title('Lead archived successfully.')
+                        ->send();
+                    return redirect()->to(LeadResource::getUrl('index'));
+                }),
+            Actions\DeleteAction::make()
+                ->visible(fn () => auth()->user()?->isAdmin()),
             Actions\Action::make('assign_to_me')
                 ->label('Assign to Me')
                 ->visible(fn() => auth()->user()?->isSales())

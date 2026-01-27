@@ -61,7 +61,7 @@ class AllArrivalResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->notArchived();
         
         // Show confirmed leads that have arrived (arrival_date is today or in the past)
         // and don't have a post-arrival call assigned yet

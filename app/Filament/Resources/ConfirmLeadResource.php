@@ -70,7 +70,9 @@ class ConfirmLeadResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery()->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
+        $query = parent::getEloquentQuery()
+            ->notArchived()
+            ->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
         
         // Filter based on user role and associations
         if ($user) {

@@ -81,7 +81,7 @@ class AllLeadDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->notArchived();
         
         // Admin users can see all leads, operation users see only INFO_GATHER_COMPLETE
         if (!$user || !$user->isAdmin()) {
@@ -253,6 +253,35 @@ class AllLeadDashboardResource extends Resource
                     ->size('sm')
                     ->color('danger')
                     ->visible(fn() => auth()->user()?->isAdmin()),
+                Tables\Actions\Action::make('archive')
+                    ->label('Archive')
+                    ->icon('heroicon-o-archive-box')
+                    ->color('warning')
+                    ->button()
+                    ->size('sm')
+                    ->visible(fn($record) => auth()->user()?->isAdmin() && !$record->isArchived())
+                    ->requiresConfirmation()
+                    ->modalHeading('Archive Lead')
+                    ->modalDescription('Are you sure you want to archive this lead? It will be hidden from all dashboards but can be accessed from the Archive Leads dashboard.')
+                    ->action(function ($record) {
+                        $user = auth()->user();
+                        $record->archived_at = now();
+                        $record->archived_by = $user->id;
+                        $record->save();
+                        
+                        // Log archive action
+                        \App\Models\LeadActionLog::create([
+                            'lead_id' => $record->id,
+                            'user_id' => $user->id,
+                            'action' => 'archived',
+                            'description' => 'Lead archived',
+                        ]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Lead archived successfully.')
+                            ->send();
+                    }),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
             ->headerActions([

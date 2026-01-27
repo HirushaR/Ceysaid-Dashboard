@@ -221,12 +221,12 @@ class User extends Authenticatable
 
     public function leads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Lead::class, 'assigned_to');
+        return $this->hasMany(Lead::class, 'assigned_to')->whereNull('archived_at');
     }
 
     public function operatorLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Lead::class, 'assigned_operator');
+        return $this->hasMany(Lead::class, 'assigned_operator')->whereNull('archived_at');
     }
 
     public function callCenterCalls(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -270,7 +270,7 @@ class User extends Authenticatable
 
     public function createdLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Lead::class, 'created_by');
+        return $this->hasMany(Lead::class, 'created_by')->whereNull('archived_at');
     }
 
     /**

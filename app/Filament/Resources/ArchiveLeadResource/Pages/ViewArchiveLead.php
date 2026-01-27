@@ -1,69 +1,23 @@
 <?php
 
-namespace App\Filament\Resources\LeadResource\Pages;
+namespace App\Filament\Resources\ArchiveLeadResource\Pages;
 
-use App\Filament\Resources\LeadResource;
+use App\Filament\Resources\ArchiveLeadResource;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action as NotificationAction;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
-use App\Notifications\LeadDatabaseNotification;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
-use Filament\Forms;
-use App\Models\LeadNote;
-use App\Models\User;
 
-class ViewLead extends ViewRecord
+class ViewArchiveLead extends ViewRecord
 {
-    protected static string $resource = LeadResource::class;
-    
-    public static function canAccess(array $parameters = []): bool
-    {
-        \Log::info('ViewLead::canAccess called', [
-            'parameters' => $parameters,
-            'user_id' => auth()->id(),
-            'user_email' => auth()->user()?->email,
-        ]);
-        
-        // Let Filament handle the authorization through canView
-        return true;
-    }
-    
+    protected static string $resource = ArchiveLeadResource::class;
+
     protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
     {
-        \Log::info('ViewLead::resolveRecord called', [
-            'key' => $key,
-            'user_id' => auth()->id(),
-            'user_email' => auth()->user()?->email,
-        ]);
-        
-        try {
-            $query = static::getResource()::getEloquentQuery();
-            \Log::info('ViewLead::resolveRecord - Query built', [
-                'query_sql' => $query->toSql(),
-                'query_bindings' => $query->getBindings(),
-            ]);
-            
-            $record = $query->with(['actionLogs.user', 'notes.user'])->findOrFail($key);
-            
-            \Log::info('ViewLead::resolveRecord - Record found', [
-                'record_id' => $record->id,
-                'created_by' => $record->created_by,
-                'assigned_to' => $record->assigned_to,
-            ]);
-            
-            return $record;
-        } catch (\Exception $e) {
-            \Log::error('ViewLead::resolveRecord - Error', [
-                'key' => $key,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
+        $query = static::getResource()::getEloquentQuery();
+        return $query->with(['actionLogs.user', 'notes.user', 'archivedBy'])->findOrFail($key);
     }
-    
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist
@@ -232,6 +186,22 @@ class ViewLead extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
+                // Archive Information
+                Components\Section::make('Archive Information')
+                    ->schema([
+                        Components\Grid::make(2)
+                            ->schema([
+                                Components\TextEntry::make('archivedBy.name')
+                                    ->label('Archived By')
+                                    ->placeholder('Unknown'),
+                                Components\TextEntry::make('archived_at')
+                                    ->label('Archived At')
+                                    ->dateTime('M j, Y \a\t g:i A'),
+                            ]),
+                    ])
+                    ->columns(2)
+                    ->collapsed(),
+
                 // System Information
                 Components\Section::make('System Information')
                     ->schema([
@@ -248,7 +218,7 @@ class ViewLead extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
-                // Internal Notes (Users with access to lead)
+                // Internal Notes Section
                 Components\Section::make('Internal Notes')
                     ->schema([
                         Components\TextEntry::make('notes_table')
@@ -288,7 +258,7 @@ class ViewLead extends ViewRecord
                     ])
                     ->collapsed(),
 
-                // Action Log (Admin Only)
+                // Action Log Section
                 Components\Section::make('Action Log')
                     ->schema([
                         Components\TextEntry::make('action_logs_table')
@@ -317,7 +287,6 @@ class ViewLead extends ViewRecord
                                         'assigned' => 'bg-info-50 text-info-700 ring-info-600/20 dark:bg-info-400/10 dark:text-info-400 dark:ring-info-400/20',
                                         'operator_assigned' => 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20',
                                         'archived' => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
-                                        'unarchived' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
                                         default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
                                     };
                                     
@@ -338,7 +307,6 @@ class ViewLead extends ViewRecord
                             })
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn () => auth()->user()?->isAdmin())
                     ->collapsed(),
             ])
             ->columns(1);
@@ -347,203 +315,35 @@ class ViewLead extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\EditAction::make()
-                ->label('Edit')
-                ->icon('heroicon-o-pencil')
-                ->button(),
-            
-            \Filament\Actions\Action::make('add_note')
-                ->label('Add Internal Note')
-                ->icon('heroicon-o-document-text')
-                ->color('info')
-                ->button()
-                ->form([
-                    Forms\Components\Textarea::make('note')
-                        ->label('Internal Note')
-                        ->required()
-                        ->rows(4)
-                        ->placeholder('Add an internal note about this lead...')
-                        ->helperText('This note will be visible to all users who have access to this lead.'),
-                ])
-                ->action(function (array $data) {
-                    $user = auth()->user();
-                    $note = $this->record->notes()->create([
-                        'user_id' => $user->id,
-                        'note' => $data['note'],
-                    ]);
-
-                    // Send notifications to all users working on this lead
-                    $this->sendNoteNotifications($this->record, $note, $user);
-
-                    Notification::make()
-                        ->success()
-                        ->title('Internal note added successfully.')
-                        ->send();
-                }),
-
-            \Filament\Actions\Action::make('assign_to_me')
-                ->label('Assign to Me')
-                ->icon('heroicon-o-user-plus')
+            \Filament\Actions\Action::make('unarchive')
+                ->label('Unarchive Lead')
+                ->icon('heroicon-o-arrow-uturn-left')
                 ->color('success')
-                ->visible(fn() => auth()->user()?->isSales() && !$this->record->assigned_to)
-                ->action(function () {
-                    $user = auth()->user();
-                    $oldAssignedTo = $this->record->assigned_to;
-                    $this->record->assigned_to = $user->id;
-                    $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value;
-                    $this->record->save();
-                    Notification::make()
-                        ->success()
-                        ->title('Lead assigned to you and status updated.')
-                        ->send();
-                }),
-            
-            \Filament\Actions\Action::make('archive')
-                ->label('Archive Lead')
-                ->icon('heroicon-o-archive-box')
-                ->color('warning')
                 ->button()
-                ->visible(fn () => auth()->user()?->isAdmin() && !$this->record->isArchived())
                 ->requiresConfirmation()
-                ->modalHeading('Archive Lead')
-                ->modalDescription('Are you sure you want to archive this lead? It will be hidden from all dashboards but can be accessed from the Archive Leads dashboard.')
+                ->modalHeading('Unarchive Lead')
+                ->modalDescription('Are you sure you want to unarchive this lead? It will become visible in other dashboards again.')
                 ->action(function () {
                     $user = auth()->user();
-                    $this->record->archived_at = now();
-                    $this->record->archived_by = $user->id;
+                    $this->record->archived_at = null;
+                    $this->record->archived_by = null;
                     $this->record->save();
                     
-                    // Log archive action
+                    // Log unarchive action
                     \App\Models\LeadActionLog::create([
                         'lead_id' => $this->record->id,
                         'user_id' => $user->id,
-                        'action' => 'archived',
-                        'description' => 'Lead archived',
+                        'action' => 'unarchived',
+                        'description' => 'Lead unarchived',
                     ]);
                     
                     Notification::make()
                         ->success()
-                        ->title('Lead archived successfully.')
+                        ->title('Lead unarchived successfully.')
                         ->send();
-                    return redirect()->to(LeadResource::getUrl('index'));
-                }),
-
-            \Filament\Actions\Action::make('delete')
-                ->label('Delete')
-                ->icon('heroicon-o-trash')
-                ->color('danger')
-                ->visible(fn () => auth()->user()?->isAdmin())
-                ->requiresConfirmation()
-                ->action(function () {
-                    $this->record->delete();
-                    Notification::make()
-                        ->success()
-                        ->title('Lead deleted successfully.')
-                        ->send();
-                    return redirect()->to(LeadResource::getUrl('index'));
+                    
+                    return redirect()->to(ArchiveLeadResource::getUrl('index'));
                 }),
         ];
     }
-
-    /**
-     * Send notifications to all users working on the lead when a note is added
-     */
-    private function sendNoteNotifications(\App\Models\Lead $lead, LeadNote $note, User $addedBy): void
-    {
-        $recipients = $this->getNotificationRecipients($lead);
-        
-        // Don't notify the user who added the note
-        $recipients = $recipients->reject(fn($user) => $user->id === $addedBy->id);
-
-        $refId = $lead->reference_id ?: "ID: {$lead->id}";
-        $notePreview = \Str::limit($note->note, 100);
-
-        foreach ($recipients as $recipient) {
-            // Get the correct URL based on recipient's role
-            $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
-            
-            $notification = Notification::make()
-                ->title('New Internal Note Added')
-                ->body("{$addedBy->name} added a note to lead {$refId} ({$lead->customer_name}): {$notePreview}")
-                ->info()
-                ->icon('heroicon-o-document-text')
-                ->actions([
-                    NotificationAction::make('view')
-                        ->label('View Lead')
-                        ->button()
-                        ->url($leadUrl),
-                ]);
-
-            $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($recipient));
-        }
-    }
-
-    /**
-     * Get notification recipients - all users working on the lead
-     */
-    private function getNotificationRecipients(\App\Models\Lead $lead): \Illuminate\Support\Collection
-    {
-        $recipients = collect();
-
-        // Always notify assigned users
-        if ($lead->assigned_to && $lead->assignedUser) {
-            $recipients->push($lead->assignedUser);
-        }
-
-        if ($lead->assigned_operator && $lead->assignedOperator) {
-            $recipients->push($lead->assignedOperator);
-        }
-
-        // Notify creator if different from assignees
-        if ($lead->created_by && $lead->creator) {
-            $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
-            if (!$isCreatorAlreadyIncluded) {
-                $recipients->push($lead->creator);
-            }
-        }
-
-        // Notify managers
-        if ($lead->assignedUser) {
-            $manager = $this->getManager($lead->assignedUser);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
-                $recipients->push($manager);
-            }
-        }
-
-        if ($lead->assignedOperator) {
-            $manager = $this->getManager($lead->assignedOperator);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
-                $recipients->push($manager);
-            }
-        }
-
-        return $recipients->unique('id');
-    }
-
-    /**
-     * Get manager for a user (users with same role and is_manager = true)
-     */
-    private function getManager(User $user): ?User
-    {
-        return User::where('role', $user->role)
-            ->where('is_manager', true)
-            ->where('id', '!=', $user->id)
-            ->first();
-    }
-
-    /**
-     * Get the correct lead URL based on user role
-     */
-    private function getLeadUrlForUser(User $user, \App\Models\Lead $lead): string
-    {
-        if ($user->isSales()) {
-            return \App\Filament\Resources\MySalesDashboardResource::getUrl('view', ['record' => $lead]);
-        } elseif ($user->isOperation()) {
-            return \App\Filament\Resources\MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
-        }
-
-        // Default to main LeadResource for admin and other roles
-        return LeadResource::getUrl('view', ['record' => $lead]);
-    }
-} 
+}

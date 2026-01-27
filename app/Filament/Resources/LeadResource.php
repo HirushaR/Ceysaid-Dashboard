@@ -407,7 +407,7 @@ class LeadResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->notArchived();
         
         \Log::info('LeadResource::getEloquentQuery called', [
             'user_id' => $user?->id,

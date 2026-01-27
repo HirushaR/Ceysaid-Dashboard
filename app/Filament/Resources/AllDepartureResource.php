@@ -61,7 +61,7 @@ class AllDepartureResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->notArchived();
         
         // Show confirmed leads with departure dates within the next 5 days
         // that don't have a pre-departure call assigned yet

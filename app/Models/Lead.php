@@ -37,6 +37,8 @@ class Lead extends Model
         'hotel_status',
         'visa_status',
         'land_package_status',
+        'archived_at',
+        'archived_by',
     ];
 
     protected $casts = [
@@ -45,6 +47,7 @@ class Lead extends Model
         'depature_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function customer()
@@ -112,6 +115,11 @@ class Lead extends Model
         return $this->hasMany(LeadNote::class)->orderBy('created_at', 'desc');
     }
 
+    public function archivedBy()
+    {
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
     // Analytics Scopes
     public function scopeForDateRange($query, $startDate, $endDate)
     {
@@ -153,5 +161,20 @@ class Lead extends Model
         return $query->whereHas('invoices', function ($q) {
             $q->where('status', 'paid');
         });
+    }
+
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 }

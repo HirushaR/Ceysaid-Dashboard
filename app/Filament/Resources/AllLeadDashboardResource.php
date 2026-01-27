@@ -183,7 +183,32 @@ class AllLeadDashboardResource extends Resource
         
         return $table
             ->columns($columns)
-            ->defaultSort('updated_at', 'desc')
+            ->modifyQueryUsing(function ($query) {
+                // Check if user has applied a custom sort
+                $hasCustomSort = request()->has('tableSort') && request()->get('tableSort') !== '';
+                
+                if (!$hasCustomSort) {
+                    // Default: Sort by priority first (high > medium > low), then by creation date (oldest first)
+                    $query->orderByRaw("
+                        CASE 
+                            WHEN priority = 'high' THEN 1
+                            WHEN priority = 'medium' THEN 2
+                            WHEN priority = 'low' THEN 3
+                            ELSE 4
+                        END ASC
+                    ")->orderBy('created_at', 'asc');
+                } else {
+                    // When user sorts by a column, apply priority as secondary sort to keep high priority leads visible
+                    $query->orderByRaw("
+                        CASE 
+                            WHEN priority = 'high' THEN 1
+                            WHEN priority = 'medium' THEN 2
+                            WHEN priority = 'low' THEN 3
+                            ELSE 4
+                        END ASC
+                    ");
+                }
+            })
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(LeadStatus::options())

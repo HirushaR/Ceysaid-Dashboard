@@ -11,6 +11,7 @@ use Filament\Notifications\Events\DatabaseNotificationsSent;
 use App\Notifications\LeadDatabaseNotification;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\MySalesDashboardResource;
+use App\Filament\Resources\MyOperationLeadDashboardResource;
 use App\Filament\Resources\AllLeadDashboardResource;
 
 trait SendsLeadNotifications
@@ -78,9 +79,9 @@ trait SendsLeadNotifications
     private function handleAssignmentChange(Lead $lead, $oldAssignedTo, $newAssignedTo): void
     {
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
-        $leadUrl = LeadResource::getUrl('view', ['record' => $lead]);
         
         if ($newAssignedTo && $lead->assignedUser) {
+            $leadUrl = $this->getLeadUrlForUser($lead->assignedUser, $lead);
             $notification = Notification::make()
                 ->title('Lead Assigned to You')
                 ->body("Lead {$refId} ({$lead->customer_name}) has been assigned to you")
@@ -100,6 +101,7 @@ trait SendsLeadNotifications
         if ($oldAssignedTo && $oldAssignedTo != $newAssignedTo) {
             $oldUser = \App\Models\User::find($oldAssignedTo);
             if ($oldUser) {
+                $leadUrl = $this->getLeadUrlForUser($oldUser, $lead);
                 $notification = Notification::make()
                     ->title('Lead Reassigned')
                     ->body("Lead {$refId} ({$lead->customer_name}) has been reassigned")
@@ -122,7 +124,7 @@ trait SendsLeadNotifications
     {
         if ($newOperatorId && $lead->assignedOperator) {
             $refId = $lead->reference_id ?: "ID: {$lead->id}";
-            $leadUrl = LeadResource::getUrl('view', ['record' => $lead]);
+            $leadUrl = $this->getLeadUrlForUser($lead->assignedOperator, $lead);
             
             $notification = Notification::make()
                 ->title('Lead Assigned to You (Operator)')
@@ -183,9 +185,10 @@ trait SendsLeadNotifications
             $recipients->push($lead->creator);
         }
 
-        $leadUrl = LeadResource::getUrl('view', ['record' => $lead]);
-        
         foreach ($recipients->unique('id') as $recipient) {
+            // Get the correct URL based on recipient's role
+            $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
+            
             $notification = Notification::make()
                 ->title('Lead Status Changed')
                 ->body("Lead {$refId} ({$lead->customer_name}) status changed from '{$oldStatusLabel}' to '{$newStatusLabel}'")
@@ -225,9 +228,10 @@ trait SendsLeadNotifications
         }
 
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
-        $leadUrl = LeadResource::getUrl('view', ['record' => $lead]);
         
         foreach ($recipients->unique('id') as $recipient) {
+            $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
+            
             $notification = Notification::make()
                 ->title('Service Status Updated')
                 ->body("{$serviceLabel} status for lead {$refId} ({$lead->customer_name}) changed from '{$oldStatusLabel}' to '{$newStatusLabel}'")
@@ -243,5 +247,20 @@ trait SendsLeadNotifications
             $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
             event(new DatabaseNotificationsSent($recipient));
         }
+    }
+
+    /**
+     * Get the correct lead URL based on user role
+     */
+    private function getLeadUrlForUser(User $user, Lead $lead): string
+    {
+        if ($user->isSales()) {
+            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+        } elseif ($user->isOperation()) {
+            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
+        }
+
+        // Default to main LeadResource for admin and other roles
+        return LeadResource::getUrl('view', ['record' => $lead]);
     }
 }

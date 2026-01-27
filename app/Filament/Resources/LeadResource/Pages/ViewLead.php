@@ -5,8 +5,14 @@ namespace App\Filament\Resources\LeadResource\Pages;
 use App\Filament\Resources\LeadResource;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Events\DatabaseNotificationsSent;
+use App\Notifications\LeadDatabaseNotification;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use Filament\Forms;
+use App\Models\LeadNote;
+use App\Models\User;
 
 class ViewLead extends ViewRecord
 {
@@ -39,7 +45,7 @@ class ViewLead extends ViewRecord
                 'query_bindings' => $query->getBindings(),
             ]);
             
-            $record = $query->with(['actionLogs.user'])->findOrFail($key);
+            $record = $query->with(['actionLogs.user', 'notes.user'])->findOrFail($key);
             
             \Log::info('ViewLead::resolveRecord - Record found', [
                 'record_id' => $record->id,
@@ -239,6 +245,46 @@ class ViewLead extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
+                // Internal Notes (Users with access to lead)
+                Components\Section::make('Internal Notes')
+                    ->schema([
+                        Components\TextEntry::make('notes_table')
+                            ->label('')
+                            ->getStateUsing(function ($record) {
+                                $notes = $record->notes;
+                                if ($notes->isEmpty()) {
+                                    return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No internal notes yet.</p>');
+                                }
+                                
+                                $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
+                                $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
+                                $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
+                                $html .= '<tr class="bg-gray-50 dark:bg-white/5">';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Note</span></th>';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Added By</span></th>';
+                                $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
+                                $html .= '</tr></thead>';
+                                $html .= '<tbody class="divide-y divide-gray-200 dark:divide-white/5">';
+                                
+                                foreach ($notes as $note) {
+                                    $addedBy = $note->user ? $note->user->name : 'Unknown';
+                                    $when = $note->created_at->format('M j, Y \a\t g:i A');
+                                    $noteText = nl2br(htmlspecialchars($note->note));
+                                    
+                                    $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">' . $noteText . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">' . htmlspecialchars($addedBy) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '</tr>';
+                                }
+                                
+                                $html .= '</tbody></table></div>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed(),
+
                 // Action Log (Admin Only)
                 Components\Section::make('Action Log')
                     ->schema([
@@ -299,7 +345,37 @@ class ViewLead extends ViewRecord
             \Filament\Actions\EditAction::make()
                 ->label('Edit')
                 ->icon('heroicon-o-pencil')
-                ->button(),          
+                ->button(),
+            
+            \Filament\Actions\Action::make('add_note')
+                ->label('Add Internal Note')
+                ->icon('heroicon-o-document-text')
+                ->color('info')
+                ->button()
+                ->form([
+                    Forms\Components\Textarea::make('note')
+                        ->label('Internal Note')
+                        ->required()
+                        ->rows(4)
+                        ->placeholder('Add an internal note about this lead...')
+                        ->helperText('This note will be visible to all users who have access to this lead.'),
+                ])
+                ->action(function (array $data) {
+                    $user = auth()->user();
+                    $note = $this->record->notes()->create([
+                        'user_id' => $user->id,
+                        'note' => $data['note'],
+                    ]);
+
+                    // Send notifications to all users working on this lead
+                    $this->sendNoteNotifications($this->record, $note, $user);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Internal note added successfully.')
+                        ->send();
+                }),
+
             \Filament\Actions\Action::make('assign_to_me')
                 ->label('Assign to Me')
                 ->icon('heroicon-o-user-plus')
@@ -317,7 +393,7 @@ class ViewLead extends ViewRecord
                         ->send();
                 }),
             
-                \Filament\Actions\Action::make('delete')
+            \Filament\Actions\Action::make('delete')
                 ->label('Delete')
                 ->icon('heroicon-o-trash')
                 ->color('danger')
@@ -331,5 +407,107 @@ class ViewLead extends ViewRecord
                     return redirect()->to(LeadResource::getUrl('index'));
                 }),
         ];
+    }
+
+    /**
+     * Send notifications to all users working on the lead when a note is added
+     */
+    private function sendNoteNotifications(\App\Models\Lead $lead, LeadNote $note, User $addedBy): void
+    {
+        $recipients = $this->getNotificationRecipients($lead);
+        
+        // Don't notify the user who added the note
+        $recipients = $recipients->reject(fn($user) => $user->id === $addedBy->id);
+
+        $refId = $lead->reference_id ?: "ID: {$lead->id}";
+        $notePreview = \Str::limit($note->note, 100);
+
+        foreach ($recipients as $recipient) {
+            // Get the correct URL based on recipient's role
+            $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
+            
+            $notification = Notification::make()
+                ->title('New Internal Note Added')
+                ->body("{$addedBy->name} added a note to lead {$refId} ({$lead->customer_name}): {$notePreview}")
+                ->info()
+                ->icon('heroicon-o-document-text')
+                ->actions([
+                    NotificationAction::make('view')
+                        ->label('View Lead')
+                        ->button()
+                        ->url($leadUrl),
+                ]);
+
+            $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
+            event(new DatabaseNotificationsSent($recipient));
+        }
+    }
+
+    /**
+     * Get notification recipients - all users working on the lead
+     */
+    private function getNotificationRecipients(\App\Models\Lead $lead): \Illuminate\Support\Collection
+    {
+        $recipients = collect();
+
+        // Always notify assigned users
+        if ($lead->assigned_to && $lead->assignedUser) {
+            $recipients->push($lead->assignedUser);
+        }
+
+        if ($lead->assigned_operator && $lead->assignedOperator) {
+            $recipients->push($lead->assignedOperator);
+        }
+
+        // Notify creator if different from assignees
+        if ($lead->created_by && $lead->creator) {
+            $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
+            if (!$isCreatorAlreadyIncluded) {
+                $recipients->push($lead->creator);
+            }
+        }
+
+        // Notify managers
+        if ($lead->assignedUser) {
+            $manager = $this->getManager($lead->assignedUser);
+            if ($manager && !$recipients->contains('id', $manager->id)) {
+                $recipients->push($manager);
+            }
+        }
+
+        if ($lead->assignedOperator) {
+            $manager = $this->getManager($lead->assignedOperator);
+            if ($manager && !$recipients->contains('id', $manager->id)) {
+                $recipients->push($manager);
+            }
+        }
+
+        return $recipients->unique('id');
+    }
+
+    /**
+     * Get manager for a user (users with same role and is_manager = true)
+     */
+    private function getManager(User $user): ?User
+    {
+        return User::where('role', $user->role)
+            ->where('is_manager', true)
+            ->where('id', '!=', $user->id)
+            ->first();
+    }
+
+    /**
+     * Get the correct lead URL based on user role
+     */
+    private function getLeadUrlForUser(User $user, \App\Models\Lead $lead): string
+    {
+        if ($user->isSales()) {
+            return \App\Filament\Resources\MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+        } elseif ($user->isOperation()) {
+            return \App\Filament\Resources\MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
+        }
+
+        // Default to main LeadResource for admin and other roles
+        return LeadResource::getUrl('view', ['record' => $lead]);
     }
 } 

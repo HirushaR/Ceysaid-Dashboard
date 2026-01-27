@@ -107,6 +107,11 @@ class Lead extends Model
         return $this->hasMany(LeadActionLog::class)->orderBy('created_at', 'desc');
     }
 
+    public function notes()
+    {
+        return $this->hasMany(LeadNote::class)->orderBy('created_at', 'desc');
+    }
+
     // Analytics Scopes
     public function scopeForDateRange($query, $startDate, $endDate)
     {

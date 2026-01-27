@@ -12,6 +12,7 @@ use Filament\Notifications\Events\DatabaseNotificationsSent;
 use App\Notifications\LeadDatabaseNotification;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\MySalesDashboardResource;
+use App\Filament\Resources\MyOperationLeadDashboardResource;
 use App\Filament\Resources\AllLeadDashboardResource;
 use Illuminate\Support\Facades\Log;
 
@@ -409,14 +410,8 @@ class LeadObserver
 
             // Add action to view lead if lead is provided
             if ($lead) {
-                // Determine the correct URL based on notification type
-                $leadUrl = LeadResource::getUrl('view', ['record' => $lead]);
-                
-                if ($title === 'New Lead Assigned') {
-                    $leadUrl = MySalesDashboardResource::getUrl('view', ['record' => $lead]);
-                } elseif ($title === 'New Lead Ready for Operations') {
-                    $leadUrl = AllLeadDashboardResource::getUrl('view', ['record' => $lead]);
-                }
+                // Determine the correct URL based on user role
+                $leadUrl = $this->getLeadUrlForUser($user, $lead, $title);
                     
                 $filamentNotification->actions([
                     Action::make('view')
@@ -442,6 +437,27 @@ class LeadObserver
                 'trace' => $e->getTraceAsString(),
             ]);
         }
+    }
+
+    /**
+     * Get the correct lead URL based on user role
+     */
+    private function getLeadUrlForUser(User $user, Lead $lead, ?string $notificationTitle = null): string
+    {
+        // Special handling for specific notification types
+        if ($notificationTitle === 'New Lead Ready for Operations') {
+            return AllLeadDashboardResource::getUrl('view', ['record' => $lead]);
+        }
+
+        // Role-based URL routing
+        if ($user->isSales()) {
+            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+        } elseif ($user->isOperation()) {
+            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
+        }
+
+        // Default to main LeadResource for admin and other roles
+        return LeadResource::getUrl('view', ['record' => $lead]);
     }
 
     /**

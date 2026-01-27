@@ -8,6 +8,8 @@ enum LeadStatus: string
     case ASSIGNED_TO_SALES = 'assigned_to_sales';
     case ASSIGNED_TO_OPERATIONS = 'assigned_to_operations';
     case INFO_GATHER_COMPLETE = 'info_gather_complete';
+    case RATE_REQUESTED = 'rate_requested';
+    case AMENDMENT = 'amendment';
     case MARK_COMPLETED = 'mark_completed';
     case MARK_CLOSED = 'mark_closed';
     case PRICING_IN_PROGRESS = 'pricing_in_progress';
@@ -23,6 +25,8 @@ enum LeadStatus: string
             self::ASSIGNED_TO_SALES => 'Assigned to Sales',
             self::ASSIGNED_TO_OPERATIONS => 'Assigned to Operations',
             self::INFO_GATHER_COMPLETE => 'Info Gather Complete',
+            self::RATE_REQUESTED => 'Rate Requested',
+            self::AMENDMENT => 'Amendment',
             self::MARK_COMPLETED => 'Mark Completed',
             self::MARK_CLOSED => 'Mark Closed',
             self::PRICING_IN_PROGRESS => 'Pricing In Progress',
@@ -40,6 +44,8 @@ enum LeadStatus: string
             self::ASSIGNED_TO_SALES => 'info',
             self::ASSIGNED_TO_OPERATIONS => 'warning',
             self::INFO_GATHER_COMPLETE => 'success',
+            self::RATE_REQUESTED => 'warning',
+            self::AMENDMENT => 'warning',
             self::MARK_COMPLETED => 'company',           // Custom company color
             self::MARK_CLOSED => 'danger',
             self::PRICING_IN_PROGRESS => 'primary',
@@ -57,6 +63,8 @@ enum LeadStatus: string
             self::ASSIGNED_TO_SALES->value => self::ASSIGNED_TO_SALES->label(),
             self::ASSIGNED_TO_OPERATIONS->value => self::ASSIGNED_TO_OPERATIONS->label(),
             self::INFO_GATHER_COMPLETE->value => self::INFO_GATHER_COMPLETE->label(),
+            self::RATE_REQUESTED->value => self::RATE_REQUESTED->label(),
+            self::AMENDMENT->value => self::AMENDMENT->label(),
             self::MARK_COMPLETED->value => self::MARK_COMPLETED->label(),
             self::MARK_CLOSED->value => self::MARK_CLOSED->label(),
             self::PRICING_IN_PROGRESS->value => self::PRICING_IN_PROGRESS->label(),
@@ -74,6 +82,8 @@ enum LeadStatus: string
             self::ASSIGNED_TO_SALES->value => self::ASSIGNED_TO_SALES->color(),
             self::ASSIGNED_TO_OPERATIONS->value => self::ASSIGNED_TO_OPERATIONS->color(),
             self::INFO_GATHER_COMPLETE->value => self::INFO_GATHER_COMPLETE->color(),
+            self::RATE_REQUESTED->value => self::RATE_REQUESTED->color(),
+            self::AMENDMENT->value => self::AMENDMENT->color(),
             self::MARK_COMPLETED->value => self::MARK_COMPLETED->color(),
             self::MARK_CLOSED->value => self::MARK_CLOSED->color(),
             self::PRICING_IN_PROGRESS->value => self::PRICING_IN_PROGRESS->color(),

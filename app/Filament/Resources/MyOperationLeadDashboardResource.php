@@ -184,6 +184,40 @@ class MyOperationLeadDashboardResource extends Resource
                     ->button()
                     ->size('sm')
                     ->color('gray'),
+                Tables\Actions\Action::make('rate_requested')
+                    ->label('Rate Requested')
+                    ->color('warning')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->button()
+                    ->size('sm')
+                    ->action(function ($record) {
+                        $record->status = \App\Enums\LeadStatus::RATE_REQUESTED->value;
+                        $record->save();
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Lead marked as Rate Requested')
+                            ->send();
+                    })
+                    ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::RATE_REQUESTED->value && 
+                        $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+                
+                Tables\Actions\Action::make('amendment')
+                    ->label('Amendment')
+                    ->color('warning')
+                    ->icon('heroicon-o-pencil-square')
+                    ->button()
+                    ->size('sm')
+                    ->action(function ($record) {
+                        $record->status = \App\Enums\LeadStatus::AMENDMENT->value;
+                        $record->save();
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Lead marked as Amendment')
+                            ->send();
+                    })
+                    ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::AMENDMENT->value && 
+                        $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+
                 Tables\Actions\Action::make('operation_complete')
                     ->label('Complete')
                     ->color('success')
@@ -200,7 +234,7 @@ class MyOperationLeadDashboardResource extends Resource
                             ->title('Lead marked as Operation Complete')
                             ->send();
                     })
-                    ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value),
+                    ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
             ->striped()

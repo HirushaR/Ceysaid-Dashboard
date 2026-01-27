@@ -45,6 +45,8 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                         'assigned_to_sales' => 'info',
                                         'assigned_to_operations' => 'warning',
                                         'info_gather_complete' => 'success',
+                                        'rate_requested' => 'warning',
+                                        'amendment' => 'warning',
                                         'pricing_in_progress' => 'primary',
                                         'sent_to_customer' => 'accent',
                                         'confirmed' => 'brand',
@@ -327,6 +329,36 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                         ->title('Internal note added successfully.')
                         ->send();
                 }),
+
+            \Filament\Actions\Action::make('rate_requested')
+                ->label('Rate Requested')
+                ->color('warning')
+                ->icon('heroicon-o-currency-dollar')
+                ->action(function ($record) {
+                    $record->status = \App\Enums\LeadStatus::RATE_REQUESTED->value;
+                    $record->save();
+                    Notification::make()
+                        ->title('Lead marked as Rate Requested')
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::RATE_REQUESTED->value && 
+                    $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+
+            \Filament\Actions\Action::make('amendment')
+                ->label('Amendment')
+                ->color('warning')
+                ->icon('heroicon-o-pencil-square')
+                ->action(function ($record) {
+                    $record->status = \App\Enums\LeadStatus::AMENDMENT->value;
+                    $record->save();
+                    Notification::make()
+                        ->title('Lead marked as Amendment')
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::AMENDMENT->value && 
+                    $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
 
             \Filament\Actions\Action::make('operation_complete')
                 ->label('Operation Complete')

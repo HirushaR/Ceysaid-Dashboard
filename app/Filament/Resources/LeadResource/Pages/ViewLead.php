@@ -90,10 +90,13 @@ class ViewLead extends ViewRecord
                                         'assigned_to_sales' => 'info',
                                         'assigned_to_operations' => 'warning',
                                         'info_gather_complete' => 'success',
+                                        'rate_requested' => 'warning',
+                                        'amendment' => 'warning',
                                         'pricing_in_progress' => 'primary',
                                         'sent_to_customer' => 'accent',
                                         'confirmed' => 'brand',
                                         'mark_closed' => 'danger',
+                                        'operation_complete' => 'success',
                                         default => 'gray',
                                     })
                                     ->formatStateUsing(fn ($state) => \App\Enums\LeadStatus::tryFrom($state)?->label() ?? $state),

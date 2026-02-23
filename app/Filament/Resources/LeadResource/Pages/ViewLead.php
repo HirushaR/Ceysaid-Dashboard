@@ -371,6 +371,7 @@ class ViewLead extends ViewRecord
                         'user_id' => $user->id,
                         'note' => $data['note'],
                     ]);
+                    $note->markAsReadBy($user->id);
 
                     // Send notifications to all users working on this lead
                     $this->sendNoteNotifications($this->record, $note, $user);

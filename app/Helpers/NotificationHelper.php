@@ -2,10 +2,36 @@
 
 namespace App\Helpers;
 
+use App\Models\LeadNote;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationHelper
 {
+    /**
+     * Get unread internal note count for current user (sales/operation only).
+     * Counts notes on leads where user is assigned_to (sales) or assigned_operator (operation)
+     * and the user has not read the note.
+     */
+    public static function getInternalNoteUnreadCount(): int
+    {
+        $user = Auth::user();
+        if (!$user || (! $user->isSales() && ! $user->isOperation())) {
+            return 0;
+        }
+
+        $userId = $user->id;
+
+        return LeadNote::query()
+            ->whereHas('lead', function ($q) use ($userId) {
+                $q->whereNull('archived_at')
+                    ->where(function ($q2) use ($userId) {
+                        $q2->where('assigned_to', $userId)
+                            ->orWhere('assigned_operator', $userId);
+                    });
+            })
+            ->whereDoesntHave('reads', fn ($q) => $q->where('user_id', $userId))
+            ->count();
+    }
     /**
      * Get unread notification count for current user
      */

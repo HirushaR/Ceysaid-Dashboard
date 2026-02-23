@@ -115,6 +115,16 @@ class Lead extends Model
         return $this->hasMany(LeadNote::class)->orderBy('created_at', 'desc');
     }
 
+    /**
+     * Mark all notes on this lead as read by the given user (by user id).
+     */
+    public function markNotesAsReadBy(int $userId): void
+    {
+        foreach ($this->notes as $note) {
+            $note->markAsReadBy($userId);
+        }
+    }
+
     public function archivedBy()
     {
         return $this->belongsTo(User::class, 'archived_by');

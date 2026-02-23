@@ -23,7 +23,16 @@ class ViewMySalesDashboard extends ViewRecord
         $query = static::getResource()::getEloquentQuery();
         return $query->with(['actionLogs.user', 'notes.user'])->findOrFail($key);
     }
-    
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+        $user = auth()->user();
+        if ($user && $this->record && ($user->isSales() || $user->isOperation())) {
+            $this->record->markNotesAsReadBy($user->id);
+        }
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist
@@ -203,8 +212,10 @@ class ViewMySalesDashboard extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
-                // Internal Notes Section
+                // Internal Notes Section (expanded when opened from Internal Notes resource)
                 Components\Section::make('Internal Notes')
+                    ->id('internal-notes')
+                    ->collapsed(fn () => ! request()->boolean('internal_notes'))
                     ->schema([
                         Components\TextEntry::make('notes_table')
                             ->label('')
@@ -240,8 +251,7 @@ class ViewMySalesDashboard extends ViewRecord
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
-                    ])
-                    ->collapsed(),
+                    ]),
 
                 // Action Log Section
                 Components\Section::make('Action Log')
@@ -325,6 +335,7 @@ class ViewMySalesDashboard extends ViewRecord
                         'user_id' => $user->id,
                         'note' => $data['note'],
                     ]);
+                    $note->markAsReadBy($user->id);
 
                     // Send notifications to all users working on this lead
                     $this->sendNoteNotifications($this->record, $note, $user);

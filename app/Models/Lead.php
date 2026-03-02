@@ -39,6 +39,7 @@ class Lead extends Model
         'land_package_status',
         'archived_at',
         'archived_by',
+        'is_group_lead',
     ];
 
     protected $casts = [
@@ -48,6 +49,7 @@ class Lead extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'archived_at' => 'datetime',
+        'is_group_lead' => 'boolean',
     ];
 
     public function customer()

@@ -675,6 +675,11 @@ a:hover {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Group lead table row background (uses theme styling) */
+.group-lead-row {
+    background-color: rgb(253 230 138) !important; /* warning-200 */
+}
+
 @media (prefers-color-scheme: dark) {
     .fi-sidebar {
         background: linear-gradient(180deg, rgb(15 23 42) 0%, rgb(2 6 23) 100%) !important;
@@ -764,6 +769,10 @@ a:hover {
     .fi-table {
         background-color: rgb(15 23 42) !important;
         border-color: rgb(30 41 59) !important;
+    }
+    
+    .group-lead-row {
+        background-color: rgb(245 158 11 / 0.4) !important; /* warning-500 with opacity */
     }
     
     /* Dark mode for main content areas */

@@ -55,6 +55,26 @@ enum Platform: string
         ];
     }
 
+    /**
+     * Options with a numeric index prefix for UI selects.
+     *
+     * Example: "1. Facebook", "2. TikTok", ...
+     */
+    public static function optionsWithIndex(): array
+    {
+        $base = self::options();
+
+        $indexed = [];
+        $index = 1;
+
+        foreach ($base as $value => $label) {
+            $indexed[$value] = sprintf('%d. %s', $index, $label);
+            $index++;
+        }
+
+        return $indexed;
+    }
+
     public static function colorMap(): array
     {
         return [

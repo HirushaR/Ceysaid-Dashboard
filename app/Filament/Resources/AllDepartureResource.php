@@ -93,6 +93,7 @@ class AllDepartureResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
+                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),
@@ -218,6 +219,7 @@ class AllDepartureResource extends Resource
                     ->visible(fn () => auth()->user()?->isCallCenter()),
             ])
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->recordClasses(fn ($record) => $record->is_group_lead ? 'group-lead-row' : null)
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

@@ -83,6 +83,15 @@ html {
     }
 }
 
+/* Group lead table row background */
+.group-lead-row {
+    background-color: rgb(254 240 138); /* yellow-200 */
+}
+
+.dark .group-lead-row {
+    background-color: rgb(234 179 8 / 0.4); /* yellow-500 with opacity */
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .cursor-help[data-tooltip]:hover::after {
@@ -91,3 +100,5 @@ html {
         padding: 6px 10px;
     }
 }
+
+

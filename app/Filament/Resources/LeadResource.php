@@ -249,7 +249,7 @@ class LeadResource extends Resource
                             ->hidden(fn($livewire) => $livewire instanceof CreateRecord),
                         Forms\Components\Select::make('platform')
                                 ->label('Source Platform')
-                            ->options(Platform::options())
+                            ->options(Platform::optionsWithIndex())
                                 ->required()
                                 ->native(false),
                         ]),
@@ -261,8 +261,12 @@ class LeadResource extends Resource
                         ->label('Customer Message')
                         ->rows(3)
                         ->placeholder('Original customer message or inquiry'),
-                        Forms\Components\Hidden::make('created_by')
-                            ->default(fn() => auth()->id()),
+                    Forms\Components\Toggle::make('is_group_lead')
+                        ->label('Group lead')
+                        ->default(false)
+                        ->helperText('Mark this lead as a group lead.'),
+                    Forms\Components\Hidden::make('created_by')
+                        ->default(fn() => auth()->id()),
                     ])
                 ->collapsed(false)
                 ->compact(),
@@ -513,6 +517,7 @@ class LeadResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
+                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),

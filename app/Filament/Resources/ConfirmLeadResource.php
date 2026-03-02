@@ -122,6 +122,7 @@ class ConfirmLeadResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
+                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),
@@ -281,6 +282,7 @@ class ConfirmLeadResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
+            ->recordClasses(fn ($record) => $record->is_group_lead ? 'group-lead-row' : null)
             ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
     }
 

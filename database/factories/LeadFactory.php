@@ -43,6 +43,7 @@ class LeadFactory extends Factory
             'hotel_status' => $this->faker->randomElement(['pending', 'in_progress', 'done']),
             'visa_status' => $this->faker->randomElement(['pending', 'in_progress', 'done']),
             'land_package_status' => $this->faker->randomElement(['pending', 'in_progress', 'done']),
+            'is_group_lead' => false,
         ];
     }
 
@@ -64,6 +65,13 @@ class LeadFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => LeadStatus::ASSIGNED_TO_SALES->value,
+        ]);
+    }
+
+    public function groupLead(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_group_lead' => true,
         ]);
     }
 }

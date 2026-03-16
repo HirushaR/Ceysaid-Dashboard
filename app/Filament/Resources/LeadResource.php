@@ -264,7 +264,15 @@ class LeadResource extends Resource
                     Forms\Components\Toggle::make('is_group_lead')
                         ->label('Group lead')
                         ->default(false)
-                        ->helperText('Mark this lead as a group lead.'),
+                        ->live()
+                        ->afterStateUpdated(fn ($set, $state) => $state && $set('is_cruise_lead', false))
+                        ->helperText('Mark this lead as a group lead. Only one of Group or Cruise can be selected.'),
+                    Forms\Components\Toggle::make('is_cruise_lead')
+                        ->label('Cruise lead')
+                        ->default(false)
+                        ->live()
+                        ->afterStateUpdated(fn ($set, $state) => $state && $set('is_group_lead', false))
+                        ->helperText('Mark this lead as a cruise lead. Only one of Group or Cruise can be selected.'),
                     Forms\Components\Hidden::make('created_by')
                         ->default(fn() => auth()->id()),
                     ])
@@ -517,7 +525,7 @@ class LeadResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
-                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
+                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_cruise_lead ? "CL-{$state}" : ($record && $record->is_group_lead ? "GL-{$state}" : (string) $state))
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),
@@ -616,6 +624,7 @@ class LeadResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

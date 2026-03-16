@@ -86,7 +86,7 @@ class InternalNotesResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
-                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
+                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_cruise_lead ? "CL-{$state}" : ($record && $record->is_group_lead ? "GL-{$state}" : (string) $state))
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold')
@@ -150,11 +150,18 @@ class InternalNotesResource extends Resource
                 if (! $user) {
                     return null;
                 }
+                $suffix = '?internal_notes=1#internal-notes';
                 if ($user->isSales()) {
-                    return MySalesDashboardResource::getUrl('view', ['record' => $record]) . '?internal_notes=1#internal-notes';
+                    if ($record->is_cruise_lead) {
+                        return CruiseLeadResource::getUrl('view', ['record' => $record]) . $suffix;
+                    }
+                    if ($record->is_group_lead) {
+                        return GroupLeadResource::getUrl('view', ['record' => $record]) . $suffix;
+                    }
+                    return MySalesDashboardResource::getUrl('view', ['record' => $record]) . $suffix;
                 }
                 if ($user->isOperation()) {
-                    return MyOperationLeadDashboardResource::getUrl('view', ['record' => $record]) . '?internal_notes=1#internal-notes';
+                    return MyOperationLeadDashboardResource::getUrl('view', ['record' => $record]) . $suffix;
                 }
                 return null;
             })
@@ -165,7 +172,7 @@ class InternalNotesResource extends Resource
                     ->url(fn (Lead $record) => self::getLeadViewUrl($record))
                     ->openUrlInNewTab(false),
             ])
-            ->recordClasses(fn ($record) => $record->is_group_lead ? 'group-lead-row' : null)
+            ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
             ->striped()
             ->paginated([10, 25, 50]);
     }
@@ -176,11 +183,18 @@ class InternalNotesResource extends Resource
         if (! $user) {
             return null;
         }
+        $suffix = '?internal_notes=1#internal-notes';
         if ($user->isSales()) {
-            return MySalesDashboardResource::getUrl('view', ['record' => $record]) . '?internal_notes=1#internal-notes';
+            if ($record->is_cruise_lead) {
+                return CruiseLeadResource::getUrl('view', ['record' => $record]) . $suffix;
+            }
+            if ($record->is_group_lead) {
+                return GroupLeadResource::getUrl('view', ['record' => $record]) . $suffix;
+            }
+            return MySalesDashboardResource::getUrl('view', ['record' => $record]) . $suffix;
         }
         if ($user->isOperation()) {
-            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $record]) . '?internal_notes=1#internal-notes';
+            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $record]) . $suffix;
         }
         return null;
     }

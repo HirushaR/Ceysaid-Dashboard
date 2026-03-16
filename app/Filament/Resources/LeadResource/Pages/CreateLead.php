@@ -27,6 +27,14 @@ class CreateLead extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = auth()->user();
+
+        // Mutual exclusivity: group lead and cruise lead cannot both be true
+        if (!empty($data['is_cruise_lead'])) {
+            $data['is_group_lead'] = false;
+        }
+        if (!empty($data['is_group_lead'])) {
+            $data['is_cruise_lead'] = false;
+        }
         
         // If the user is a sales user, automatically assign the lead to them
         if ($user && $user->isSales()) {

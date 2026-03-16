@@ -40,6 +40,7 @@ class Lead extends Model
         'archived_at',
         'archived_by',
         'is_group_lead',
+        'is_cruise_lead',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class Lead extends Model
         'updated_at' => 'datetime',
         'archived_at' => 'datetime',
         'is_group_lead' => 'boolean',
+        'is_cruise_lead' => 'boolean',
     ];
 
     public function customer()

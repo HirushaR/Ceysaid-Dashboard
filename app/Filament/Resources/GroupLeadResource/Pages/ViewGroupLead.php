@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\GroupLeadResource\Pages;
 
+use App\Filament\Resources\CruiseLeadResource;
 use App\Filament\Resources\GroupLeadResource;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\MySalesDashboardResource;
@@ -441,9 +442,13 @@ class ViewGroupLead extends ViewRecord
     private function getLeadUrlForUser(User $user, \App\Models\Lead $lead): string
     {
         if ($user->isSales()) {
-            return $lead->is_group_lead
-                ? GroupLeadResource::getUrl('view', ['record' => $lead])
-                : MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+            if ($lead->is_cruise_lead) {
+                return CruiseLeadResource::getUrl('view', ['record' => $lead]);
+            }
+            if ($lead->is_group_lead) {
+                return GroupLeadResource::getUrl('view', ['record' => $lead]);
+            }
+            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
         }
         if ($user->isOperation()) {
             return \App\Filament\Resources\MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);

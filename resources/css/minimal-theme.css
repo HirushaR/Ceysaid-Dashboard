@@ -680,6 +680,12 @@ a:hover {
     background-color: rgb(253 230 138) !important; /* warning-200 */
 }
 
+/* Cruise lead table row background */
+.cruise-lead-row,
+tr.cruise-lead-row {
+    background-color: rgb(191 219 254) !important; /* blue-200 */
+}
+
 @media (prefers-color-scheme: dark) {
     .fi-sidebar {
         background: linear-gradient(180deg, rgb(15 23 42) 0%, rgb(2 6 23) 100%) !important;
@@ -773,6 +779,11 @@ a:hover {
     
     .group-lead-row {
         background-color: rgb(245 158 11 / 0.4) !important; /* warning-500 with opacity */
+    }
+    
+    .cruise-lead-row,
+    tr.cruise-lead-row {
+        background-color: rgb(59 130 246 / 0.4) !important; /* blue-500 with opacity */
     }
     
     /* Dark mode for main content areas */

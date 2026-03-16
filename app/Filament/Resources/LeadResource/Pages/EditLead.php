@@ -24,6 +24,13 @@ class EditLead extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Mutual exclusivity: group lead and cruise lead cannot both be true
+        if (!empty($data['is_cruise_lead'])) {
+            $data['is_group_lead'] = false;
+        }
+        if (!empty($data['is_group_lead'])) {
+            $data['is_cruise_lead'] = false;
+        }
         // Store original values before save for comparison
         $this->originalData = $this->record->getOriginal();
         return $data;

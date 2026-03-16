@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\MyOperationLeadDashboardResource\Pages;
+namespace App\Filament\Resources\CruiseLeadResource\Pages;
 
-use App\Filament\Resources\MyOperationLeadDashboardResource;
+use App\Filament\Resources\CruiseLeadResource;
+use App\Filament\Resources\GroupLeadResource;
+use App\Filament\Resources\LeadResource;
+use App\Filament\Resources\MySalesDashboardResource;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action as NotificationAction;
@@ -14,9 +17,9 @@ use Filament\Forms;
 use App\Models\LeadNote;
 use App\Models\User;
 
-class ViewMyOperationLeadDashboard extends ViewRecord
+class ViewCruiseLead extends ViewRecord
 {
-    protected static string $resource = MyOperationLeadDashboardResource::class;
+    protected static string $resource = CruiseLeadResource::class;
 
     protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
     {
@@ -37,7 +40,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
     {
         return $infolist
             ->schema([
-                // Header section with key info
                 Components\Section::make('Lead Overview')
                     ->schema([
                         Components\Grid::make(3)
@@ -78,7 +80,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                     ])
                     ->columns(1),
 
-                // Customer Information
                 Components\Section::make('Customer Information')
                     ->schema([
                         Components\Grid::make(2)
@@ -114,7 +115,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                     ])
                     ->columns(2),
 
-                // Travel Details
                 Components\Section::make('Travel Information')
                     ->schema([
                         Components\Grid::make(3)
@@ -167,7 +167,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                     ])
                     ->columns(3),
 
-                // Assignment Information
                 Components\Section::make('Assignment & Team')
                     ->schema([
                         Components\Grid::make(2)
@@ -196,7 +195,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
-                // System Information
                 Components\Section::make('System Information')
                     ->schema([
                         Components\Grid::make(2)
@@ -212,7 +210,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                     ->columns(2)
                     ->collapsed(),
 
-                // Internal Notes Section (expanded when opened from Internal Notes resource)
                 Components\Section::make('Internal Notes')
                     ->id('internal-notes')
                     ->collapsed(fn () => ! request()->boolean('internal_notes'))
@@ -224,7 +221,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                 if ($notes->isEmpty()) {
                                     return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No internal notes yet.</p>');
                                 }
-                                
                                 $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
                                 $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
                                 $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
@@ -232,28 +228,23 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Note</span></th>';
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Added By</span></th>';
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
-                                $html .= '</tr></thead>';
-                                $html .= '<tbody class="divide-y divide-gray-200 dark:divide-white/5">';
-                                
+                                $html .= '</tr></thead><tbody class="divide-y divide-gray-200 dark:divide-white/5">';
                                 foreach ($notes as $note) {
                                     $addedBy = $note->user ? $note->user->name : 'Unknown';
                                     $when = $note->created_at->format('M j, Y \a\t g:i A');
                                     $noteText = nl2br(htmlspecialchars($note->note));
-                                    
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
                                     $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">' . $noteText . '</td>';
                                     $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">' . htmlspecialchars($addedBy) . '</td>';
                                     $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
                                     $html .= '</tr>';
                                 }
-                                
                                 $html .= '</tbody></table></div>';
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
                     ]),
 
-                // Action Log Section
                 Components\Section::make('Action Log')
                     ->schema([
                         Components\TextEntry::make('action_logs_table')
@@ -263,7 +254,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                 if ($logs->isEmpty()) {
                                     return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No actions logged yet.</p>');
                                 }
-                                
                                 $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
                                 $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
                                 $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
@@ -272,11 +262,9 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Performed By</span></th>';
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">Description</span></th>';
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
-                                $html .= '</tr></thead>';
-                                $html .= '<tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">';
-                                
+                                $html .= '</tr></thead><tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">';
                                 foreach ($logs as $log) {
-                                    $actionBadgeColor = match($log->action) {
+                                    $actionBadgeColor = match ($log->action) {
                                         'created' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
                                         'status_changed' => 'bg-warning-50 text-warning-700 ring-warning-600/20 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/20',
                                         'assigned' => 'bg-info-50 text-info-700 ring-info-600/20 dark:bg-info-400/10 dark:text-info-400 dark:ring-info-400/20',
@@ -285,11 +273,9 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                         'unarchived' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
                                         default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
                                     };
-                                    
                                     $actionLabel = ucfirst(str_replace('_', ' ', $log->action));
                                     $performedBy = $log->user ? $log->user->name : 'System';
                                     $when = $log->created_at->format('M j, Y \a\t g:i A');
-                                    
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
                                     $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $actionBadgeColor . '">' . htmlspecialchars($actionLabel) . '</span></td>';
                                     $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($performedBy) . '</td>';
@@ -297,7 +283,6 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                                     $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
                                     $html .= '</tr>';
                                 }
-                                
                                 $html .= '</tbody></table></div>';
                                 return new \Illuminate\Support\HtmlString($html);
                             })
@@ -311,8 +296,12 @@ class ViewMyOperationLeadDashboard extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\EditAction::make(),
-            
+            \Filament\Actions\EditAction::make()
+                ->label('Edit')
+                ->icon('heroicon-o-pencil')
+                ->button()
+                ->url(fn () => LeadResource::getUrl('edit', ['record' => $this->record])),
+
             \Filament\Actions\Action::make('add_note')
                 ->label('Add Internal Note')
                 ->icon('heroicon-o-document-text')
@@ -333,80 +322,70 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                         'note' => $data['note'],
                     ]);
                     $note->markAsReadBy($user->id);
-
-                    // Send notifications to all users working on this lead
                     $this->sendNoteNotifications($this->record, $note, $user);
-
                     Notification::make()
                         ->success()
                         ->title('Internal note added successfully.')
                         ->send();
                 }),
 
-            \Filament\Actions\Action::make('rate_requested')
-                ->label('Rate Requested')
-                ->color('warning')
-                ->icon('heroicon-o-currency-dollar')
-                ->action(function ($record) {
-                    $record->status = \App\Enums\LeadStatus::RATE_REQUESTED->value;
-                    $record->save();
-                    Notification::make()
-                        ->title('Lead marked as Rate Requested')
-                        ->success()
-                        ->send();
-                })
-                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::RATE_REQUESTED->value && 
-                    $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
-
-            \Filament\Actions\Action::make('amendment')
-                ->label('Amendment')
-                ->color('warning')
-                ->icon('heroicon-o-pencil-square')
-                ->action(function ($record) {
-                    $record->status = \App\Enums\LeadStatus::AMENDMENT->value;
-                    $record->save();
-                    Notification::make()
-                        ->title('Lead marked as Amendment')
-                        ->success()
-                        ->send();
-                })
-                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::AMENDMENT->value && 
-                    $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
-
-            \Filament\Actions\Action::make('operation_complete')
-                ->label('Operation Complete')
-                ->color('success')
+            \Filament\Actions\Action::make('info_gather_complete')
+                ->label('Info Gather Complete')
                 ->icon('heroicon-o-check-circle')
-                ->requiresConfirmation()
-                ->action(function ($record) {
-                    $record->status = \App\Enums\LeadStatus::OPERATION_COMPLETE->value;
-                    $record->save();
-                    Notification::make()
-                        ->title('Operation marked as complete!')
+                ->color('success')
+                ->action(function () {
+                    $this->record->status = \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value;
+                    $this->record->save();
+                    \Filament\Notifications\Notification::make()
                         ->success()
+                        ->title('Lead marked as Info Gather Complete.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status !== \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
+            \Filament\Actions\Action::make('sent_to_customer')
+                ->label('Sent to Customer')
+                ->color('success')
+                ->icon('heroicon-o-paper-airplane')
+                ->requiresConfirmation()
+                ->modalHeading('Are you sure?')
+                ->modalDescription('Confirm that all steps are done and this lead will be marked as sent to customer.')
+                ->action(function () {
+                    $this->record->status = \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value;
+                    $this->record->save();
+                    \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('Lead marked as Sent to Customer.')
+                        ->send();
+                })
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+            \Filament\Actions\Action::make('confirm_lead')
+                ->label('Confirm Lead')
+                ->color('info')
+                ->icon('heroicon-o-check')
+                ->requiresConfirmation()
+                ->modalHeading('Confirm this lead?')
+                ->modalDescription('This will mark the lead as confirmed.')
+                ->action(function () {
+                    $this->record->status = \App\Enums\LeadStatus::CONFIRMED->value;
+                    $this->record->save();
+                    \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('Lead confirmed successfully.')
+                        ->send();
+                })
+                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value),
         ];
     }
 
-    /**
-     * Send notifications to all users working on the lead when a note is added
-     */
     private function sendNoteNotifications(\App\Models\Lead $lead, LeadNote $note, User $addedBy): void
     {
         $recipients = $this->getNotificationRecipients($lead);
-        
-        // Don't notify the user who added the note
-        $recipients = $recipients->reject(fn($user) => $user->id === $addedBy->id);
-
+        $recipients = $recipients->reject(fn ($user) => $user->id === $addedBy->id);
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
         $notePreview = \Str::limit($note->note, 100);
 
         foreach ($recipients as $recipient) {
-            // Get the correct URL based on recipient's role
             $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
-            
             $notification = Notification::make()
                 ->title('New Internal Note Added')
                 ->body("{$addedBy->name} added a note to lead {$refId} ({$lead->customer_name}): {$notePreview}")
@@ -418,57 +397,40 @@ class ViewMyOperationLeadDashboard extends ViewRecord
                         ->button()
                         ->url($leadUrl),
                 ]);
-
             $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
             event(new DatabaseNotificationsSent($recipient));
         }
     }
 
-    /**
-     * Get notification recipients - all users working on the lead
-     */
     private function getNotificationRecipients(\App\Models\Lead $lead): \Illuminate\Support\Collection
     {
         $recipients = collect();
-
-        // Always notify assigned users
         if ($lead->assigned_to && $lead->assignedUser) {
             $recipients->push($lead->assignedUser);
         }
-
         if ($lead->assigned_operator && $lead->assignedOperator) {
             $recipients->push($lead->assignedOperator);
         }
-
-        // Notify creator if different from assignees
         if ($lead->created_by && $lead->creator) {
-            $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
-            if (!$isCreatorAlreadyIncluded) {
+            if (!$recipients->contains('id', $lead->created_by)) {
                 $recipients->push($lead->creator);
             }
         }
-
-        // Notify managers
         if ($lead->assignedUser) {
             $manager = $this->getManager($lead->assignedUser);
             if ($manager && !$recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
-
         if ($lead->assignedOperator) {
             $manager = $this->getManager($lead->assignedOperator);
             if ($manager && !$recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
-
         return $recipients->unique('id');
     }
 
-    /**
-     * Get manager for a user (users with same role and is_manager = true)
-     */
     private function getManager(User $user): ?User
     {
         return User::where('role', $user->role)
@@ -477,25 +439,20 @@ class ViewMyOperationLeadDashboard extends ViewRecord
             ->first();
     }
 
-    /**
-     * Get the correct lead URL based on user role
-     */
     private function getLeadUrlForUser(User $user, \App\Models\Lead $lead): string
     {
         if ($user->isSales()) {
             if ($lead->is_cruise_lead) {
-                return \App\Filament\Resources\CruiseLeadResource::getUrl('view', ['record' => $lead]);
+                return CruiseLeadResource::getUrl('view', ['record' => $lead]);
             }
             if ($lead->is_group_lead) {
-                return \App\Filament\Resources\GroupLeadResource::getUrl('view', ['record' => $lead]);
+                return GroupLeadResource::getUrl('view', ['record' => $lead]);
             }
-            return \App\Filament\Resources\MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
         }
         if ($user->isOperation()) {
-            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
+            return \App\Filament\Resources\MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
         }
-
-        // Default to main LeadResource for admin and other roles
-        return \App\Filament\Resources\LeadResource::getUrl('view', ['record' => $lead]);
+        return LeadResource::getUrl('view', ['record' => $lead]);
     }
-} 
+}

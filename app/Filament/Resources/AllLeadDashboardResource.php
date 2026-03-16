@@ -112,7 +112,7 @@ class AllLeadDashboardResource extends Resource
                 ->sortable()
                 ->searchable()
                 ->copyable()
-                ->formatStateUsing(fn ($state, $record) => $record && $record->is_group_lead ? "GL-{$state}" : (string) $state)
+                ->formatStateUsing(fn ($state, $record) => $record && $record->is_cruise_lead ? "CL-{$state}" : ($record && $record->is_group_lead ? "GL-{$state}" : (string) $state))
                 ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                 ->color('primary')
                 ->weight('bold'),
@@ -259,12 +259,23 @@ class AllLeadDashboardResource extends Resource
                             ->send();
                     }),
             ])
-            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(function ($record) {
+                $user = auth()->user();
+                if ($user && $user->isSales()) {
+                    if ($record->is_cruise_lead) {
+                        return \App\Filament\Resources\CruiseLeadResource::getUrl('view', ['record' => $record]);
+                    }
+                    if ($record->is_group_lead) {
+                        return \App\Filament\Resources\GroupLeadResource::getUrl('view', ['record' => $record]);
+                    }
+                }
+                return static::getUrl('view', ['record' => $record]);
+            })
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->visible(fn() => auth()->user()?->isAdmin()),
             ])
-            ->recordClasses(fn ($record) => $record->is_group_lead ? 'group-lead-row' : null)
+            ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

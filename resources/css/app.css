@@ -85,11 +85,22 @@ html {
 
 /* Group lead table row background */
 .group-lead-row {
-    background-color: rgb(254 240 138); /* yellow-200 */
+    background-color: rgb(254 240 138) !important; /* yellow-200 */
 }
 
 .dark .group-lead-row {
-    background-color: rgb(234 179 8 / 0.4); /* yellow-500 with opacity */
+    background-color: rgb(234 179 8 / 0.4) !important; /* yellow-500 with opacity */
+}
+
+/* Cruise lead table row background */
+.cruise-lead-row,
+tr.cruise-lead-row {
+    background-color: rgb(191 219 254) !important; /* blue-200 */
+}
+
+.dark .cruise-lead-row,
+.dark tr.cruise-lead-row {
+    background-color: rgb(59 130 246 / 0.4) !important; /* blue-500 with opacity */
 }
 
 /* Mobile responsiveness */

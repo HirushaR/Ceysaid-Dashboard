@@ -215,6 +215,7 @@
         Account Number: {{ $company['bank']['account_number'] }}<br>
         Bank: {{ $company['bank']['bank'] }}<br>
         Branch: {{ $company['bank']['branch'] }}<br>
+        Code: {{ $company['bank']['branch_code'] ?? '—' }}<br>
         SWIFT/BIC: {{ $company['bank']['swift'] }}<br>
         Please include the invoice number in the payment reference.
     </div>

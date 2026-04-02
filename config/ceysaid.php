@@ -11,8 +11,10 @@ return [
             'account_name' => 'CEYSAID HOLIDAYS PVT LTD',
             'account_number' => '200020052830',
             'bank' => 'Nations Trust Bank',
-            'branch' => 'Colpetty | Code: 002',
+            'branch' => 'Colpetty',
+            'branch_code' => '002',
             'swift' => 'NTBCLKLX',
         ],
+        'logo_path' => 'images/ceysaid-logo.png',
     ],
 ];

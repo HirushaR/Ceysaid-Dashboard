@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CallCenterCall extends Model
 {
+    /** @use HasFactory<\Database\Factories\CallCenterCallFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'lead_id',
         'assigned_call_center_user',
@@ -35,13 +39,18 @@ class CallCenterCall extends Model
 
     // Call type constants
     const CALL_TYPE_PRE_DEPARTURE = 'pre_departure';
+
     const CALL_TYPE_POST_ARRIVAL = 'post_arrival';
 
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_ASSIGNED = 'assigned';
+
     const STATUS_CALLED = 'called';
+
     const STATUS_NOT_ANSWERED = 'not_answered';
+
     const STATUS_COMPLETED = 'completed';
 
     public static function getCallTypes(): array
@@ -75,7 +84,7 @@ class CallCenterCall extends Model
 
     public function getStatusColor(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING => 'gray',
             self::STATUS_ASSIGNED => 'warning',
             self::STATUS_CALLED => 'info',
@@ -104,7 +113,7 @@ class CallCenterCall extends Model
     public function scopeOverdue($query, $days = 2)
     {
         return $query->where('created_at', '<', now()->subDays($days))
-                    ->whereIn('status', [self::STATUS_PENDING, self::STATUS_ASSIGNED]);
+            ->whereIn('status', [self::STATUS_PENDING, self::STATUS_ASSIGNED]);
     }
 
     public function scopeByOperationUser($query, $userId)

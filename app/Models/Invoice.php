@@ -2,15 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
+    /** @use HasFactory<\Database\Factories\InvoiceFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'lead_id',
+        'quote_id',
         'invoice_number',
+        'invoice_date',
+        'due_date',
+        'terms',
+        'subject',
         'total_amount',
         'payment_amount',
         'balance_amount',
@@ -31,7 +40,7 @@ class Invoice extends Model
 
         // Initialize customer payment status when invoice is created
         static::creating(function ($invoice) {
-            if (!$invoice->customer_payment_status) {
+            if (! $invoice->customer_payment_status) {
                 $invoice->customer_payment_status = 'pending';
                 $invoice->balance_amount = $invoice->total_amount;
             }
@@ -48,6 +57,8 @@ class Invoice extends Model
         'payment_amount' => 'decimal:2',
         'balance_amount' => 'decimal:2',
         'payment_date' => 'date',
+        'invoice_date' => 'date',
+        'due_date' => 'date',
         'customer_payment_status' => 'string',
         'vendor_payment_status' => 'string',
     ];
@@ -58,6 +69,19 @@ class Invoice extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    /**
+     * @return HasMany<InvoiceLineItem, $this>
+     */
+    public function lineItems(): HasMany
+    {
+        return $this->hasMany(InvoiceLineItem::class)->orderBy('sort_order');
     }
 
     /**
@@ -116,6 +140,7 @@ class Invoice extends Model
         if ($this->total_amount == 0) {
             return 0;
         }
+
         return ($this->profit / $this->total_amount) * 100;
     }
 
@@ -169,6 +194,7 @@ class Invoice extends Model
 
     /**
      * Legacy method - check if invoice is fully paid (customer payment)
+     *
      * @deprecated Use isCustomerPaid() instead
      */
     public function isPaid(): bool
@@ -178,6 +204,7 @@ class Invoice extends Model
 
     /**
      * Legacy method - check if invoice is partially paid (customer payment)
+     *
      * @deprecated Use isCustomerPartiallyPaid() instead
      */
     public function isPartiallyPaid(): bool
@@ -187,11 +214,24 @@ class Invoice extends Model
 
     /**
      * Legacy method - check if invoice is pending payment (customer payment)
+     *
      * @deprecated Use isCustomerPending() instead
      */
     public function isPending(): bool
     {
         return $this->isCustomerPending();
+    }
+
+    /**
+     * Set total_amount from line items and refresh customer payment balances.
+     */
+    public function recalculateTotalsFromLineItems(): void
+    {
+        $this->load('lineItems');
+        $total = round((float) $this->lineItems->sum('amount'), 2);
+        $this->total_amount = $total;
+        $this->save();
+        $this->updateCustomerPaymentStatus();
     }
 
     /**
@@ -201,7 +241,7 @@ class Invoice extends Model
     {
         $totalPaid = $this->total_customer_payments_amount;
         $balance = $this->total_amount - $totalPaid;
-        
+
         if ($totalPaid >= $this->total_amount) {
             $status = 'paid';
             $balance = 0;
@@ -227,15 +267,16 @@ class Invoice extends Model
     public function updateVendorPaymentStatus(): void
     {
         $vendorBills = $this->vendorBills;
-        
+
         if ($vendorBills->isEmpty()) {
             // No vendor bills, mark as paid (nothing to pay)
             $this->update(['vendor_payment_status' => 'paid']);
+
             return;
         }
 
-        $allPaid = $vendorBills->every(fn($bill) => $bill->payment_status === 'paid');
-        $anyPaid = $vendorBills->some(fn($bill) => $bill->payment_status === 'paid');
+        $allPaid = $vendorBills->every(fn ($bill) => $bill->payment_status === 'paid');
+        $anyPaid = $vendorBills->some(fn ($bill) => $bill->payment_status === 'paid');
 
         if ($allPaid) {
             $this->update(['vendor_payment_status' => 'paid']);
@@ -248,6 +289,7 @@ class Invoice extends Model
 
     /**
      * Legacy method - Update invoice status based on vendor bill payments
+     *
      * @deprecated Use updateVendorPaymentStatus() instead
      */
     public function updatePaymentStatusBasedOnVendorBills(): void

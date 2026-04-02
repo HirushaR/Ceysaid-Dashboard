@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -9,6 +11,7 @@ class VendorBill extends Model
 {
     protected $fillable = [
         'invoice_id',
+        'supplier_id',
         'vendor_name',
         'vendor_bill_number',
         'bill_amount',
@@ -16,6 +19,8 @@ class VendorBill extends Model
         'service_details',
         'payment_status',
         'payment_date',
+        'payment_mode',
+        'paid_through',
         'notes',
     ];
 
@@ -31,6 +36,11 @@ class VendorBill extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**
@@ -60,14 +70,19 @@ class VendorBill extends Model
     /**
      * Mark vendor bill as paid
      */
-    public function markAsPaid(): void
+    public function markAsPaid(null|string|DateTimeInterface $paymentDate = null, ?string $paymentMode = null, ?string $paidThrough = null): void
     {
+        $date = $paymentDate instanceof DateTimeInterface
+            ? $paymentDate
+            : ($paymentDate !== null && $paymentDate !== '' ? Carbon::parse($paymentDate) : now());
+
         $this->update([
             'payment_status' => 'paid',
-            'payment_date' => now(),
+            'payment_date' => $date,
+            'payment_mode' => $paymentMode,
+            'paid_through' => $paidThrough,
         ]);
-        
-        // Automatically update invoice vendor payment status
+
         $this->invoice->updateVendorPaymentStatus();
     }
 
@@ -79,9 +94,10 @@ class VendorBill extends Model
         $this->update([
             'payment_status' => 'pending',
             'payment_date' => null,
+            'payment_mode' => null,
+            'paid_through' => null,
         ]);
-        
-        // Automatically update invoice vendor payment status
+
         $this->invoice->updateVendorPaymentStatus();
     }
 

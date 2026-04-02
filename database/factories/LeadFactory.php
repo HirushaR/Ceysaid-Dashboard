@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\Lead;
-use App\Models\User;
-use App\Models\Customer;
 use App\Enums\LeadStatus;
 use App\Enums\Platform;
+use App\Models\Customer;
+use App\Models\Lead;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class LeadFactory extends Factory
@@ -16,7 +16,7 @@ class LeadFactory extends Factory
     public function definition(): array
     {
         return [
-            'reference_id' => 'REF' . $this->faker->unique()->numberBetween(1000, 9999),
+            'reference_id' => 'REF'.$this->faker->unique()->numberBetween(1000, 9999),
             'customer_name' => $this->faker->name(),
             'customer_id' => Customer::factory(),
             'platform' => $this->faker->randomElement(Platform::cases())->value,
@@ -55,7 +55,7 @@ class LeadFactory extends Factory
         ]);
     }
 
-    public function new(): static
+    public function asNew(): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => LeadStatus::NEW->value,

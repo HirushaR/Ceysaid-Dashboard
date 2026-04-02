@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Leave;
-use App\Models\User;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
+use App\Models\Leave;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class LeaveFactory extends Factory
@@ -23,7 +23,7 @@ class LeaveFactory extends Factory
             'end_date' => $endDate,
             'type' => $this->faker->randomElement(LeaveType::cases())->value,
             'status' => $this->faker->randomElement(LeaveStatus::cases())->value,
-            'reason' => $this->faker->paragraph(),
+            'description' => $this->faker->paragraph(),
             'approved_by' => User::factory(),
             'created_by' => User::factory(),
         ];

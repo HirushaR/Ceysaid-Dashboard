@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Analytics;
 
-use App\Models\Lead;
-use App\Models\Invoice;
-use App\Models\User;
-use App\Models\CallCenterCall;
-use App\Models\Leave;
-use App\Services\DateRangeService;
 use App\Enums\LeadStatus;
+use App\Models\CallCenterCall;
+use App\Models\Invoice;
+use App\Models\Lead;
+use App\Models\Leave;
+use App\Models\User;
+use App\Services\DateRangeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class AnalyticsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create test users
         $this->salesUser = User::factory()->create(['role' => 'sales', 'name' => 'Sales User']);
         $this->operationUser = User::factory()->create(['role' => 'operation', 'name' => 'Operation User']);
@@ -28,17 +28,17 @@ class AnalyticsTest extends TestCase
 
     public function test_date_range_service_presets()
     {
-        $dateRange = new DateRangeService();
-        
+        $dateRange = new DateRangeService;
+
         // Test today preset
         $dateRange->setPreset(DateRangeService::PRESET_TODAY);
         $this->assertTrue($dateRange->getStartDate()->isToday());
         $this->assertTrue($dateRange->getEndDate()->isToday());
-        
+
         // Test last 7 days preset
         $dateRange->setPreset(DateRangeService::PRESET_LAST_7_DAYS);
         $this->assertEquals(6, $dateRange->getDaysDiff());
-        
+
         // Test custom preset
         $dateRange->setPreset(DateRangeService::PRESET_CUSTOM, [
             'start' => '2024-01-01',
@@ -57,7 +57,7 @@ class AnalyticsTest extends TestCase
             'status' => LeadStatus::NEW->value,
             'created_at' => now()->subDays(5),
         ]);
-        
+
         $lead2 = Lead::factory()->create([
             'assigned_to' => $this->salesUser->id,
             'platform' => 'whatsapp',
@@ -92,18 +92,18 @@ class AnalyticsTest extends TestCase
     public function test_invoice_analytics_scopes()
     {
         $lead = Lead::factory()->create(['assigned_to' => $this->salesUser->id]);
-        
+
         $invoice1 = Invoice::factory()->create([
             'lead_id' => $lead->id,
             'total_amount' => 1000.00,
-            'status' => 'paid',
+            'customer_payment_status' => 'paid',
             'created_at' => now()->subDays(5),
         ]);
-        
+
         $invoice2 = Invoice::factory()->create([
             'lead_id' => $lead->id,
             'total_amount' => 500.00,
-            'status' => 'pending',
+            'customer_payment_status' => 'pending',
             'created_at' => now()->subDays(3),
         ]);
 
@@ -130,14 +130,14 @@ class AnalyticsTest extends TestCase
     public function test_call_center_analytics_scopes()
     {
         $lead = Lead::factory()->create();
-        
+
         $call1 = CallCenterCall::factory()->create([
             'lead_id' => $lead->id,
             'assigned_call_center_user' => $this->operationUser->id,
             'status' => CallCenterCall::STATUS_PENDING,
             'created_at' => now()->subDays(5),
         ]);
-        
+
         $call2 = CallCenterCall::factory()->create([
             'lead_id' => $lead->id,
             'assigned_call_center_user' => $this->operationUser->id,
@@ -176,12 +176,12 @@ class AnalyticsTest extends TestCase
             'status' => LeadStatus::NEW->value,
             'created_at' => now()->subDays(5),
         ]);
-        
+
         $lead2 = Lead::factory()->create([
             'status' => LeadStatus::CONFIRMED->value,
             'created_at' => now()->subDays(3),
         ]);
-        
+
         $lead3 = Lead::factory()->create([
             'status' => LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value,
             'created_at' => now()->subDays(2),
@@ -192,7 +192,7 @@ class AnalyticsTest extends TestCase
 
         $totalLeads = Lead::forDateRange($startDate, $endDate)->count();
         $convertedLeads = Lead::forDateRange($startDate, $endDate)->converted()->count();
-        
+
         $conversionRate = $totalLeads > 0 ? ($convertedLeads / $totalLeads) * 100 : 0;
 
         $this->assertEquals(3, $totalLeads);
@@ -203,25 +203,25 @@ class AnalyticsTest extends TestCase
     public function test_revenue_calculation()
     {
         $lead = Lead::factory()->create(['assigned_to' => $this->salesUser->id]);
-        
+
         $invoice1 = Invoice::factory()->create([
             'lead_id' => $lead->id,
             'total_amount' => 1000.00,
-            'status' => 'paid',
+            'customer_payment_status' => 'paid',
             'created_at' => now()->subDays(5),
         ]);
-        
+
         $invoice2 = Invoice::factory()->create([
             'lead_id' => $lead->id,
             'total_amount' => 500.00,
-            'status' => 'paid',
+            'customer_payment_status' => 'paid',
             'created_at' => now()->subDays(3),
         ]);
-        
+
         $invoice3 = Invoice::factory()->create([
             'lead_id' => $lead->id,
             'total_amount' => 750.00,
-            'status' => 'pending',
+            'customer_payment_status' => 'pending',
             'created_at' => now()->subDays(2),
         ]);
 
@@ -264,11 +264,11 @@ class AnalyticsTest extends TestCase
             ->where('status', 'approved')
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('start_date', [$startDate, $endDate])
-                      ->orWhereBetween('end_date', [$startDate, $endDate])
-                      ->orWhere(function ($q) use ($startDate, $endDate) {
-                          $q->where('start_date', '<=', $startDate)
+                    ->orWhereBetween('end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('start_date', '<=', $startDate)
                             ->where('end_date', '>=', $endDate);
-                      });
+                    });
             })
             ->get();
 
@@ -279,14 +279,14 @@ class AnalyticsTest extends TestCase
 
     public function test_analytics_dashboard_access_permission()
     {
-        // Test admin access
-        $this->actingAs($this->adminUser);
-        $response = $this->get('/admin/analytics-dashboard');
-        $response->assertStatus(200);
+        if (\config('database.default') === 'sqlite') {
+            $this->markTestSkipped('Analytics dashboard widgets use MySQL-specific SQL; skipped on sqlite.');
+        }
 
-        // Test non-admin access denied
+        $this->actingAs($this->adminUser);
+        $this->get('/admin/analytics-dashboard')->assertStatus(200);
+
         $this->actingAs($this->salesUser);
-        $response = $this->get('/admin/analytics-dashboard');
-        $response->assertStatus(403);
+        $this->get('/admin/analytics-dashboard')->assertStatus(403);
     }
 }

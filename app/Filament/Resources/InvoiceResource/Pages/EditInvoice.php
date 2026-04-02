@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\InvoiceResource\Pages;
 
+use App\Enums\DepositAccount;
+use App\Enums\PaymentMode;
 use App\Filament\Resources\InvoiceResource;
 use App\Models\CustomerPayment;
 use Filament\Actions;
@@ -16,48 +18,57 @@ class EditInvoice extends EditRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        $user = auth()->user();
-        return $user && ($user->hasPermission('invoices.edit') || $user->isAccount() || $user->isAdmin());
+        return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
+
+    protected function afterSave(): void
+    {
+        $this->record->recalculateTotalsFromLineItems();
     }
 
     protected function getHeaderActions(): array
     {
         return [
             Action::make('add_customer_payment')
-                ->label('Add Payment')
+                ->label('Add payment receipt')
                 ->icon('heroicon-o-banknotes')
                 ->color('success')
                 ->button()
                 ->visible(function () {
-                    return $this->record->customer_balance_amount > 0;
+                    $u = auth()->user();
+
+                    return $u && $u->canManageAccountingRecords()
+                        && $this->record->customer_balance_amount > 0;
                 })
                 ->form([
-                    Forms\Components\Section::make('Customer Payment Details')
+                    Forms\Components\Section::make('Payment receipt')
                         ->schema([
                             Forms\Components\TextInput::make('amount')
                                 ->label('Payment Amount')
                                 ->required()
                                 ->numeric()
                                 ->step(0.01)
-                                ->prefix('$')
+                                ->prefix('LKR')
                                 ->minValue(0.01)
                                 ->rules([
                                     function () {
                                         return function (string $attribute, $value, \Closure $fail) {
                                             $remainingBalance = $this->record->customer_balance_amount;
                                             if ($value > $remainingBalance) {
-                                                $fail("Payment amount cannot exceed remaining balance of LKR " . number_format($remainingBalance, 2));
+                                                $fail('Payment amount cannot exceed remaining balance of LKR '.number_format($remainingBalance, 2));
                                             }
                                         };
-                                    }
+                                    },
                                 ])
                                 ->helperText(function () {
                                     $remainingBalance = $this->record->customer_balance_amount;
-                                    return "Remaining balance: LKR " . number_format($remainingBalance, 2);
+
+                                    return 'Remaining balance: LKR '.number_format($remainingBalance, 2);
                                 })
                                 ->default(function () {
                                     // Default to remaining balance if less than LKR 100, otherwise leave empty
                                     $balance = $this->record->customer_balance_amount;
+
                                     return $balance <= 100 ? $balance : null;
                                 }),
                             Forms\Components\DatePicker::make('payment_date')
@@ -73,17 +84,13 @@ class EditInvoice extends EditRecord
                                 ->unique('customer_payments', 'receipt_number')
                                 ->helperText('Unique receipt number for this payment'),
                             Forms\Components\Select::make('payment_method')
-                                ->label('Payment Method')
-                                ->options([
-                                    'bank_transfer' => 'Bank Transfer',
-                                    'cash' => 'Cash',
-                                    'check' => 'Check',
-                                    'credit_card' => 'Credit Card',
-                                    'online_payment' => 'Online Payment',
-                                    'other' => 'Other',
-                                ])
-                                ->placeholder('Select payment method')
-                                ->helperText('How the customer made this payment'),
+                                ->label('Payment mode')
+                                ->options(PaymentMode::options())
+                                ->required(),
+                            Forms\Components\Select::make('deposit_to')
+                                ->label('Deposit to')
+                                ->options(DepositAccount::options())
+                                ->required(),
                             Forms\Components\Textarea::make('notes')
                                 ->label('Payment Notes')
                                 ->rows(3)
@@ -95,22 +102,22 @@ class EditInvoice extends EditRecord
                 ->action(function (array $data) {
                     // Add the invoice_id to the data
                     $data['invoice_id'] = $this->record->id;
-                    
+
                     // Create the customer payment
                     $payment = CustomerPayment::create($data);
-                    
+
                     // Refresh the record to get updated status
                     $this->record->refresh();
-                    
+
                     Notification::make()
                         ->success()
                         ->title('Payment added successfully')
-                        ->body("Payment of LKR " . number_format($payment->amount, 2) . " has been added to invoice {$this->record->invoice_number}. " . 
-                               "New status: " . ucfirst($this->record->customer_payment_status))
+                        ->body('Payment of LKR '.number_format($payment->amount, 2)." has been added to invoice {$this->record->invoice_number}. ".
+                               'New status: '.ucfirst($this->record->customer_payment_status))
                         ->send();
                 })
-                ->modalHeading('Add Customer Payment')
-                ->modalButton('Add Payment')
+                ->modalHeading('Add payment receipt')
+                ->modalButton('Save receipt')
                 ->modalWidth('2xl'),
 
             Actions\DeleteAction::make(),

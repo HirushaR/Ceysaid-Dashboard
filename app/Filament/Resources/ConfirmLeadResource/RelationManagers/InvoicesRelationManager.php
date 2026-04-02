@@ -2,15 +2,12 @@
 
 namespace App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 
+use App\Services\DocumentNumberService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Models\Invoice;
-use App\Models\VendorBill;
 
 class InvoicesRelationManager extends RelationManager
 {
@@ -18,123 +15,59 @@ class InvoicesRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'invoice_number';
 
-    public function canCreate(): bool
+    public function isReadOnly(): bool
     {
-        return true;
+        return ! (auth()->user()?->canManageAccountingRecords() ?? false);
     }
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Invoice Information')
+                Forms\Components\Section::make('Invoice')
                     ->schema([
                         Forms\Components\TextInput::make('invoice_number')
-                            ->label('Invoice Number')
+                            ->label('Invoice number')
                             ->required()
-                            ->unique('invoices', 'invoice_number', ignoreRecord: true)
-                            ->maxLength(255)
-                            ->placeholder('e.g., INV20252345'),
-                        Forms\Components\TextInput::make('total_amount')
-                            ->label('Total Amount')
-                            ->required()
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('$'),
+                            ->unique(ignoreRecord: true)
+                            ->disabledOn('edit')
+                            ->dehydrated(),
+                        Forms\Components\DatePicker::make('invoice_date')->default(now()),
+                        Forms\Components\DatePicker::make('due_date')->default(now()),
+                        Forms\Components\TextInput::make('terms')->default('Due on Receipt'),
+                        Forms\Components\TextInput::make('subject'),
+                        Forms\Components\Hidden::make('total_amount')->default(0),
                         Forms\Components\Textarea::make('description')
-                            ->label('Description')
                             ->rows(3)
-                            ->placeholder('Brief description of the invoice')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
-
-                Forms\Components\Section::make('Payment Information')
+                Forms\Components\Section::make('Line items')
                     ->schema([
-                        Forms\Components\Select::make('status')
-                            ->label('Payment Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'partial' => 'Partially Paid',
-                                'paid' => 'Fully Paid',
-                            ])
-                            ->default('pending')
-                            ->required()
-                            ->live(),
-                        Forms\Components\TextInput::make('payment_amount')
-                            ->label('Payment Amount')
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('$')
-                            ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
-                        Forms\Components\DatePicker::make('payment_date')
-                            ->label('Payment Date')
-                            ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
-                        Forms\Components\TextInput::make('receipt_number')
-                            ->label('Receipt Number')
-                            ->maxLength(255)
-                            ->placeholder('e.g., RC202534')
-                            ->visible(fn($get) => in_array($get('status'), ['partial', 'paid'])),
-                    ])
-                    ->columns(2),
-
-                Forms\Components\Section::make('Vendor Bills')
-                    ->schema([
-                        Forms\Components\Repeater::make('vendorBills')
-                            ->relationship('vendorBills')
+                        Forms\Components\Repeater::make('lineItems')
+                            ->relationship()
                             ->schema([
-                                Forms\Components\TextInput::make('vendor_name')
-                                    ->label('Vendor Name')
+                                Forms\Components\Textarea::make('description')
                                     ->required()
-                                    ->placeholder('e.g., IATA, TRAVEL BUDDY'),
-                                Forms\Components\TextInput::make('vendor_bill_number')
-                                    ->label('Vendor Bill Number')
-                                    ->required()
-                                    ->placeholder('e.g., XO20252345'),
-                                Forms\Components\TextInput::make('bill_amount')
-                                    ->label('Amount')
-                                    ->required()
-                                    ->numeric()
-                                    ->step(0.01)
-                                    ->prefix('$'),
-                                Forms\Components\Select::make('service_type')
-                                    ->label('Service Type')
-                                    ->options([
-                                        'AIR TICKET' => 'Air Ticket',
-                                        'HOTEL' => 'Hotel',
-                                        'VISA' => 'Visa',
-                                        'LAND PACKAGE' => 'Land Package',
-                                        'INSURANCE' => 'Insurance',
-                                        'OTHER' => 'Other',
-                                    ])
-                                    ->required(),
-                                Forms\Components\Textarea::make('service_details')
-                                    ->label('Details')
                                     ->rows(2)
                                     ->columnSpanFull(),
-                                Forms\Components\Select::make('payment_status')
-                                    ->label('Payment Status')
-                                    ->options([
-                                        'pending' => 'Pending',
-                                        'paid' => 'Paid',
-                                    ])
-                                    ->default('pending')
+                                Forms\Components\TextInput::make('customer_details')->maxLength(255),
+                                Forms\Components\TextInput::make('quantity')->numeric()->default(1)->required(),
+                                Forms\Components\TextInput::make('rate')
+                                    ->label('Rate (LKR)')
+                                    ->numeric()
+                                    ->prefix('LKR')
                                     ->required(),
                             ])
-                            ->createItemButtonLabel('Add Vendor Bill')
-                            ->reorderable(false)
-                            ->columns(2)
-                            ->collapsible()
-                            ->cloneable(),
+                            ->defaultItems(1)
+                            ->reorderable()
+                            ->orderColumn('sort_order')
+                            ->columns(2),
                     ])
                     ->collapsible(),
-
-                Forms\Components\Section::make('Additional Notes')
+                Forms\Components\Section::make('Notes')
                     ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Notes')
-                            ->rows(3)
-                            ->columnSpanFull(),
+                        Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
                     ])
                     ->collapsible(),
             ]);
@@ -146,12 +79,11 @@ class InvoicesRelationManager extends RelationManager
             ->recordTitleAttribute('invoice_number')
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
-                    ->label('Invoice Number')
+                    ->label('Invoice #')
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->weight('medium')
-                    ->url(fn($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null)
+                    ->url(fn ($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null)
                     ->color('info'),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Amount')
@@ -160,96 +92,67 @@ class InvoicesRelationManager extends RelationManager
                     ->alignRight()
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('description')
-                    ->label('Details')
                     ->limit(50)
-                    ->tooltip(function ($record) {
-                        return $record->description;
-                    })
-                    ->placeholder('No details'),
+                    ->tooltip(fn ($record) => $record->description),
                 Tables\Columns\TextColumn::make('vendorBills')
-                    ->label('Vendor Bills')
+                    ->label('Vendor bills')
                     ->formatStateUsing(function ($record) {
-                        $vendorBills = $record->vendorBills;
-                        if ($vendorBills->isEmpty()) {
-                            return 'No vendor bills';
+                        if ($record->vendorBills->isEmpty()) {
+                            return '—';
                         }
-                        
-                        return $vendorBills->map(function ($bill) {
-                            return $bill->vendor_bill_number;
-                        })->join(', ');
+
+                        return $record->vendorBills->pluck('vendor_bill_number')->join(', ');
                     })
-                    ->limit(30)
-                    ->tooltip(function ($record) {
-                        $vendorBills = $record->vendorBills;
-                        if ($vendorBills->isEmpty()) {
-                            return 'No vendor bills attached';
-                        }
-                        
-                        return $vendorBills->map(function ($bill) {
-                            return "{$bill->vendor_name}: {$bill->vendor_bill_number} (LKR {$bill->bill_amount})";
-                        })->join("\n");
-                    }),
+                    ->limit(30),
                 Tables\Columns\TextColumn::make('total_vendor_bills_amount')
-                    ->label('Vendor Amount')
+                    ->label('Vendor total')
                     ->money('LKR')
-                    ->sortable()
                     ->alignRight()
-                    ->getStateUsing(function ($record) {
-                        return $record->total_vendor_bills_amount;
-                    }),
-                Tables\Columns\BadgeColumn::make('status')
+                    ->getStateUsing(fn ($record) => $record->total_vendor_bills_amount),
+                Tables\Columns\BadgeColumn::make('customer_payment_status')
                     ->label('Status')
                     ->colors([
                         'warning' => 'pending',
                         'info' => 'partial',
                         'success' => 'paid',
                     ])
-                    ->formatStateUsing(fn($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Payment Status')
+                Tables\Filters\SelectFilter::make('customer_payment_status')
                     ->options([
                         'pending' => 'Pending',
-                        'partial' => 'Partially Paid',
-                        'paid' => 'Fully Paid',
+                        'partial' => 'Partial',
+                        'paid' => 'Paid',
                     ]),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Create Invoice')
-                    ->modalHeading('Create Invoice')
-                    ->modalButton('Create Invoice')
-                    ->color('primary')
-                    ->icon('heroicon-o-plus')
+                    ->label('Create invoice')
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['lead_id'] = $this->getOwnerRecord()->id;
+                        $data['invoice_number'] = app(DocumentNumberService::class)->nextInvoiceNumber();
+                        $data['total_amount'] = $data['total_amount'] ?? 0;
+
                         return $data;
                     })
-                    ->successNotificationTitle('Invoice created successfully'),
+                    ->after(function ($record) {
+                        $record->recalculateTotalsFromLineItems();
+                    }),
             ])
             ->heading(function () {
-                $ownerRecord = $this->getOwnerRecord();
-                $invoices = $ownerRecord->invoices;
-                $totalInvoiceAmount = $invoices->sum('total_amount');
-                $paidInvoiceAmount = $invoices->where('customer_payment_status', 'paid')->sum('total_amount');
-                $unpaidInvoiceAmount = $totalInvoiceAmount - $paidInvoiceAmount;
-                $paidCount = $invoices->where('customer_payment_status', 'paid')->count();
-                $unpaidCount = $invoices->whereIn('customer_payment_status', ['pending', 'partial'])->count();
-                
-                return "Invoices - Total: LKR " . number_format($totalInvoiceAmount, 2) . 
-                       " | Paid: LKR " . number_format($paidInvoiceAmount, 2) . " ({$paidCount})" .
-                       " | Unpaid: LKR " . number_format($unpaidInvoiceAmount, 2) . " ({$unpaidCount})";
+                $owner = $this->getOwnerRecord();
+                $invoices = $owner->invoices;
+                $total = $invoices->sum('total_amount');
+                $paid = $invoices->where('customer_payment_status', 'paid')->sum('total_amount');
+
+                return 'Invoices — Total: LKR '.number_format($total, 2).' | Paid: LKR '.number_format($paid, 2);
             })
             ->actions([
-                Tables\Actions\Action::make('manage_vendor_bills')
-                    ->label('Vendor Bills')
-                    ->icon('heroicon-o-receipt-percent')
-                    ->color('info')
-                    ->url(fn ($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null)
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function ($record) {
+                        $record->recalculateTotalsFromLineItems();
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
@@ -258,6 +161,6 @@ class InvoicesRelationManager extends RelationManager
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->recordUrl(fn($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null);
+            ->recordUrl(fn ($record) => $record ? route('filament.admin.resources.invoices.view', ['record' => $record]) : null);
     }
 }

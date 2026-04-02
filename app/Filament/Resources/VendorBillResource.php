@@ -2,18 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\DepositAccount;
+use App\Enums\PaymentMode;
 use App\Filament\Resources\VendorBillResource\Pages;
-use App\Filament\Resources\VendorBillResource\RelationManagers;
-use App\Models\VendorBill;
 use App\Models\Invoice;
+use App\Models\Supplier;
+use App\Models\VendorBill;
+use App\Traits\HasResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Traits\HasResourcePermissions;
+use Illuminate\Database\Eloquent\Model;
 
 class VendorBillResource extends Resource
 {
@@ -22,9 +25,27 @@ class VendorBillResource extends Resource
     protected static ?string $model = VendorBill::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
+
     protected static ?string $navigationGroup = 'Finance';
+
     protected static ?string $label = 'Vendor Bill';
+
     protected static ?string $pluralLabel = 'Vendor Bills';
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -35,28 +56,41 @@ class VendorBillResource extends Resource
                         Forms\Components\Select::make('invoice_id')
                             ->label('Invoice')
                             ->relationship('invoice', 'invoice_number')
-                            ->getOptionLabelFromRecordUsing(fn (Invoice $record): string => 
-                                "{$record->invoice_number} - {$record->lead->customer_name} (LKR {$record->total_amount})"
+                            ->getOptionLabelFromRecordUsing(fn (Invoice $record): string => "{$record->invoice_number} - {$record->lead->customer_name} (LKR {$record->total_amount})"
                             )
                             ->searchable(['invoice_number'])
                             ->required()
-                            ->disabled(fn($context) => $context === 'edit'), // Cannot change invoice after creation
+                            ->disabledOn('edit'),
+                        Forms\Components\Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->relationship('supplier', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $s = Supplier::find($state);
+                                    if ($s) {
+                                        $set('vendor_name', $s->name);
+                                    }
+                                }
+                            }),
                         Forms\Components\TextInput::make('vendor_name')
                             ->label('Vendor Name')
                             ->required()
-                            ->maxLength(255)
-                            ->placeholder('e.g., IATA, TRAVEL BUDDY, MALAYSIA E VISA'),
+                            ->maxLength(255),
                         Forms\Components\TextInput::make('vendor_bill_number')
                             ->label('Vendor Bill Number')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('e.g., XO20252345'),
+                            ->disabledOn('edit')
+                            ->dehydrated(),
                         Forms\Components\TextInput::make('bill_amount')
                             ->label('Bill Amount')
                             ->required()
                             ->numeric()
                             ->step(0.01)
-                            ->prefix('$'),
+                            ->prefix('LKR'),
                         Forms\Components\Select::make('service_type')
                             ->label('Service Type')
                             ->options([
@@ -77,7 +111,7 @@ class VendorBillResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Payment Information')
+                Forms\Components\Section::make('Vendor payment')
                     ->schema([
                         Forms\Components\Select::make('payment_status')
                             ->label('Payment Status')
@@ -90,7 +124,17 @@ class VendorBillResource extends Resource
                             ->live(),
                         Forms\Components\DatePicker::make('payment_date')
                             ->label('Payment Date')
-                            ->visible(fn($get) => $get('payment_status') === 'paid'),
+                            ->visible(fn (Get $get) => $get('payment_status') === 'paid'),
+                        Forms\Components\Select::make('payment_mode')
+                            ->label('Payment mode')
+                            ->options(PaymentMode::options())
+                            ->visible(fn (Get $get) => $get('payment_status') === 'paid')
+                            ->required(fn (Get $get) => $get('payment_status') === 'paid'),
+                        Forms\Components\Select::make('paid_through')
+                            ->label('Paid through')
+                            ->options(DepositAccount::options())
+                            ->visible(fn (Get $get) => $get('payment_status') === 'paid')
+                            ->required(fn (Get $get) => $get('payment_status') === 'paid'),
                     ])
                     ->columns(2),
 
@@ -114,13 +158,13 @@ class VendorBillResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->url(fn($record) => $record->invoice ? route('filament.admin.resources.invoices.view', ['record' => $record->invoice]) : null)
+                    ->url(fn ($record) => $record->invoice ? route('filament.admin.resources.invoices.view', ['record' => $record->invoice]) : null)
                     ->color('info'),
                 Tables\Columns\TextColumn::make('invoice.lead.reference_id')
                     ->label('Lead #')
                     ->searchable()
                     ->sortable()
-                    ->url(fn($record) => $record->invoice && $record->invoice->lead ? route('filament.admin.resources.leads.view', ['record' => $record->invoice->lead]) : null)
+                    ->url(fn ($record) => $record->invoice && $record->invoice->lead ? route('filament.admin.resources.leads.view', ['record' => $record->invoice->lead]) : null)
                     ->color('primary'),
                 Tables\Columns\TextColumn::make('invoice.lead.customer_name')
                     ->label('Customer')
@@ -160,7 +204,7 @@ class VendorBillResource extends Resource
                         'warning' => 'pending',
                         'success' => 'paid',
                     ])
-                    ->formatStateUsing(fn($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
                 Tables\Columns\TextColumn::make('payment_date')
                     ->label('Payment Date')
                     ->date('M j, Y')
@@ -225,12 +269,28 @@ class VendorBillResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('mark_paid')
-                    ->label('Mark Paid')
+                    ->label('Mark paid')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        $record->markAsPaid();
+                    ->form([
+                        Forms\Components\DatePicker::make('payment_date')
+                            ->required()
+                            ->default(now()),
+                        Forms\Components\Select::make('payment_mode')
+                            ->label('Payment mode')
+                            ->options(PaymentMode::options())
+                            ->required(),
+                        Forms\Components\Select::make('paid_through')
+                            ->label('Paid through')
+                            ->options(DepositAccount::options())
+                            ->required(),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->markAsPaid(
+                            $data['payment_date'] ?? null,
+                            $data['payment_mode'] ?? null,
+                            $data['paid_through'] ?? null
+                        );
                         \Filament\Notifications\Notification::make()
                             ->success()
                             ->title('Vendor bill marked as paid')
@@ -256,14 +316,28 @@ class VendorBillResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\BulkAction::make('mark_paid_bulk')
-                        ->label('Mark as Paid')
+                        ->label('Mark as paid')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->requiresConfirmation()
-                        ->action(function ($records) {
+                        ->form([
+                            Forms\Components\DatePicker::make('payment_date')
+                                ->required()
+                                ->default(now()),
+                            Forms\Components\Select::make('payment_mode')
+                                ->options(PaymentMode::options())
+                                ->required(),
+                            Forms\Components\Select::make('paid_through')
+                                ->options(DepositAccount::options())
+                                ->required(),
+                        ])
+                        ->action(function ($records, array $data) {
                             $count = $records->count();
-                            $records->each(function ($record) {
-                                $record->markAsPaid();
+                            $records->each(function ($record) use ($data) {
+                                $record->markAsPaid(
+                                    $data['payment_date'] ?? null,
+                                    $data['payment_mode'] ?? null,
+                                    $data['paid_through'] ?? null
+                                );
                             });
                             \Filament\Notifications\Notification::make()
                                 ->success()

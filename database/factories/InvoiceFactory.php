@@ -14,7 +14,12 @@ class InvoiceFactory extends Factory
     {
         return [
             'lead_id' => Lead::factory(),
-            'invoice_number' => 'INV' . $this->faker->unique()->numberBetween(1000, 9999),
+            'quote_id' => null,
+            'invoice_number' => 'INV'.$this->faker->unique()->numberBetween(1000, 9999),
+            'invoice_date' => now(),
+            'due_date' => now(),
+            'terms' => 'Due on Receipt',
+            'subject' => null,
             'total_amount' => $this->faker->randomFloat(2, 500, 5000),
             'payment_amount' => null,
             'balance_amount' => null,
@@ -30,19 +35,17 @@ class InvoiceFactory extends Factory
     public function paid(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'paid',
             'customer_payment_status' => 'paid',
             'payment_amount' => $attributes['total_amount'],
             'balance_amount' => 0,
             'payment_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
-            'receipt_number' => 'RC' . $this->faker->unique()->numberBetween(1000, 9999),
+            'receipt_number' => 'RC'.$this->faker->unique()->numberBetween(1000, 9999),
         ]);
     }
 
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'pending',
             'customer_payment_status' => 'pending',
             'balance_amount' => $attributes['total_amount'],
         ]);
@@ -51,7 +54,6 @@ class InvoiceFactory extends Factory
     public function partial(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'partial',
             'customer_payment_status' => 'partial',
             'payment_amount' => $attributes['total_amount'] * 0.5,
             'balance_amount' => $attributes['total_amount'] * 0.5,

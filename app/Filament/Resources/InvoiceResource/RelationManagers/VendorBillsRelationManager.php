@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources\InvoiceResource\RelationManagers;
 
+use App\Enums\DepositAccount;
+use App\Enums\PaymentMode;
+use App\Models\Supplier;
+use App\Services\DocumentNumberService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class VendorBillsRelationManager extends RelationManager
 {
@@ -16,28 +19,47 @@ class VendorBillsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'vendor_name';
 
+    public function isReadOnly(): bool
+    {
+        return ! (auth()->user()?->canManageAccountingRecords() ?? false);
+    }
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('supplier_id')
+                    ->label('Supplier')
+                    ->relationship('supplier', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($state) {
+                            $s = Supplier::find($state);
+                            if ($s) {
+                                $set('vendor_name', $s->name);
+                            }
+                        }
+                    }),
                 Forms\Components\TextInput::make('vendor_name')
-                    ->label('Vendor Name')
+                    ->label('Vendor name')
                     ->required()
-                    ->maxLength(255)
-                    ->placeholder('e.g., IATA, TRAVEL BUDDY, MALAYSIA E VISA'),
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('vendor_bill_number')
-                    ->label('Vendor Bill Number')
+                    ->label('Vendor bill number')
                     ->required()
                     ->maxLength(255)
-                    ->placeholder('e.g., XO20252345'),
+                    ->disabledOn('edit')
+                    ->dehydrated(),
                 Forms\Components\TextInput::make('bill_amount')
-                    ->label('Bill Amount')
+                    ->label('Bill amount')
                     ->required()
                     ->numeric()
                     ->step(0.01)
-                    ->prefix('$'),
+                    ->prefix('LKR'),
                 Forms\Components\Select::make('service_type')
-                    ->label('Service Type')
+                    ->label('Service type')
                     ->options([
                         'AIR TICKET' => 'Air Ticket',
                         'HOTEL' => 'Hotel',
@@ -49,12 +71,11 @@ class VendorBillsRelationManager extends RelationManager
                     ->required()
                     ->searchable(),
                 Forms\Components\Textarea::make('service_details')
-                    ->label('Service Details')
+                    ->label('Service details')
                     ->rows(3)
-                    ->placeholder('Additional details about the service')
                     ->columnSpanFull(),
                 Forms\Components\Select::make('payment_status')
-                    ->label('Payment Status')
+                    ->label('Payment status')
                     ->options([
                         'pending' => 'Pending',
                         'paid' => 'Paid',
@@ -63,8 +84,18 @@ class VendorBillsRelationManager extends RelationManager
                     ->required()
                     ->live(),
                 Forms\Components\DatePicker::make('payment_date')
-                    ->label('Payment Date')
-                    ->visible(fn($get) => $get('payment_status') === 'paid'),
+                    ->label('Payment date')
+                    ->visible(fn (Get $get) => $get('payment_status') === 'paid'),
+                Forms\Components\Select::make('payment_mode')
+                    ->label('Payment mode')
+                    ->options(PaymentMode::options())
+                    ->visible(fn (Get $get) => $get('payment_status') === 'paid')
+                    ->required(fn (Get $get) => $get('payment_status') === 'paid'),
+                Forms\Components\Select::make('paid_through')
+                    ->label('Paid through')
+                    ->options(DepositAccount::options())
+                    ->visible(fn (Get $get) => $get('payment_status') === 'paid')
+                    ->required(fn (Get $get) => $get('payment_status') === 'paid'),
                 Forms\Components\Textarea::make('notes')
                     ->label('Notes')
                     ->rows(2)
@@ -84,20 +115,13 @@ class VendorBillsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('medium'),
                 Tables\Columns\TextColumn::make('vendor_bill_number')
-                    ->label('Bill Number')
+                    ->label('Bill #')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 Tables\Columns\TextColumn::make('service_type')
                     ->label('Service')
-                    ->badge()
-                    ->colors([
-                        'info' => 'AIR TICKET',
-                        'success' => 'HOTEL',
-                        'warning' => 'VISA',
-                        'primary' => 'LAND PACKAGE',
-                        'gray' => 'OTHER',
-                    ]),
+                    ->badge(),
                 Tables\Columns\TextColumn::make('bill_amount')
                     ->label('Amount')
                     ->money('LKR')
@@ -110,34 +134,14 @@ class VendorBillsRelationManager extends RelationManager
                         'warning' => 'pending',
                         'success' => 'paid',
                     ])
-                    ->formatStateUsing(fn($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
                 Tables\Columns\TextColumn::make('payment_date')
-                    ->label('Payment Date')
+                    ->label('Payment date')
                     ->date('M j, Y')
-                    ->sortable()
-                    ->placeholder('Not paid'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
-                    ->dateTime('M j, Y')
-                    ->sortable()
-                    ->since()
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
-                    ->color('gray')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->placeholder('—'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('service_type')
-                    ->label('Service Type')
-                    ->options([
-                        'AIR TICKET' => 'Air Ticket',
-                        'HOTEL' => 'Hotel',
-                        'VISA' => 'Visa',
-                        'LAND PACKAGE' => 'Land Package',
-                        'INSURANCE' => 'Insurance',
-                        'OTHER' => 'Other',
-                    ]),
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->label('Payment Status')
                     ->options([
                         'pending' => 'Pending',
                         'paid' => 'Paid',
@@ -145,8 +149,16 @@ class VendorBillsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->modalHeading('Add Vendor Bill')
-                    ->modalButton('Add Bill'),
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
+                        if (($data['payment_status'] ?? '') !== 'paid') {
+                            $data['payment_date'] = null;
+                            $data['payment_mode'] = null;
+                            $data['paid_through'] = null;
+                        }
+
+                        return $data;
+                    }),
             ])
             ->heading(function () {
                 $ownerRecord = $this->getOwnerRecord();
@@ -154,44 +166,37 @@ class VendorBillsRelationManager extends RelationManager
                 $totalAmount = $vendorBills->sum('bill_amount');
                 $paidAmount = $vendorBills->where('payment_status', 'paid')->sum('bill_amount');
                 $unpaidAmount = $vendorBills->where('payment_status', 'pending')->sum('bill_amount');
-                $paidCount = $vendorBills->where('payment_status', 'paid')->count();
-                $unpaidCount = $vendorBills->where('payment_status', 'pending')->count();
-                
-                return "Vendor Bills - Total: LKR " . number_format($totalAmount, 2) . 
-                       " | Paid: LKR " . number_format($paidAmount, 2) . " ({$paidCount})" .
-                       " | Unpaid: LKR " . number_format($unpaidAmount, 2) . " ({$unpaidCount})";
+
+                return 'Vendor Bills — Total: LKR '.number_format($totalAmount, 2).
+                    ' | Paid: LKR '.number_format($paidAmount, 2).
+                    ' | Unpaid: LKR '.number_format($unpaidAmount, 2);
             })
             ->actions([
                 Tables\Actions\Action::make('mark_paid')
-                    ->label('Mark Paid')
+                    ->label('Mark paid')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Mark as Paid')
-                    ->modalDescription('Are you sure you want to mark this vendor bill as paid?')
-                    ->action(function ($record) {
-                        $record->markAsPaid();
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('Vendor bill marked as paid')
-                            ->body("Bill {$record->vendor_bill_number} has been marked as paid.")
-                            ->send();
+                    ->form([
+                        Forms\Components\DatePicker::make('payment_date')->required()->default(now()),
+                        Forms\Components\Select::make('payment_mode')->options(PaymentMode::options())->required(),
+                        Forms\Components\Select::make('paid_through')->options(DepositAccount::options())->required(),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->markAsPaid(
+                            $data['payment_date'] ?? null,
+                            $data['payment_mode'] ?? null,
+                            $data['paid_through'] ?? null
+                        );
+                        \Filament\Notifications\Notification::make()->success()->title('Marked paid')->send();
                     })
                     ->visible(fn ($record) => $record->isPending()),
                 Tables\Actions\Action::make('mark_pending')
-                    ->label('Mark Pending')
+                    ->label('Mark pending')
                     ->icon('heroicon-o-x-circle')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->modalHeading('Mark as Pending')
-                    ->modalDescription('Are you sure you want to mark this vendor bill as pending?')
                     ->action(function ($record) {
                         $record->markAsPending();
-                        \Filament\Notifications\Notification::make()
-                            ->warning()
-                            ->title('Vendor bill marked as pending')
-                            ->body("Bill {$record->vendor_bill_number} has been marked as pending.")
-                            ->send();
                     })
                     ->visible(fn ($record) => $record->isPaid()),
                 Tables\Actions\EditAction::make(),
@@ -199,42 +204,6 @@ class VendorBillsRelationManager extends RelationManager
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('mark_paid_bulk')
-                        ->label('Mark as Paid')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Mark Selected Bills as Paid')
-                        ->modalDescription('Are you sure you want to mark the selected vendor bills as paid?')
-                        ->action(function ($records) {
-                            $count = $records->count();
-                            $records->each(function ($record) {
-                                $record->markAsPaid();
-                            });
-                            \Filament\Notifications\Notification::make()
-                                ->success()
-                                ->title('Vendor bills marked as paid')
-                                ->body("{$count} vendor bill(s) have been marked as paid.")
-                                ->send();
-                        }),
-                    Tables\Actions\BulkAction::make('mark_pending_bulk')
-                        ->label('Mark as Pending')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('warning')
-                        ->requiresConfirmation()
-                        ->modalHeading('Mark Selected Bills as Pending')
-                        ->modalDescription('Are you sure you want to mark the selected vendor bills as pending?')
-                        ->action(function ($records) {
-                            $count = $records->count();
-                            $records->each(function ($record) {
-                                $record->markAsPending();
-                            });
-                            \Filament\Notifications\Notification::make()
-                                ->warning()
-                                ->title('Vendor bills marked as pending')
-                                ->body("{$count} vendor bill(s) have been marked as pending.")
-                                ->send();
-                        }),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])

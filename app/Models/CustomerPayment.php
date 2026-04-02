@@ -13,6 +13,7 @@ class CustomerPayment extends Model
         'payment_date',
         'receipt_number',
         'payment_method',
+        'deposit_to',
         'notes',
     ];
 

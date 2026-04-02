@@ -2,68 +2,93 @@
 
 namespace App\Traits;
 
-use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Model;
 
 trait HasResourcePermissions
 {
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Admin users can view all resources
-        if ($user->isAdmin()) return true;
-        
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         $resourceName = static::getResourceName();
+
         return $user->canViewResource($resourceName);
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Admin users can create all resources
-        if ($user->isAdmin()) return true;
-        
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         $resourceName = static::getResourceName();
+
         return $user->canCreateResource($resourceName);
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Admin users can edit all resources
-        if ($user->isAdmin()) return true;
-        
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         $resourceName = static::getResourceName();
+
         return $user->canEditResource($resourceName);
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Admin users can delete all resources
-        if ($user->isAdmin()) return true;
-        
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         $resourceName = static::getResourceName();
+
         return $user->canDeleteResource($resourceName);
     }
 
     public static function canView(Model $record): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Admin users can view all resources
-        if ($user->isAdmin()) return true;
-        
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         $resourceName = static::getResourceName();
+
         return $user->canViewResource($resourceName);
     }
 
@@ -71,7 +96,7 @@ trait HasResourcePermissions
     {
         $className = class_basename(static::class);
         $resourceName = strtolower(str_replace('Resource', '', $className));
-        
+
         // Map singular resource names to their plural forms for permissions
         $resourceMap = [
             'lead' => 'leads',
@@ -85,11 +110,13 @@ trait HasResourcePermissions
             'permissiongroup' => 'permission_groups',
             'confirmlead' => 'confirm_leads',
             'documentcompletelead' => 'document_complete_leads',
+            'quote' => 'quotes',
+            'supplier' => 'suppliers',
             'allsalesdashboard' => 'all_sales_dashboards',
             'mysalesdashboard' => 'my_sales_dashboards',
             'myoperationleaddashboard' => 'my_operation_lead_dashboards',
         ];
-        
+
         return $resourceMap[$resourceName] ?? $resourceName;
     }
-} 
+}

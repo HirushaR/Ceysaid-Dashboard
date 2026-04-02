@@ -2,10 +2,15 @@
 
 namespace App\Filament\Resources\InvoiceResource\Pages;
 
+use App\Enums\DepositAccount;
+use App\Enums\PaymentMode;
 use App\Filament\Resources\InvoiceResource;
-use App\Models\VendorBill;
 use App\Models\CustomerPayment;
+use App\Models\Supplier;
+use App\Models\VendorBill;
+use App\Services\DocumentNumberService;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -17,133 +22,136 @@ class ViewInvoice extends ViewRecord
     public static function canAccess(array $parameters = []): bool
     {
         $user = auth()->user();
+
         return $user && ($user->hasPermission('invoices.view') || $user->isAccount() || $user->isAdmin());
     }
 
     protected function getHeaderActions(): array
     {
+        $canAcct = auth()->user()?->canManageAccountingRecords() ?? false;
+
         return [
-            \Filament\Actions\EditAction::make()
-                ->label('Edit Invoice')
+            Action::make('download_pdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn () => route('finance.invoices.pdf', ['invoice' => $this->record]))
+                ->openUrlInNewTab(),
+
+            EditAction::make()
+                ->label('Edit invoice')
                 ->icon('heroicon-o-pencil')
-                ->button(),
+                ->button()
+                ->visible(fn () => $canAcct),
 
             Action::make('add_customer_payment')
-                ->label('Add Payment')
+                ->label('Add payment receipt')
                 ->icon('heroicon-o-banknotes')
                 ->color('success')
                 ->button()
-                ->visible(function () {
-                    return $this->record->customer_balance_amount > 0;
-                })
+                ->visible(fn () => $canAcct && $this->record->customer_balance_amount > 0)
                 ->form([
-                    Forms\Components\Section::make('Customer Payment Details')
+                    Forms\Components\Section::make('Payment receipt')
                         ->schema([
                             Forms\Components\TextInput::make('amount')
-                                ->label('Payment Amount')
+                                ->label('Payment amount')
                                 ->required()
                                 ->numeric()
                                 ->step(0.01)
-                                ->prefix('$')
+                                ->prefix('LKR')
                                 ->minValue(0.01)
                                 ->rules([
                                     function () {
                                         return function (string $attribute, $value, \Closure $fail) {
                                             $remainingBalance = $this->record->customer_balance_amount;
                                             if ($value > $remainingBalance) {
-                                                $fail("Payment amount cannot exceed remaining balance of LKR " . number_format($remainingBalance, 2));
+                                                $fail('Payment amount cannot exceed remaining balance of LKR '.number_format($remainingBalance, 2));
                                             }
                                         };
-                                    }
+                                    },
                                 ])
                                 ->helperText(function () {
-                                    $remainingBalance = $this->record->customer_balance_amount;
-                                    return "Remaining balance: LKR " . number_format($remainingBalance, 2);
+                                    return 'Remaining balance: LKR '.number_format($this->record->customer_balance_amount, 2);
                                 })
                                 ->default(function () {
-                                    // Default to remaining balance if less than LKR 100, otherwise leave empty
                                     $balance = $this->record->customer_balance_amount;
+
                                     return $balance <= 100 ? $balance : null;
                                 }),
                             Forms\Components\DatePicker::make('payment_date')
-                                ->label('Payment Date')
+                                ->label('Payment date')
                                 ->required()
                                 ->default(today())
-                                ->maxDate(today())
-                                ->helperText('When the payment was received'),
+                                ->maxDate(today()),
                             Forms\Components\TextInput::make('receipt_number')
-                                ->label('Receipt Number')
+                                ->label('Receipt number')
                                 ->maxLength(255)
-                                ->placeholder('e.g., RC202534')
                                 ->unique('customer_payments', 'receipt_number')
-                                ->helperText('Unique receipt number for this payment'),
+                                ->placeholder('e.g., RC202534'),
                             Forms\Components\Select::make('payment_method')
-                                ->label('Payment Method')
-                                ->options([
-                                    'bank_transfer' => 'Bank Transfer',
-                                    'cash' => 'Cash',
-                                    'check' => 'Check',
-                                    'credit_card' => 'Credit Card',
-                                    'online_payment' => 'Online Payment',
-                                    'other' => 'Other',
-                                ])
-                                ->placeholder('Select payment method')
-                                ->helperText('How the customer made this payment'),
+                                ->label('Payment mode')
+                                ->options(PaymentMode::options())
+                                ->required(),
+                            Forms\Components\Select::make('deposit_to')
+                                ->label('Deposit to')
+                                ->options(DepositAccount::options())
+                                ->required(),
                             Forms\Components\Textarea::make('notes')
-                                ->label('Payment Notes')
+                                ->label('Notes')
                                 ->rows(3)
-                                ->placeholder('Any additional notes about this payment')
                                 ->columnSpanFull(),
                         ])
                         ->columns(2),
                 ])
                 ->action(function (array $data) {
-                    // Add the invoice_id to the data
                     $data['invoice_id'] = $this->record->id;
-                    
-                    // Create the customer payment
-                    $payment = CustomerPayment::create($data);
-                    
-                    // Refresh the record to get updated status
+                    CustomerPayment::create($data);
                     $this->record->refresh();
-                    
                     Notification::make()
                         ->success()
-                        ->title('Payment added successfully')
-                        ->body("Payment of LKR " . number_format($payment->amount, 2) . " has been added to invoice {$this->record->invoice_number}. " . 
-                               "New status: " . ucfirst($this->record->customer_payment_status))
+                        ->title('Payment receipt saved')
+                        ->body('New status: '.ucfirst($this->record->customer_payment_status))
                         ->send();
                 })
-                ->modalHeading('Add Customer Payment')
-                ->modalButton('Add Payment')
+                ->modalHeading('Add payment receipt')
+                ->modalButton('Save receipt')
                 ->modalWidth('2xl'),
 
             Action::make('create_vendor_bill')
-                ->label('Add Vendor Bill')
+                ->label('Add vendor bill')
                 ->icon('heroicon-o-receipt-percent')
                 ->color('success')
                 ->button()
+                ->visible(fn () => $canAcct)
                 ->form([
-                    Forms\Components\Section::make('Vendor Bill Information')
+                    Forms\Components\Section::make('Vendor bill')
                         ->schema([
+                            Forms\Components\Select::make('supplier_id')
+                                ->label('Supplier')
+                                ->relationship('supplier', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    if ($state) {
+                                        $s = Supplier::find($state);
+                                        if ($s) {
+                                            $set('vendor_name', $s->name);
+                                        }
+                                    }
+                                }),
                             Forms\Components\TextInput::make('vendor_name')
-                                ->label('Vendor Name')
+                                ->label('Vendor name')
                                 ->required()
-                                ->maxLength(255)
-                                ->placeholder('e.g., IATA, TRAVEL BUDDY, MALAYSIA E VISA'),
-                            Forms\Components\TextInput::make('vendor_bill_number')
-                                ->label('Vendor Bill Number')
-                                ->required()
-                                ->maxLength(255)
-                                ->placeholder('e.g., XO20252345'),
+                                ->maxLength(255),
                             Forms\Components\TextInput::make('bill_amount')
-                                ->label('Bill Amount')
+                                ->label('Bill amount')
                                 ->required()
                                 ->numeric()
                                 ->step(0.01)
-                                ->prefix('$'),
+                                ->prefix('LKR'),
                             Forms\Components\Select::make('service_type')
-                                ->label('Service Type')
+                                ->label('Service type')
                                 ->options([
                                     'AIR TICKET' => 'Air Ticket',
                                     'HOTEL' => 'Hotel',
@@ -155,17 +163,16 @@ class ViewInvoice extends ViewRecord
                                 ->required()
                                 ->searchable(),
                             Forms\Components\Textarea::make('service_details')
-                                ->label('Service Details')
+                                ->label('Service details')
                                 ->rows(3)
-                                ->placeholder('Additional details about the service')
                                 ->columnSpanFull(),
                         ])
                         ->columns(2),
 
-                    Forms\Components\Section::make('Payment Information')
+                    Forms\Components\Section::make('Vendor payment')
                         ->schema([
                             Forms\Components\Select::make('payment_status')
-                                ->label('Payment Status')
+                                ->label('Payment status')
                                 ->options([
                                     'pending' => 'Pending',
                                     'paid' => 'Paid',
@@ -174,35 +181,44 @@ class ViewInvoice extends ViewRecord
                                 ->required()
                                 ->live(),
                             Forms\Components\DatePicker::make('payment_date')
-                                ->label('Payment Date')
-                                ->visible(fn($get) => $get('payment_status') === 'paid'),
+                                ->label('Payment date')
+                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
+                            Forms\Components\Select::make('payment_mode')
+                                ->label('Payment mode')
+                                ->options(PaymentMode::options())
+                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid')
+                                ->required(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
+                            Forms\Components\Select::make('paid_through')
+                                ->label('Paid through')
+                                ->options(DepositAccount::options())
+                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid')
+                                ->required(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
                         ])
                         ->columns(2),
 
-                    Forms\Components\Section::make('Additional Notes')
+                    Forms\Components\Section::make('Notes')
                         ->schema([
                             Forms\Components\Textarea::make('notes')
-                                ->label('Notes')
                                 ->rows(3)
                                 ->columnSpanFull(),
                         ])
                         ->collapsible(),
                 ])
                 ->action(function (array $data) {
-                    // Add the invoice_id to the data
                     $data['invoice_id'] = $this->record->id;
-                    
-                    // Create the vendor bill
-                    $vendorBill = VendorBill::create($data);
-                    
+                    $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
+                    if (($data['payment_status'] ?? '') !== 'paid') {
+                        $data['payment_date'] = null;
+                        $data['payment_mode'] = null;
+                        $data['paid_through'] = null;
+                    }
+                    VendorBill::create($data);
                     Notification::make()
                         ->success()
-                        ->title('Vendor bill created successfully')
-                        ->body("Vendor bill {$vendorBill->vendor_bill_number} has been added to invoice {$this->record->invoice_number}.")
+                        ->title('Vendor bill created')
                         ->send();
                 })
-                ->modalHeading('Add Vendor Bill')
-                ->modalButton('Create Vendor Bill')
+                ->modalHeading('Create vendor bill')
                 ->modalWidth('3xl'),
         ];
     }

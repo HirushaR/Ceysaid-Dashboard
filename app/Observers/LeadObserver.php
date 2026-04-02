@@ -2,18 +2,18 @@
 
 namespace App\Observers;
 
-use App\Models\Lead;
-use App\Models\User;
-use App\Models\LeadActionLog;
 use App\Enums\LeadStatus;
-use Filament\Notifications\Notification;
+use App\Filament\Resources\AllLeadDashboardResource;
+use App\Filament\Resources\LeadResource;
+use App\Filament\Resources\MyOperationLeadDashboardResource;
+use App\Filament\Resources\MySalesDashboardResource;
+use App\Models\Lead;
+use App\Models\LeadActionLog;
+use App\Models\User;
+use App\Notifications\LeadDatabaseNotification;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Events\DatabaseNotificationsSent;
-use App\Notifications\LeadDatabaseNotification;
-use App\Filament\Resources\LeadResource;
-use App\Filament\Resources\MySalesDashboardResource;
-use App\Filament\Resources\MyOperationLeadDashboardResource;
-use App\Filament\Resources\AllLeadDashboardResource;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
 class LeadObserver
@@ -91,13 +91,13 @@ class LeadObserver
         // Log assignment change
         $oldUser = $oldAssignedTo ? User::find($oldAssignedTo) : null;
         $newUser = $lead->assignedUser;
-        $description = $newUser 
-            ? "Assigned to {$newUser->name}" 
-            : "Assignment removed";
+        $description = $newUser
+            ? "Assigned to {$newUser->name}"
+            : 'Assignment removed';
         if ($oldUser && $oldUser->id !== $newAssignedTo) {
-            $description = "Reassigned from {$oldUser->name} to " . ($newUser ? $newUser->name : 'unassigned');
+            $description = "Reassigned from {$oldUser->name} to ".($newUser ? $newUser->name : 'unassigned');
         }
-        
+
         $this->logAction($lead, 'assigned', $description, [
             'assigned_to' => $oldAssignedTo,
         ], [
@@ -142,7 +142,7 @@ class LeadObserver
             $this->sendNotification(
                 $lead->creator,
                 'Lead Assignment Update',
-                "Lead {$refId} ({$lead->customer_name}) has been assigned to " . ($lead->assignedUser ? $lead->assignedUser->name : 'someone'),
+                "Lead {$refId} ({$lead->customer_name}) has been assigned to ".($lead->assignedUser ? $lead->assignedUser->name : 'someone'),
                 'info',
                 'heroicon-o-information-circle',
                 $lead
@@ -158,13 +158,13 @@ class LeadObserver
         // Log operator assignment change
         $oldOperator = $oldOperatorId ? User::find($oldOperatorId) : null;
         $newOperator = $lead->assignedOperator;
-        $description = $newOperator 
-            ? "Operator assigned: {$newOperator->name}" 
-            : "Operator assignment removed";
+        $description = $newOperator
+            ? "Operator assigned: {$newOperator->name}"
+            : 'Operator assignment removed';
         if ($oldOperator && $oldOperator->id !== $newOperatorId) {
-            $description = "Operator reassigned from {$oldOperator->name} to " . ($newOperator ? $newOperator->name : 'unassigned');
+            $description = "Operator reassigned from {$oldOperator->name} to ".($newOperator ? $newOperator->name : 'unassigned');
         }
-        
+
         $this->logAction($lead, 'operator_assigned', $description, [
             'assigned_operator' => $oldOperatorId,
         ], [
@@ -269,6 +269,17 @@ class LeadObserver
                 $lead
             );
         }
+
+        if ($newStatus === LeadStatus::CONFIRMED->value && $oldStatus !== LeadStatus::CONFIRMED->value) {
+            try {
+                app(\App\Services\CreateInvoiceForConfirmedLeadService::class)->createIfNeeded($lead);
+            } catch (\Throwable $e) {
+                Log::error('Failed to auto-create invoice for confirmed lead', [
+                    'lead_id' => $lead->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     /**
@@ -321,7 +332,7 @@ class LeadObserver
         // Notify creator if different from assignees
         if ($lead->created_by && $lead->creator) {
             $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
-            if (!$isCreatorAlreadyIncluded) {
+            if (! $isCreatorAlreadyIncluded) {
                 $recipients->push($lead->creator);
             }
         }
@@ -329,14 +340,14 @@ class LeadObserver
         // Notify managers
         if ($lead->assignedUser) {
             $manager = $this->getManager($lead->assignedUser);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
 
         if ($lead->assignedOperator) {
             $manager = $this->getManager($lead->assignedOperator);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
@@ -412,7 +423,7 @@ class LeadObserver
             if ($lead) {
                 // Determine the correct URL based on user role
                 $leadUrl = $this->getLeadUrlForUser($user, $lead, $title);
-                    
+
                 $filamentNotification->actions([
                     Action::make('view')
                         ->label('View Lead')

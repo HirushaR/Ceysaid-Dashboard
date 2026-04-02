@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2|^8.3|^8.4",
+        "barryvdh/laravel-dompdf": "^3.1",
         "filament/filament": "^3.3",
         "guava/calendar": "^1.14",
         "laravel/framework": "^12.0",

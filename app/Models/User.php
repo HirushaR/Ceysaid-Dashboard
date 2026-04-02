@@ -6,7 +6,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Leave;
 
 class User extends Authenticatable
 {
@@ -55,26 +54,38 @@ class User extends Authenticatable
     {
         return $this->role === 'marketing';
     }
+
     public function isSales(): bool
     {
         return $this->role === 'sales';
     }
+
     public function isOperation(): bool
     {
         return $this->role === 'operation';
     }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
+
     public function isAccount(): bool
     {
         return $this->role === 'account';
     }
+
+    /** Invoices, vendor bills, payment receipts, suppliers — edit/create restricted to these roles. */
+    public function canManageAccountingRecords(): bool
+    {
+        return $this->isAccount() || $this->isAdmin();
+    }
+
     public function isHR(): bool
     {
         return $this->role === 'hr';
     }
+
     public function isCallCenter(): bool
     {
         return $this->role === 'call_center';
@@ -107,7 +118,7 @@ class User extends Authenticatable
     // Get team members (users with same role, excluding self)
     public function teamMembers()
     {
-        if (!$this->isManager()) {
+        if (! $this->isManager()) {
             return static::whereRaw('1 = 0'); // Return empty query
         }
 
@@ -120,15 +131,15 @@ class User extends Authenticatable
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'user_permissions')
-                    ->withPivot(['granted_by', 'granted_at'])
-                    ->withTimestamps();
+            ->withPivot(['granted_by', 'granted_at'])
+            ->withTimestamps();
     }
 
     public function permissionGroups()
     {
         return $this->belongsToMany(PermissionGroup::class, 'user_permission_groups')
-                    ->withPivot(['granted_by', 'granted_at'])
-                    ->withTimestamps();
+            ->withPivot(['granted_by', 'granted_at'])
+            ->withTimestamps();
     }
 
     // Permission checking methods
@@ -152,7 +163,7 @@ class User extends Authenticatable
             ->whereIn('name', $permissions)
             ->pluck('name')
             ->toArray();
-        
+
         return count(array_intersect($permissions, $userPermissions)) === count($permissions);
     }
 
@@ -187,8 +198,8 @@ class User extends Authenticatable
     public function grantPermission(string $permissionName, ?int $grantedBy = null)
     {
         $permission = Permission::where('name', $permissionName)->first();
-        
-        if (!$permission) {
+
+        if (! $permission) {
             throw new \Exception("Permission '{$permissionName}' not found");
         }
 
@@ -202,7 +213,7 @@ class User extends Authenticatable
     public function revokePermission(string $permissionName)
     {
         $permission = Permission::where('name', $permissionName)->first();
-        
+
         if ($permission) {
             $this->permissions()->detach($permission->id);
         }
@@ -251,6 +262,7 @@ class User extends Authenticatable
         if ($this->isOperation()) {
             return $this->operatorLeads();
         }
+
         return $this->leads();
     }
 
@@ -265,6 +277,7 @@ class User extends Authenticatable
         if ($this->isOperation()) {
             return $lead->assigned_operator === $this->id;
         }
+
         return $lead->assigned_to === $this->id;
     }
 
@@ -279,6 +292,7 @@ class User extends Authenticatable
     public function getRemainingLeaves(?int $year = null): array
     {
         $service = app(\App\Services\LeaveAllocationService::class);
+
         return $service->getRemainingLeaves($this, $year);
     }
 
@@ -288,6 +302,7 @@ class User extends Authenticatable
     public function getUsedLeaves(?int $year = null): array
     {
         $service = app(\App\Services\LeaveAllocationService::class);
+
         return $service->getUsedLeaves($this, $year);
     }
 
@@ -297,6 +312,7 @@ class User extends Authenticatable
     public function getLeaveAllocations(): array
     {
         $service = app(\App\Services\LeaveAllocationService::class);
+
         return $service->getAllocations();
     }
 }

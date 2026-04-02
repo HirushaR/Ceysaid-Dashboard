@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('leads', 'is_cruise_lead')) {
+            return;
+        }
+
         Schema::table('leads', function (Blueprint $table) {
             $table->boolean('is_cruise_lead')->default(false)->after('is_group_lead');
         });

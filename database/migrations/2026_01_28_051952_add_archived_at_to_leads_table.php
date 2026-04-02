@@ -12,11 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->timestamp('archived_at')->nullable()->after('deleted_at');
-            $table->foreignId('archived_by')->nullable()->after('archived_at')->constrained('users')->onDelete('set null');
-            
-            $table->index('archived_at');
+            if (! Schema::hasColumn('leads', 'archived_at')) {
+                $table->timestamp('archived_at')->nullable()->after('deleted_at');
+            }
+            if (! Schema::hasColumn('leads', 'archived_by')) {
+                $table->foreignId('archived_by')->nullable()->after('archived_at')->constrained('users')->onDelete('set null');
+            }
         });
+
+        if (Schema::hasColumn('leads', 'archived_at') && ! Schema::hasIndex('leads', 'leads_archived_at_index')) {
+            Schema::table('leads', function (Blueprint $table) {
+                $table->index('archived_at');
+            });
+        }
     }
 
     /**

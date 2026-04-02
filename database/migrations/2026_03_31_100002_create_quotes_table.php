@@ -8,18 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('quotes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lead_id')->constrained()->cascadeOnDelete();
-            $table->string('quote_number')->unique();
-            $table->string('status', 32)->default('draft');
-            $table->date('quote_date')->nullable();
-            $table->date('valid_until')->nullable();
-            $table->string('terms')->nullable();
-            $table->string('subject')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('quotes')) {
+            Schema::create('quotes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('lead_id')->constrained()->cascadeOnDelete();
+                $table->string('quote_number')->unique();
+                $table->string('status', 32)->default('draft');
+                $table->date('quote_date')->nullable();
+                $table->date('valid_until')->nullable();
+                $table->string('terms')->nullable();
+                $table->string('subject')->nullable();
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (Schema::hasTable('quote_line_items')) {
+            return;
+        }
 
         Schema::create('quote_line_items', function (Blueprint $table) {
             $table->id();

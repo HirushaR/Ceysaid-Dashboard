@@ -9,12 +9,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->foreignId('quote_id')->nullable()->after('lead_id')->constrained('quotes')->nullOnDelete();
-            $table->date('invoice_date')->nullable()->after('invoice_number');
-            $table->date('due_date')->nullable()->after('invoice_date');
-            $table->string('terms')->nullable()->after('due_date');
-            $table->string('subject')->nullable()->after('terms');
+            if (! Schema::hasColumn('invoices', 'quote_id')) {
+                $table->foreignId('quote_id')->nullable()->after('lead_id')->constrained('quotes')->nullOnDelete();
+            }
+            if (! Schema::hasColumn('invoices', 'invoice_date')) {
+                $table->date('invoice_date')->nullable()->after('invoice_number');
+            }
+            if (! Schema::hasColumn('invoices', 'due_date')) {
+                $table->date('due_date')->nullable()->after('invoice_date');
+            }
+            if (! Schema::hasColumn('invoices', 'terms')) {
+                $table->string('terms')->nullable()->after('due_date');
+            }
+            if (! Schema::hasColumn('invoices', 'subject')) {
+                $table->string('subject')->nullable()->after('terms');
+            }
         });
+
+        if (Schema::hasTable('invoice_line_items')) {
+            return;
+        }
 
         Schema::create('invoice_line_items', function (Blueprint $table) {
             $table->id();

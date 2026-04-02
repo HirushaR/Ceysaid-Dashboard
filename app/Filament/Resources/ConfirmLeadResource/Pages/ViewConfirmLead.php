@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ConfirmLeadResource\Pages;
 
 use App\Filament\Resources\ConfirmLeadResource;
+use App\Filament\Resources\QuoteResource;
 use App\Models\Invoice;
 use App\Models\VendorBill;
 use Filament\Resources\Pages\ViewRecord;
@@ -25,6 +26,14 @@ class ViewConfirmLead extends ViewRecord
                 ->label('Edit')
                 ->icon('heroicon-o-pencil')
                 ->button(),
+
+            Action::make('create_quote')
+                ->label('Create Quote')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->button()
+                ->url(fn (): string => QuoteResource::getUrl('create').'?'.http_build_query(['lead_id' => $this->record->id]))
+                ->visible(fn (): bool => QuoteResource::canCreate()),
 
             Action::make('create_invoice')
                 ->label('Create Invoice')

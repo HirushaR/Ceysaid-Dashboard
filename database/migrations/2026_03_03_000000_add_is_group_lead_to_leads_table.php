@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('leads', 'is_group_lead')) {
+            return;
+        }
+
         Schema::table('leads', function (Blueprint $table) {
             $table->boolean('is_group_lead')->default(false)->after('archived_by');
         });

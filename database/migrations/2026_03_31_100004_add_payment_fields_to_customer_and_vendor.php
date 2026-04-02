@@ -9,13 +9,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('customer_payments', function (Blueprint $table) {
-            $table->string('deposit_to', 64)->nullable()->after('payment_method');
+            if (! Schema::hasColumn('customer_payments', 'deposit_to')) {
+                $table->string('deposit_to', 64)->nullable()->after('payment_method');
+            }
         });
 
         Schema::table('vendor_bills', function (Blueprint $table) {
-            $table->foreignId('supplier_id')->nullable()->after('invoice_id')->constrained('suppliers')->nullOnDelete();
-            $table->string('payment_mode', 32)->nullable()->after('payment_date');
-            $table->string('paid_through', 64)->nullable()->after('payment_mode');
+            if (! Schema::hasColumn('vendor_bills', 'supplier_id')) {
+                $table->foreignId('supplier_id')->nullable()->after('invoice_id')->constrained('suppliers')->nullOnDelete();
+            }
+            if (! Schema::hasColumn('vendor_bills', 'payment_mode')) {
+                $table->string('payment_mode', 32)->nullable()->after('payment_date');
+            }
+            if (! Schema::hasColumn('vendor_bills', 'paid_through')) {
+                $table->string('paid_through', 64)->nullable()->after('payment_mode');
+            }
         });
     }
 

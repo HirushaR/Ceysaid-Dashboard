@@ -18,6 +18,13 @@ class ViewQuote extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('download_pdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn () => route('finance.quotes.pdf', ['quote' => $this->record]))
+                ->openUrlInNewTab(),
+
             Action::make('convert_to_invoice')
                 ->label('Convert to invoice')
                 ->icon('heroicon-o-arrow-right-circle')

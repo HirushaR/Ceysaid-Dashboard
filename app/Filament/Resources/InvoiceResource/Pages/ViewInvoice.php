@@ -104,11 +104,18 @@ class ViewInvoice extends ViewRecord
                                 ->required()
                                 ->default(today())
                                 ->maxDate(today()),
-                            Forms\Components\TextInput::make('receipt_number')
+                            Forms\Components\Placeholder::make('receipt_number_auto')
                                 ->label('Receipt number')
-                                ->maxLength(255)
-                                ->unique('customer_payments', 'receipt_number')
-                                ->placeholder('e.g., RC202534'),
+                                ->content(function (): string {
+                                    $this->record->loadMissing('lead');
+                                    $lid = (int) ($this->record->lead_id ?? 0);
+                                    if ($lid === 0) {
+                                        return 'Assigned automatically when you save.';
+                                    }
+
+                                    return 'Assigned automatically on save — CR/'.now()->year.'/'.$lid.'/…';
+                                })
+                                ->columnSpanFull(),
                             Forms\Components\Select::make('payment_method')
                                 ->label('Payment mode')
                                 ->options(PaymentMode::options())
@@ -125,7 +132,9 @@ class ViewInvoice extends ViewRecord
                         ->columns(2),
                 ])
                 ->action(function (array $data) {
+                    unset($data['receipt_number_auto']);
                     $data['invoice_id'] = $this->record->id;
+                    unset($data['receipt_number']);
                     CustomerPayment::create($data);
                     $this->record->refresh();
                     Notification::make()

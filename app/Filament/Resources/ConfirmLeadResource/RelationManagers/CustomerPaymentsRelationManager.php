@@ -110,10 +110,20 @@ class CustomerPaymentsRelationManager extends RelationManager
                             ->required()
                             ->default(today())
                             ->maxDate(today()),
+                        Forms\Components\Placeholder::make('receipt_number_auto')
+                            ->label('Receipt number')
+                            ->content(function (): string {
+                                $lid = (int) $this->getOwnerRecord()->id;
+
+                                return 'Assigned on save — CR/'.now()->year.'/'.$lid.'/{next}';
+                            })
+                            ->visibleOn('create')
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('receipt_number')
                             ->label('Receipt number')
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->disabled()
+                            ->dehydrated()
+                            ->visibleOn('edit'),
                         Forms\Components\Select::make('payment_method')
                             ->label('Payment mode')
                             ->options(PaymentMode::options())
@@ -197,7 +207,7 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ->modalHeading('Record customer payment')
                     ->successNotificationTitle('Payment saved')
                     ->mutateFormDataUsing(function (array $data): array {
-                        unset($data['invoice_on_record']);
+                        unset($data['invoice_on_record'], $data['receipt_number_auto'], $data['receipt_number']);
 
                         return $data;
                     })
@@ -227,7 +237,7 @@ class CustomerPaymentsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
-                        unset($data['invoice_id'], $data['invoice_on_record']);
+                        unset($data['invoice_id'], $data['invoice_on_record'], $data['receipt_number_auto']);
 
                         return $data;
                     }),

@@ -18,9 +18,15 @@ class VendorBillPdfController
         $vendorBill->load(['invoice.lead', 'supplier']);
 
         $filename = str_replace(['/', '\\'], '-', $vendorBill->vendor_bill_number).'.pdf';
+        $company = config('ceysaid.company');
+        $logoRelative = $company['logo_path'] ?? null;
+        $logoPath = $logoRelative ? public_path($logoRelative) : null;
+        $logoPath = $logoPath && is_file($logoPath) ? $logoPath : null;
+
         $pdf = Pdf::loadView('pdf.vendor-bill', [
             'vendorBill' => $vendorBill,
-            'company' => config('ceysaid.company'),
+            'company' => $company,
+            'logoPath' => $logoPath,
         ]);
 
         return $pdf->download($filename);

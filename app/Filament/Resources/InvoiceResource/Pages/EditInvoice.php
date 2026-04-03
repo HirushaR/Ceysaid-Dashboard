@@ -109,12 +109,18 @@ class EditInvoice extends EditRecord
                                 ->default(today())
                                 ->maxDate(today())
                                 ->helperText('When the payment was received'),
-                            Forms\Components\TextInput::make('receipt_number')
-                                ->label('Receipt Number')
-                                ->maxLength(255)
-                                ->placeholder('e.g., RC202534')
-                                ->unique('customer_payments', 'receipt_number')
-                                ->helperText('Unique receipt number for this payment'),
+                            Forms\Components\Placeholder::make('receipt_number_auto')
+                                ->label('Receipt number')
+                                ->content(function (): string {
+                                    $this->record->loadMissing('lead');
+                                    $lid = (int) ($this->record->lead_id ?? 0);
+                                    if ($lid === 0) {
+                                        return 'Assigned automatically when you save.';
+                                    }
+
+                                    return 'Assigned automatically on save — CR/'.now()->year.'/'.$lid.'/…';
+                                })
+                                ->columnSpanFull(),
                             Forms\Components\Select::make('payment_method')
                                 ->label('Payment mode')
                                 ->options(PaymentMode::options())
@@ -132,10 +138,10 @@ class EditInvoice extends EditRecord
                         ->columns(2),
                 ])
                 ->action(function (array $data) {
-                    // Add the invoice_id to the data
+                    unset($data['receipt_number_auto']);
                     $data['invoice_id'] = $this->record->id;
+                    unset($data['receipt_number']);
 
-                    // Create the customer payment
                     $payment = CustomerPayment::create($data);
 
                     // Refresh the record to get updated status

@@ -156,6 +156,11 @@ class VendorBillResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with([
+                'invoice.lead',
+                'invoice',
+                'supplier',
+            ]))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.invoice_number')
                     ->label('Invoice #')
@@ -166,8 +171,22 @@ class VendorBillResource extends Resource
                     ->color('info'),
                 Tables\Columns\TextColumn::make('invoice.lead.reference_id')
                     ->label('Lead #')
-                    ->searchable()
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('invoice.lead', function (Builder $q) use ($search) {
+                            $q->where('reference_id', 'like', "%{$search}%")
+                                ->orWhere('id', $search)
+                                ->orWhere('customer_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable()
+                    ->formatStateUsing(function (?string $state, VendorBill $record): ?string {
+                        $lead = $record->invoice?->lead;
+                        if (! $lead) {
+                            return null;
+                        }
+
+                        return filled($lead->reference_id) ? $lead->reference_id : '#'.$lead->id;
+                    })
                     ->url(fn ($record) => $record->invoice && $record->invoice->lead ? route('filament.admin.resources.leads.view', ['record' => $record->invoice->lead]) : null)
                     ->color('primary'),
                 Tables\Columns\TextColumn::make('invoice.lead.customer_name')

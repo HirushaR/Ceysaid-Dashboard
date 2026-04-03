@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DocumentNumberService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -36,6 +37,21 @@ class CustomerPayment extends Model
     protected static function boot()
     {
         parent::boot();
+
+        static::creating(function (CustomerPayment $payment) {
+            if (filled($payment->receipt_number)) {
+                return;
+            }
+            if (! $payment->invoice_id) {
+                return;
+            }
+            $invoice = Invoice::query()->find($payment->invoice_id);
+            if (! $invoice?->lead_id) {
+                return;
+            }
+            $payment->receipt_number = app(DocumentNumberService::class)
+                ->nextCustomerReceiptNumberForLead((int) $invoice->lead_id);
+        });
 
         // Update invoice payment status when payment is created, updated, or deleted
         static::saved(function ($payment) {

@@ -60,10 +60,23 @@ class CustomerPaymentsRelationManager extends RelationManager
                             ->required()
                             ->default(today())
                             ->maxDate(today()),
+                        Forms\Components\Placeholder::make('receipt_number_auto')
+                            ->label('Receipt number')
+                            ->content(function (): string {
+                                $inv = $this->getOwnerRecord();
+                                $lid = (int) ($inv->lead_id ?? 0);
+
+                                return $lid > 0
+                                    ? 'Assigned on save — CR/'.now()->year.'/'.$lid.'/{next}'
+                                    : 'Assigned on save when you save this payment.';
+                            })
+                            ->visibleOn('create')
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('receipt_number')
                             ->label('Receipt number')
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->disabled()
+                            ->dehydrated()
+                            ->visibleOn('edit'),
                         Forms\Components\Select::make('payment_method')
                             ->label('Payment mode')
                             ->options(PaymentMode::options())
@@ -120,6 +133,11 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ->label('Record payment')
                     ->modalHeading('Record customer payment')
                     ->successNotificationTitle('Payment saved')
+                    ->mutateFormDataUsing(function (array $data): array {
+                        unset($data['receipt_number_auto'], $data['receipt_number']);
+
+                        return $data;
+                    })
                     ->visible(function () {
                         $invoice = $this->getOwnerRecord();
 
@@ -138,7 +156,12 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ' | Balance: LKR '.number_format($balance, 2);
             })
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->mutateFormDataUsing(function (array $data): array {
+                        unset($data['receipt_number_auto']);
+
+                        return $data;
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

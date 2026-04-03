@@ -40,6 +40,7 @@ class FinanceFlowsTest extends TestCase
         $lead->refresh();
         $this->assertCount(1, $lead->invoices);
         $invoice = $lead->invoices->first();
+        $this->assertSame('INV/'.now()->year.'/'.$lead->id, $invoice->invoice_number);
         $this->assertEquals(200.00, (float) $invoice->total_amount);
         $this->assertCount(2, $invoice->lineItems);
     }
@@ -51,6 +52,7 @@ class FinanceFlowsTest extends TestCase
         $lead->refresh();
         $this->assertCount(1, $lead->invoices);
         $invoice = $lead->invoices->first();
+        $this->assertSame('INV/'.now()->year.'/'.$lead->id, $invoice->invoice_number);
         $this->assertEquals(0.0, (float) $invoice->total_amount);
         $this->assertCount(1, $invoice->lineItems);
         $this->assertStringContainsString('Pending pricing', $invoice->lineItems->first()->description);
@@ -86,6 +88,7 @@ class FinanceFlowsTest extends TestCase
         $invoice = app(ConvertQuoteToInvoiceService::class)->convert($quote->fresh());
 
         $this->assertInstanceOf(Invoice::class, $invoice);
+        $this->assertSame('INV/'.now()->year.'/'.$lead->id, $invoice->invoice_number);
         $this->assertEquals(200.0, (float) $invoice->total_amount);
         $this->assertCount(1, $invoice->lineItems);
         $this->assertEquals(QuoteStatus::Converted, $quote->fresh()->status);
@@ -112,11 +115,11 @@ class FinanceFlowsTest extends TestCase
         app(ConvertQuoteToInvoiceService::class)->convert($quote->fresh());
     }
 
-    public function test_only_accounting_can_create_invoices_via_resource(): void
+    public function test_sales_and_accounting_can_create_invoices_via_resource(): void
     {
         $sales = User::factory()->create(['role' => 'sales']);
         $this->actingAs($sales);
-        $this->assertFalse(InvoiceResource::canCreate());
+        $this->assertTrue(InvoiceResource::canCreate());
 
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);

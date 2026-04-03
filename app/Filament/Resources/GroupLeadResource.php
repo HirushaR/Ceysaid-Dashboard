@@ -2,30 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
+use App\Enums\Platform;
+use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Resources\GroupLeadResource\Pages;
 use App\Models\Lead;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\GroupLeadResource\Pages;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Enums\LeadStatus;
-use App\Enums\Platform;
 
 class GroupLeadResource extends Resource
 {
     protected static ?string $model = Lead::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $navigationLabel = 'Group Lead';
+
     protected static ?string $label = 'Group Lead';
+
     protected static ?string $pluralLabel = 'Group Leads';
+
     protected static ?string $navigationGroup = 'Dashboard';
 
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();
-        if (!$user || !$user->isSales()) {
+        if (! $user || ! $user->isSales()) {
             return null;
         }
         $count = Lead::where('assigned_to', $user->id)
@@ -33,6 +39,7 @@ class GroupLeadResource extends Resource
             ->whereNull('deleted_at')
             ->whereNull('archived_at')
             ->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -44,6 +51,7 @@ class GroupLeadResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+
         return parent::getEloquentQuery()
             ->notArchived()
             ->where('assigned_to', $user ? $user->id : null)
@@ -53,9 +61,10 @@ class GroupLeadResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if (!$user) {
+        if (! $user) {
             return false;
         }
+
         return $user->isSales();
     }
 
@@ -79,6 +88,7 @@ class GroupLeadResource extends Resource
                 $path = $file->storeAs('', $fileName, 'lead-attachments');
                 $set('file_path', $path);
                 $set('original_name', $file->getClientOriginalName());
+
                 return $path;
             });
     }
@@ -126,8 +136,7 @@ class GroupLeadResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->color(fn (string $state): string =>
-                        LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                    ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'
                     )
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state)
                     ->alignCenter()
@@ -244,6 +253,8 @@ class GroupLeadResource extends Resource
                     ])
                     ->columns(2)
                     ->collapsible(),
+
+                LeadQuoteFormSection::make(),
 
                 Forms\Components\Section::make('Attachments')
                     ->schema([

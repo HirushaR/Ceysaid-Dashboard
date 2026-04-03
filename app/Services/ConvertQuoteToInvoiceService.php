@@ -27,7 +27,7 @@ class ConvertQuoteToInvoiceService
             $invoice = Invoice::create([
                 'lead_id' => $quote->lead_id,
                 'quote_id' => $quote->id,
-                'invoice_number' => $this->numbers->nextInvoiceNumber(),
+                'invoice_number' => $this->numbers->nextInvoiceNumberForLead($quote->lead_id),
                 'invoice_date' => now()->toDateString(),
                 'due_date' => $quote->valid_until?->toDateString() ?? now()->toDateString(),
                 'terms' => $quote->terms,

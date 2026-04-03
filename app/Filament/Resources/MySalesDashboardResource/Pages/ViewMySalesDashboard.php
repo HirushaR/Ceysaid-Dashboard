@@ -3,16 +3,16 @@
 namespace App\Filament\Resources\MySalesDashboardResource\Pages;
 
 use App\Filament\Resources\MySalesDashboardResource;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action as NotificationAction;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
-use App\Notifications\LeadDatabaseNotification;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components;
-use Filament\Forms;
 use App\Models\LeadNote;
 use App\Models\User;
+use App\Notifications\LeadDatabaseNotification;
+use Filament\Forms;
+use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Events\DatabaseNotificationsSent;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewMySalesDashboard extends ViewRecord
 {
@@ -21,6 +21,7 @@ class ViewMySalesDashboard extends ViewRecord
     protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
     {
         $query = static::getResource()::getEloquentQuery();
+
         return $query->with(['actionLogs.user', 'notes.user'])->findOrFail($key);
     }
 
@@ -224,7 +225,7 @@ class ViewMySalesDashboard extends ViewRecord
                                 if ($notes->isEmpty()) {
                                     return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No internal notes yet.</p>');
                                 }
-                                
+
                                 $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
                                 $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
                                 $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
@@ -234,20 +235,21 @@ class ViewMySalesDashboard extends ViewRecord
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
                                 $html .= '</tr></thead>';
                                 $html .= '<tbody class="divide-y divide-gray-200 dark:divide-white/5">';
-                                
+
                                 foreach ($notes as $note) {
                                     $addedBy = $note->user ? $note->user->name : 'Unknown';
                                     $when = $note->created_at->format('M j, Y \a\t g:i A');
                                     $noteText = nl2br(htmlspecialchars($note->note));
-                                    
+
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">' . $noteText . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">' . htmlspecialchars($addedBy) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">'.$noteText.'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">'.htmlspecialchars($addedBy).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">'.htmlspecialchars($when).'</td>';
                                     $html .= '</tr>';
                                 }
-                                
+
                                 $html .= '</tbody></table></div>';
+
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
@@ -263,7 +265,7 @@ class ViewMySalesDashboard extends ViewRecord
                                 if ($logs->isEmpty()) {
                                     return new \Illuminate\Support\HtmlString('<p class="text-gray-500 dark:text-gray-400 text-sm">No actions logged yet.</p>');
                                 }
-                                
+
                                 $html = '<div class="fi-ta-content overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">';
                                 $html .= '<table class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">';
                                 $html .= '<thead class="divide-y divide-gray-200 dark:divide-white/5">';
@@ -274,31 +276,24 @@ class ViewMySalesDashboard extends ViewRecord
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
                                 $html .= '</tr></thead>';
                                 $html .= '<tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">';
-                                
+
                                 foreach ($logs as $log) {
-                                    $actionBadgeColor = match($log->action) {
-                                        'created' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
-                                        'status_changed' => 'bg-warning-50 text-warning-700 ring-warning-600/20 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/20',
-                                        'assigned' => 'bg-info-50 text-info-700 ring-info-600/20 dark:bg-info-400/10 dark:text-info-400 dark:ring-info-400/20',
-                                        'operator_assigned' => 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20',
-                                        'archived' => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
-                                        'unarchived' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
-                                        default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
-                                    };
-                                    
+                                    $actionBadgeColor = \App\Models\LeadActionLog::badgeClassesForAction($log->action);
+
                                     $actionLabel = ucfirst(str_replace('_', ' ', $log->action));
                                     $performedBy = $log->user ? $log->user->name : 'System';
                                     $when = $log->created_at->format('M j, Y \a\t g:i A');
-                                    
+
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
-                                    $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $actionBadgeColor . '">' . htmlspecialchars($actionLabel) . '</span></td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($performedBy) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($log->description) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.$actionBadgeColor.'">'.htmlspecialchars($actionLabel).'</span></td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">'.htmlspecialchars($performedBy).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">'.htmlspecialchars($log->description).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">'.htmlspecialchars($when).'</td>';
                                     $html .= '</tr>';
                                 }
-                                
+
                                 $html .= '</tbody></table></div>';
+
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
@@ -400,9 +395,9 @@ class ViewMySalesDashboard extends ViewRecord
     private function sendNoteNotifications(\App\Models\Lead $lead, LeadNote $note, User $addedBy): void
     {
         $recipients = $this->getNotificationRecipients($lead);
-        
+
         // Don't notify the user who added the note
-        $recipients = $recipients->reject(fn($user) => $user->id === $addedBy->id);
+        $recipients = $recipients->reject(fn ($user) => $user->id === $addedBy->id);
 
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
         $notePreview = \Str::limit($note->note, 100);
@@ -410,7 +405,7 @@ class ViewMySalesDashboard extends ViewRecord
         foreach ($recipients as $recipient) {
             // Get the correct URL based on recipient's role
             $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
-            
+
             $notification = Notification::make()
                 ->title('New Internal Note Added')
                 ->body("{$addedBy->name} added a note to lead {$refId} ({$lead->customer_name}): {$notePreview}")
@@ -447,7 +442,7 @@ class ViewMySalesDashboard extends ViewRecord
         // Notify creator if different from assignees
         if ($lead->created_by && $lead->creator) {
             $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
-            if (!$isCreatorAlreadyIncluded) {
+            if (! $isCreatorAlreadyIncluded) {
                 $recipients->push($lead->creator);
             }
         }
@@ -455,14 +450,14 @@ class ViewMySalesDashboard extends ViewRecord
         // Notify managers
         if ($lead->assignedUser) {
             $manager = $this->getManager($lead->assignedUser);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
 
         if ($lead->assignedOperator) {
             $manager = $this->getManager($lead->assignedOperator);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
@@ -493,6 +488,7 @@ class ViewMySalesDashboard extends ViewRecord
             if ($lead->is_group_lead) {
                 return \App\Filament\Resources\GroupLeadResource::getUrl('view', ['record' => $lead]);
             }
+
             return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
         }
         if ($user->isOperation()) {
@@ -502,4 +498,4 @@ class ViewMySalesDashboard extends ViewRecord
         // Default to main LeadResource for admin and other roles
         return \App\Filament\Resources\LeadResource::getUrl('view', ['record' => $lead]);
     }
-} 
+}

@@ -2,31 +2,38 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
+use App\Enums\Platform;
+use App\Enums\ServiceStatus;
+use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Resources\ConfirmLeadResource\Pages;
+use App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 use App\Models\Lead;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\ConfirmLeadResource\Pages;
-use App\Filament\Resources\ConfirmLeadResource\RelationManagers;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Enums\LeadStatus;
-use App\Enums\Platform;
-use App\Enums\ServiceStatus;
 
 class ConfirmLeadResource extends Resource
 {
     protected static ?string $model = Lead::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+
     protected static ?string $navigationLabel = 'Confirm Lead';
+
     protected static ?string $label = 'Confirm Lead';
+
     protected static ?string $pluralLabel = 'Confirm Leads';
+
     protected static ?string $navigationGroup = 'Dashboard';
 
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getConfirmLeadNotificationCount();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -38,6 +45,7 @@ class ConfirmLeadResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
+
         return $user && ($user->isSales() || $user->isOperation() || $user->isAdmin());
     }
 
@@ -59,10 +67,11 @@ class ConfirmLeadResource extends Resource
                 $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                 $extension = $file->getClientOriginalExtension();
                 $fileName = "{$timestamp}_{$originalName}.{$extension}";
-                
+
                 $path = $file->storeAs('', $fileName, 'lead-attachments');
                 $set('file_path', $path);
                 $set('original_name', $file->getClientOriginalName());
+
                 return $path;
             });
     }
@@ -73,7 +82,7 @@ class ConfirmLeadResource extends Resource
         $query = parent::getEloquentQuery()
             ->notArchived()
             ->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
-        
+
         // Filter based on user role and associations
         if ($user) {
             if ($user->isAdmin()) {
@@ -83,23 +92,25 @@ class ConfirmLeadResource extends Resource
                 // Sales users see leads they are assigned to or created
                 return $query->where(function (Builder $query) use ($user) {
                     $query->where('assigned_to', $user->id)
-                          ->orWhere('created_by', $user->id);
+                        ->orWhere('created_by', $user->id);
                 });
             } elseif ($user->isOperation()) {
                 // Operation users see leads they are assigned as operators or created
                 return $query->where(function (Builder $query) use ($user) {
                     $query->where('assigned_operator', $user->id)
-                          ->orWhere('created_by', $user->id);
+                        ->orWhere('created_by', $user->id);
                 });
             }
         }
-        
+
         return $query;
     }
 
     public static function getRelations(): array
     {
         return [
+            RelationManagers\CustomerPaymentsRelationManager::class,
+            RelationManagers\VendorBillsRelationManager::class,
             RelationManagers\InvoicesRelationManager::class,
         ];
     }
@@ -126,7 +137,7 @@ class ConfirmLeadResource extends Resource
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),
-                    
+
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()
@@ -134,19 +145,19 @@ class ConfirmLeadResource extends Resource
                     ->copyable()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
-                    
+
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Customer')
                     ->sortable()
                     ->searchable()
                     ->weight('medium')
                     ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
-                    
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors(LeadStatus::colorMap())
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
-                    
+
                 Tables\Columns\IconColumn::make('air_ticket_status')
                     ->label('Air Ticket')
                     ->icon(fn (string $state): string => match ($state) {
@@ -155,11 +166,10 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                    
+
                 Tables\Columns\IconColumn::make('hotel_status')
                     ->label('Hotel')
                     ->icon(fn (string $state): string => match ($state) {
@@ -168,11 +178,10 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                    
+
                 Tables\Columns\IconColumn::make('visa_status')
                     ->label('Visa')
                     ->icon(fn (string $state): string => match ($state) {
@@ -181,11 +190,10 @@ class ConfirmLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                    
+
                 Tables\Columns\TextColumn::make('total_invoice_amount')
                     ->label('Revenue')
                     ->money('LKR')
@@ -196,20 +204,20 @@ class ConfirmLeadResource extends Resource
                     ->getStateUsing(function ($record) {
                         return $record->invoices->sum('total_amount');
                     })
-                    ->url(fn($record) => static::getUrl('view', ['record' => $record]))
+                    ->url(fn ($record) => static::getUrl('view', ['record' => $record]))
                     ->color('info')
                     ->tooltip('Click to view invoice details'),
-                    
+
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
                     ->badge()
                     ->colors([
                         'info' => 'facebook',
-                        'success' => 'whatsapp', 
+                        'success' => 'whatsapp',
                         'warning' => 'email',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state)),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Confirmed')
                     ->dateTime('M j, Y')
@@ -246,12 +254,12 @@ class ConfirmLeadResource extends Resource
                     ->relationship('assignedOperator', 'name')
                     ->label('Assigned Operator')
                     ->searchable(),
-                    
+
                 Tables\Filters\Filter::make('has_revenue')
                     ->toggle()
                     ->query(fn (Builder $query): Builder => $query->whereHas('invoices'))
                     ->label('Has Revenue'),
-                    
+
                 Tables\Filters\Filter::make('revenue_range')
                     ->form([
                         Forms\Components\TextInput::make('revenue_from')
@@ -283,7 +291,7 @@ class ConfirmLeadResource extends Resource
                 Tables\Actions\ViewAction::make(),
             ])
             ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
-            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
+            ->recordUrl(fn ($record) => static::getUrl('view', ['record' => $record]));
     }
 
     public static function form(Form $form): Form
@@ -293,7 +301,7 @@ class ConfirmLeadResource extends Resource
                 Forms\Components\Section::make('Lead Information')
                     ->schema([
                         Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
-                        Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
@@ -302,18 +310,18 @@ class ConfirmLeadResource extends Resource
                                 Forms\Components\TextInput::make('name')->required(),
                                 Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
                             ])
-                            ->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('message')->label('Message')->disabled(fn($context) => $context === 'view'),
+                            ->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('message')->label('Message')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
 
                 Forms\Components\Section::make('Contact Information')
                     ->schema([
-                        Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
@@ -322,33 +330,33 @@ class ConfirmLeadResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('created_by')
                             ->label('Created By')
-                            ->content(fn($record) => $record->creator?->name ?? 'N/A'),
+                            ->content(fn ($record) => $record->creator?->name ?? 'N/A'),
                         Forms\Components\Placeholder::make('assigned_to')
                             ->label('Assigned To')
-                            ->content(fn($record) => $record->assignedUser?->name ?? 'Unassigned'),
+                            ->content(fn ($record) => $record->assignedUser?->name ?? 'Unassigned'),
                         Forms\Components\Placeholder::make('assigned_operator')
                             ->label('Assigned Operator')
-                            ->content(fn($record) => $record->assignedOperator?->name ?? 'Unassigned'),
+                            ->content(fn ($record) => $record->assignedOperator?->name ?? 'Unassigned'),
                         Forms\Components\Placeholder::make('status')
                             ->label('Status')
-                            ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
+                            ->content(fn ($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
                     ])
                     ->columns(2)
                     ->collapsible(),
 
                 Forms\Components\Section::make('Travel Details')
                     ->schema([
-                        Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('country')->label('Country')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('country')->label('Country')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
@@ -359,29 +367,27 @@ class ConfirmLeadResource extends Resource
                             ->label('Air Ticket Status')
                             ->options(ServiceStatus::options())
                             ->default('pending')
-                            ->disabled(fn($context) => $context === 'view')
+                            ->disabled(fn ($context) => $context === 'view')
                             ->suffixIcon(fn ($state) => match ($state) {
                                 'pending' => 'heroicon-o-clock',
                                 'not_required' => 'heroicon-o-minus-circle',
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => 
-                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ->suffixIconColor(fn ($state) => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                             ),
                         Forms\Components\Select::make('hotel_status')
                             ->label('Hotel Status')
                             ->options(ServiceStatus::options())
                             ->default('pending')
-                            ->disabled(fn($context) => $context === 'view')
+                            ->disabled(fn ($context) => $context === 'view')
                             ->suffixIcon(fn ($state) => match ($state) {
                                 'pending' => 'heroicon-o-clock',
                                 'not_required' => 'heroicon-o-minus-circle',
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => 
-                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ->suffixIconColor(fn ($state) => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                             ),
                         Forms\Components\Select::make('visa_status')
                             ->label('Visa Status')
@@ -394,33 +400,29 @@ class ConfirmLeadResource extends Resource
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => 
-                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ->suffixIconColor(fn ($state) => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                             )
                             ->helperText('Visa status can only be edited in Visa Leads tab'),
                         Forms\Components\Select::make('land_package_status')
                             ->label('Land Package Status')
                             ->options(ServiceStatus::options())
                             ->default('pending')
-                            ->disabled(fn($context) => $context === 'view')
+                            ->disabled(fn ($context) => $context === 'view')
                             ->suffixIcon(fn ($state) => match ($state) {
                                 'pending' => 'heroicon-o-clock',
                                 'not_required' => 'heroicon-o-minus-circle',
                                 'done' => 'heroicon-o-check-circle',
                                 default => 'heroicon-o-question-mark-circle'
                             })
-                            ->suffixIconColor(fn ($state) => 
-                                ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                            ->suffixIconColor(fn ($state) => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                             ),
                     ])
                     ->columns(2)
                     ->collapsible(),
 
+                LeadQuoteFormSection::make(),
 
-
-                
-                
-                    Forms\Components\Section::make('Attachments')
+                Forms\Components\Section::make('Attachments')
                     ->schema([
                         Forms\Components\Repeater::make('attachments')
                             ->relationship('attachments')
@@ -439,7 +441,7 @@ class ConfirmLeadResource extends Resource
                             ->createItemButtonLabel('Add Attachment')
                             ->disableLabel()
                             ->columns(1)
-                            ->disabled(fn($context) => $context === 'view'),
+                            ->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->collapsible(),
 
@@ -447,4 +449,4 @@ class ConfirmLeadResource extends Resource
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
             ]);
     }
-} 
+}

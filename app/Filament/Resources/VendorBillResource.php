@@ -91,6 +91,10 @@ class VendorBillResource extends Resource
                             ->numeric()
                             ->step(0.01)
                             ->prefix('LKR'),
+                        Forms\Components\DatePicker::make('due_date')
+                            ->label('Due date')
+                            ->nullable()
+                            ->native(false),
                         Forms\Components\Select::make('service_type')
                             ->label('Service Type')
                             ->options([
@@ -198,6 +202,11 @@ class VendorBillResource extends Resource
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
+                Tables\Columns\TextColumn::make('due_date')
+                    ->label('Due date')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->placeholder('—'),
                 Tables\Columns\BadgeColumn::make('payment_status')
                     ->label('Status')
                     ->colors([

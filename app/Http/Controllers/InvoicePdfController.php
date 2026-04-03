@@ -21,7 +21,16 @@ class InvoicePdfController
         ]);
 
         $filename = str_replace(['/', '\\'], '-', $invoice->invoice_number).'.pdf';
-        $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice, 'company' => config('ceysaid.company')]);
+        $company = config('ceysaid.company');
+        $logoRelative = $company['logo_path'] ?? null;
+        $logoPath = $logoRelative ? public_path($logoRelative) : null;
+        $logoPath = $logoPath && is_file($logoPath) ? $logoPath : null;
+
+        $pdf = Pdf::loadView('pdf.invoice', [
+            'invoice' => $invoice,
+            'company' => $company,
+            'logoPath' => $logoPath,
+        ]);
 
         return $pdf->download($filename);
     }

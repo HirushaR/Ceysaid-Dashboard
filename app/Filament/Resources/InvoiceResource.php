@@ -12,6 +12,7 @@ use App\Traits\HasResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -34,7 +35,21 @@ class InvoiceResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->canManageAccountingRecords() ?? false;
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->canManageAccountingRecords()) {
+            return true;
+        }
+
+        if ($user->canCreateResource('invoices')) {
+            return true;
+        }
+
+        // Confirm Lead / lead workflows: same roles that work confirmed leads may create invoices.
+        return $user->isSales() || $user->isOperation();
     }
 
     public static function canEdit(Model $record): bool
@@ -45,6 +60,42 @@ class InvoiceResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
+
+    /**
+     * Vendor bills + customer payment receipts on invoice view (header actions + relation tabs).
+     */
+    public static function canManageInvoiceLinkedFinancialRecords(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin() || $user->canManageAccountingRecords()) {
+            return true;
+        }
+
+        if ($user->hasPermission('vendor_bills.create') || $user->hasPermission('vendor_bills.edit')) {
+            return true;
+        }
+
+        if ($user->hasPermission('invoices.view')) {
+            return true;
+        }
+
+        return static::canCreate();
+    }
+
+    public static function canRecordVendorBills(): bool
+    {
+        return static::canManageInvoiceLinkedFinancialRecords();
+    }
+
+    /** @see canManageInvoiceLinkedFinancialRecords() */
+    public static function canRecordCustomerPayments(): bool
+    {
+        return static::canManageInvoiceLinkedFinancialRecords();
     }
 
     public static function form(Form $form): Form
@@ -60,24 +111,81 @@ class InvoiceResource extends Resource
                             )
                             ->searchable(['reference_id', 'customer_name'])
                             ->required()
-                            ->disabledOn('edit'),
+                            ->disabledOn('edit')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                if (! $state) {
+                                    $set('quote_id', null);
+                                    $set('subject', null);
+                                    $set('terms', 'Due on Receipt');
+                                    $set('notes', null);
+                                    $set('due_date', now()->format('Y-m-d'));
+                                    $set('lineItems', [
+                                        [
+                                            'description' => '',
+                                            'quantity' => 1,
+                                            'rate' => 0,
+                                            'customer_details' => null,
+                                        ],
+                                    ]);
+
+                                    return;
+                                }
+
+                                foreach (Quote::invoiceFormStateForLeadId((int) $state) as $key => $value) {
+                                    $set($key, $value);
+                                }
+                            })
+                            ->helperText('Invoice number is assigned on save as INV/YEAR/LEAD_ID (e.g. INV/2026/42).'),
                         Forms\Components\Select::make('quote_id')
-                            ->label('From quote (optional)')
-                            ->options(fn (Get $get): array => Quote::query()
-                                ->where('lead_id', $get('lead_id'))
-                                ->where('status', QuoteStatus::Draft)
-                                ->pluck('quote_number', 'id')
-                                ->all())
+                            ->label('Load from quote (optional)')
+                            ->placeholder('None — add line items below')
+                            ->options(function (Get $get): array {
+                                $leadId = $get('lead_id');
+                                if (! $leadId) {
+                                    return [];
+                                }
+
+                                return Quote::query()
+                                    ->where('lead_id', $leadId)
+                                    ->where('status', QuoteStatus::Draft)
+                                    ->orderByDesc('id')
+                                    ->pluck('quote_number', 'id')
+                                    ->all();
+                            })
                             ->searchable()
                             ->nullable()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                if (! $state) {
+                                    return;
+                                }
+                                $quote = Quote::with(['lineItems' => fn ($q) => $q->orderBy('sort_order')])->find($state);
+                                if (! $quote) {
+                                    return;
+                                }
+                                foreach ($quote->attributesForInvoiceForm() as $key => $value) {
+                                    $set($key, $value);
+                                }
+                            })
+                            ->visible(fn (Get $get): bool => (bool) $get('lead_id'))
+                            ->helperText('Prefills line items from a draft quote; edit before saving.')
                             ->visibleOn('create'),
+                        Forms\Components\Placeholder::make('invoice_number_preview')
+                            ->label('Invoice number (on save)')
+                            ->content(fn (Get $get): string => $get('lead_id')
+                                ? 'INV/'.now()->year.'/'.$get('lead_id').' (adds -2, -3… if that number is already used).'
+                                : 'Select a lead first.')
+                            ->visibleOn('create')
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('invoice_number')
                             ->label('Invoice Number')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255)
                             ->disabledOn('edit')
-                            ->dehydrated(),
+                            ->dehydrated()
+                            ->hiddenOn('create'),
                         Forms\Components\DatePicker::make('invoice_date')
                             ->label('Invoice date')
                             ->default(now()),
@@ -102,10 +210,11 @@ class InvoiceResource extends Resource
                     ->columns(2),
 
                 Forms\Components\Section::make('Line items')
+                    ->description('Same pattern as quotes: description, optional customer details, qty and rate. Invoice total is updated when you save.')
                     ->schema([
                         Forms\Components\Repeater::make('lineItems')
-                            ->relationship()
                             ->schema([
+                                Forms\Components\Hidden::make('lead_cost_id'),
                                 Forms\Components\Textarea::make('description')
                                     ->required()
                                     ->rows(2)
@@ -129,11 +238,11 @@ class InvoiceResource extends Resource
                             ->orderColumn('sort_order')
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['description'] ?? null),
-                    ])
-                    ->collapsible(),
+                    ]),
 
                 Forms\Components\Section::make('💰 Customer Payment (Money IN)')
                     ->description('Track payments received from customers')
+                    ->hiddenOn('create')
                     ->schema([
                         Forms\Components\Select::make('customer_payment_status')
                             ->label('Customer Payment Status')
@@ -168,6 +277,7 @@ class InvoiceResource extends Resource
 
                 Forms\Components\Section::make('🏪 Vendor Payment (Money OUT)')
                     ->description('Track payments made to vendors')
+                    ->hiddenOn('create')
                     ->schema([
                         Forms\Components\Select::make('vendor_payment_status')
                             ->label('Vendor Payment Status')

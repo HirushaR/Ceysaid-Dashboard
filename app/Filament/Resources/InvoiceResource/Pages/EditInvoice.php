@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class EditInvoice extends EditRecord
 {
@@ -19,6 +20,37 @@ class EditInvoice extends EditRecord
     public static function canAccess(array $parameters = []): bool
     {
         return auth()->user()?->canManageAccountingRecords() ?? false;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $this->getRecord()->loadMissing([
+            'lineItems' => fn ($q) => $q->orderBy('sort_order'),
+        ]);
+
+        $data['lineItems'] = $this->getRecord()->lineItems->map(fn ($l) => [
+            'lead_cost_id' => $l->lead_cost_id,
+            'description' => $l->description,
+            'customer_details' => $l->customer_details,
+            'quantity' => $l->quantity,
+            'rate' => $l->rate,
+        ])->values()->all();
+
+        return $data;
+    }
+
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        $lineItems = $data['lineItems'] ?? [];
+        unset($data['lineItems']);
+
+        $record->update($data);
+
+        if (is_array($lineItems)) {
+            $record->replaceLineItemsFromFormState($lineItems);
+        }
+
+        return $record;
     }
 
     protected function afterSave(): void

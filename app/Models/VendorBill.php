@@ -15,6 +15,7 @@ class VendorBill extends Model
         'vendor_name',
         'vendor_bill_number',
         'bill_amount',
+        'due_date',
         'service_type',
         'service_details',
         'payment_status',
@@ -26,6 +27,7 @@ class VendorBill extends Model
 
     protected $casts = [
         'bill_amount' => 'decimal:2',
+        'due_date' => 'date',
         'payment_date' => 'date',
         'payment_status' => 'string',
     ];

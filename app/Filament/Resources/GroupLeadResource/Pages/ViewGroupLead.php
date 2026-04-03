@@ -6,16 +6,16 @@ use App\Filament\Resources\CruiseLeadResource;
 use App\Filament\Resources\GroupLeadResource;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\MySalesDashboardResource;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action as NotificationAction;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
-use App\Notifications\LeadDatabaseNotification;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components;
-use Filament\Forms;
 use App\Models\LeadNote;
 use App\Models\User;
+use App\Notifications\LeadDatabaseNotification;
+use Filament\Forms;
+use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Events\DatabaseNotificationsSent;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewGroupLead extends ViewRecord
 {
@@ -24,6 +24,7 @@ class ViewGroupLead extends ViewRecord
     protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
     {
         $query = static::getResource()::getEloquentQuery();
+
         return $query->with(['actionLogs.user', 'notes.user'])->findOrFail($key);
     }
 
@@ -234,12 +235,13 @@ class ViewGroupLead extends ViewRecord
                                     $when = $note->created_at->format('M j, Y \a\t g:i A');
                                     $noteText = nl2br(htmlspecialchars($note->note));
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">' . $noteText . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">' . htmlspecialchars($addedBy) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white whitespace-normal">'.$noteText.'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-950 dark:text-white">'.htmlspecialchars($addedBy).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">'.htmlspecialchars($when).'</td>';
                                     $html .= '</tr>';
                                 }
                                 $html .= '</tbody></table></div>';
+
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
@@ -264,26 +266,19 @@ class ViewGroupLead extends ViewRecord
                                 $html .= '<th class="px-3 py-3.5 pe-3 text-start"><span class="text-xs font-semibold text-gray-950 dark:text-white">When</span></th>';
                                 $html .= '</tr></thead><tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">';
                                 foreach ($logs as $log) {
-                                    $actionBadgeColor = match ($log->action) {
-                                        'created' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
-                                        'status_changed' => 'bg-warning-50 text-warning-700 ring-warning-600/20 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/20',
-                                        'assigned' => 'bg-info-50 text-info-700 ring-info-600/20 dark:bg-info-400/10 dark:text-info-400 dark:ring-info-400/20',
-                                        'operator_assigned' => 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20',
-                                        'archived' => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
-                                        'unarchived' => 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/20',
-                                        default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20',
-                                    };
+                                    $actionBadgeColor = \App\Models\LeadActionLog::badgeClassesForAction($log->action);
                                     $actionLabel = ucfirst(str_replace('_', ' ', $log->action));
                                     $performedBy = $log->user ? $log->user->name : 'System';
                                     $when = $log->created_at->format('M j, Y \a\t g:i A');
                                     $html .= '<tr class="group transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">';
-                                    $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $actionBadgeColor . '">' . htmlspecialchars($actionLabel) . '</span></td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($performedBy) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">' . htmlspecialchars($log->description) . '</td>';
-                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars($when) . '</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3"><span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.$actionBadgeColor.'">'.htmlspecialchars($actionLabel).'</span></td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">'.htmlspecialchars($performedBy).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-950 dark:text-white">'.htmlspecialchars($log->description).'</td>';
+                                    $html .= '<td class="px-3 py-4 pe-3 text-sm text-gray-500 dark:text-gray-400">'.htmlspecialchars($when).'</td>';
                                     $html .= '</tr>';
                                 }
                                 $html .= '</tbody></table></div>';
+
                                 return new \Illuminate\Support\HtmlString($html);
                             })
                             ->columnSpanFull(),
@@ -412,22 +407,23 @@ class ViewGroupLead extends ViewRecord
             $recipients->push($lead->assignedOperator);
         }
         if ($lead->created_by && $lead->creator) {
-            if (!$recipients->contains('id', $lead->created_by)) {
+            if (! $recipients->contains('id', $lead->created_by)) {
                 $recipients->push($lead->creator);
             }
         }
         if ($lead->assignedUser) {
             $manager = $this->getManager($lead->assignedUser);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
         if ($lead->assignedOperator) {
             $manager = $this->getManager($lead->assignedOperator);
-            if ($manager && !$recipients->contains('id', $manager->id)) {
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }
         }
+
         return $recipients->unique('id');
     }
 
@@ -448,11 +444,13 @@ class ViewGroupLead extends ViewRecord
             if ($lead->is_group_lead) {
                 return GroupLeadResource::getUrl('view', ['record' => $lead]);
             }
+
             return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
         }
         if ($user->isOperation()) {
             return \App\Filament\Resources\MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
         }
+
         return LeadResource::getUrl('view', ['record' => $lead]);
     }
 }

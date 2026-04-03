@@ -4,10 +4,12 @@ namespace App\Filament\Resources\QuoteResource\Pages;
 
 use App\Enums\QuoteStatus;
 use App\Filament\Resources\QuoteResource;
+use App\Models\Quote;
 use App\Services\DocumentNumberService;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Validation\ValidationException;
 
 class CreateQuote extends CreateRecord
 {
@@ -18,8 +20,15 @@ class CreateQuote extends CreateRecord
         parent::mount();
 
         if (request()->filled('lead_id')) {
+            $leadId = (int) request()->query('lead_id');
+            $existing = Quote::query()->where('lead_id', $leadId)->first();
+            if ($existing) {
+                $this->redirect(QuoteResource::getUrl('view', ['record' => $existing]));
+
+                return;
+            }
             $this->form->fill([
-                'lead_id' => (int) request()->query('lead_id'),
+                'lead_id' => $leadId,
                 'status' => QuoteStatus::Draft->value,
             ]);
         }
@@ -27,7 +36,13 @@ class CreateQuote extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['quote_number'] = app(DocumentNumberService::class)->nextQuoteNumber();
+        if (Quote::query()->where('lead_id', (int) $data['lead_id'])->exists()) {
+            throw ValidationException::withMessages([
+                'lead_id' => __('This lead already has a quote.'),
+            ]);
+        }
+
+        $data['quote_number'] = app(DocumentNumberService::class)->nextQuoteNumberForLead((int) $data['lead_id']);
         $data['status'] = $data['status'] ?? QuoteStatus::Draft->value;
 
         return $data;

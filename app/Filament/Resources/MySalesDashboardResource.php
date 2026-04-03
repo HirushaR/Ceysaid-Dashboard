@@ -2,30 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
+use App\Enums\Platform;
+use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Resources\MySalesDashboardResource\Pages;
 use App\Models\Lead;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\MySalesDashboardResource\Pages;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Enums\LeadStatus;
-use App\Enums\Platform;
-use App\Enums\ServiceStatus;
 
 class MySalesDashboardResource extends Resource
 {
     protected static ?string $model = Lead::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
+
     protected static ?string $navigationLabel = 'My Sales';
+
     protected static ?string $label = 'Lead';
+
     protected static ?string $pluralLabel = 'My Sales Dashboard';
+
     protected static ?string $navigationGroup = 'Dashboard';
 
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getSalesNotificationCount();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -37,6 +43,7 @@ class MySalesDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+
         return parent::getEloquentQuery()
             ->notArchived()
             ->where('assigned_to', $user ? $user->id : null);
@@ -45,8 +52,10 @@ class MySalesDashboardResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         // Only sales users can view this resource (admin users are excluded)
         return $user->isSales();
     }
@@ -69,10 +78,11 @@ class MySalesDashboardResource extends Resource
                 $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                 $extension = $file->getClientOriginalExtension();
                 $fileName = "{$timestamp}_{$originalName}.{$extension}";
-                
+
                 $path = $file->storeAs('', $fileName, 'lead-attachments');
                 $set('file_path', $path);
                 $set('original_name', $file->getClientOriginalName());
+
                 return $path;
             });
     }
@@ -100,7 +110,7 @@ class MySalesDashboardResource extends Resource
                     ->weight('bold')
                     ->alignCenter()
                     ->width('80px'),
-                    
+
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()
@@ -110,23 +120,22 @@ class MySalesDashboardResource extends Resource
                     ->color('gray')
                     ->alignCenter()
                     ->width('120px'),
-                    
+
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Customer')
                     ->sortable()
                     ->searchable()
                     ->weight('medium')
                     ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
-                    
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->color(fn (string $state): string => 
-                        LeadStatus::tryFrom($state)?->color() ?? 'secondary'
+                    ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'
                     )
                     ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state)
                     ->alignCenter()
                     ->width('180px'),
-                    
+
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Source')
                     ->badge()
@@ -134,7 +143,7 @@ class MySalesDashboardResource extends Resource
                     ->formatStateUsing(fn ($state) => Platform::tryFrom($state)?->label() ?? ucfirst($state))
                     ->alignCenter()
                     ->width('120px'),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime('M j, Y')
@@ -164,10 +173,10 @@ class MySalesDashboardResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                    
+
                 Tables\Actions\EditAction::make(),
             ])
-            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn ($record) => static::getUrl('view', ['record' => $record]))
             ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
             ->striped()
             ->paginated([10, 25, 50, 100]);
@@ -180,7 +189,7 @@ class MySalesDashboardResource extends Resource
                 Forms\Components\Section::make('Lead Information')
                     ->schema([
                         Forms\Components\TextInput::make('reference_id')->label('Reference ID')->disabled(),
-                        Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('customer_name')->label('Customer Name')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'name')
@@ -189,18 +198,18 @@ class MySalesDashboardResource extends Resource
                                 Forms\Components\TextInput::make('name')->required(),
                                 Forms\Components\Textarea::make('contact_info')->label('Contact Info'),
                             ])
-                            ->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('message')->label('Message')->disabled(fn($context) => $context === 'view'),
+                            ->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('platform')->label('Platform')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour')->label('Tour')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('message')->label('Message')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
 
                 Forms\Components\Section::make('Contact Information')
                     ->schema([
-                        Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('contact_method')->label('Contact Method')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('contact_value')->label('Contact Value')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
@@ -209,36 +218,38 @@ class MySalesDashboardResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('created_by')
                             ->label('Created By')
-                            ->content(fn($record) => $record->creator?->name ?? 'N/A'),
+                            ->content(fn ($record) => $record->creator?->name ?? 'N/A'),
                         Forms\Components\Placeholder::make('assigned_to')
                             ->label('Assigned To')
-                            ->content(fn($record) => $record->assignedUser?->name ?? 'Unassigned'),
+                            ->content(fn ($record) => $record->assignedUser?->name ?? 'Unassigned'),
                         Forms\Components\Placeholder::make('assigned_operator')
                             ->label('Assigned Operator')
-                            ->content(fn($record) => $record->assignedOperator?->name ?? 'Unassigned'),
+                            ->content(fn ($record) => $record->assignedOperator?->name ?? 'Unassigned'),
                         Forms\Components\Placeholder::make('status')
                             ->label('Status')
-                            ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
+                            ->content(fn ($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
                     ])
                     ->columns(2)
                     ->collapsible(),
 
                 Forms\Components\Section::make('Travel Details')
                     ->schema([
-                        Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('country')->label('Country')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn($context) => $context === 'view'),
-                        Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('country')->label('Country')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_adults')->label('Number of Adults')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_children')->label('Number of Children')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_infants')->label('Number of Infants')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('priority')->label('Priority')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('arrival_date')->label('Arrival Date')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\DatePicker::make('depature_date')->label('Departure Date')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\TextInput::make('number_of_days')->label('Number of Days')->disabled(fn ($context) => $context === 'view'),
+                        Forms\Components\Textarea::make('tour_details')->label('Tour Details')->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->columns(2)
                     ->collapsible(),
+
+                LeadQuoteFormSection::make(),
 
                 Forms\Components\Section::make('Attachments')
                     ->schema([
@@ -258,7 +269,7 @@ class MySalesDashboardResource extends Resource
                             ->createItemButtonLabel('Add Attachment')
                             ->disableLabel()
                             ->columns(1)
-                            ->disabled(fn($context) => $context === 'view'),
+                            ->disabled(fn ($context) => $context === 'view'),
                     ])
                     ->collapsible(),
 
@@ -266,4 +277,4 @@ class MySalesDashboardResource extends Resource
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
             ]);
     }
-} 
+}

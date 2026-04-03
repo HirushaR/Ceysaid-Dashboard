@@ -4,6 +4,7 @@ namespace App\Filament\Resources\InvoiceResource\RelationManagers;
 
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
+use App\Filament\Resources\InvoiceResource;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -18,7 +19,7 @@ class CustomerPaymentsRelationManager extends RelationManager
 
     public function isReadOnly(): bool
     {
-        return ! (auth()->user()?->canManageAccountingRecords() ?? false);
+        return ! InvoiceResource::canRecordCustomerPayments();
     }
 
     public function form(Form $form): Form
@@ -116,12 +117,13 @@ class CustomerPaymentsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->modalHeading('Add payment receipt')
-                    ->successNotificationTitle('Receipt saved')
+                    ->label('Record payment')
+                    ->modalHeading('Record customer payment')
+                    ->successNotificationTitle('Payment saved')
                     ->visible(function () {
                         $invoice = $this->getOwnerRecord();
 
-                        return (auth()->user()?->canManageAccountingRecords() ?? false)
+                        return InvoiceResource::canRecordCustomerPayments()
                             && $invoice->customer_balance_amount > 0;
                     }),
             ])

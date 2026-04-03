@@ -29,6 +29,8 @@ class ViewInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         $canAcct = auth()->user()?->canManageAccountingRecords() ?? false;
+        $canVendorBills = InvoiceResource::canRecordVendorBills();
+        $canCustomerPayments = InvoiceResource::canRecordCustomerPayments();
 
         return [
             Action::make('download_pdf')
@@ -45,12 +47,31 @@ class ViewInvoice extends ViewRecord
                 ->visible(fn () => $canAcct),
 
             Action::make('add_customer_payment')
-                ->label('Add payment receipt')
+                ->label('Record customer payment')
                 ->icon('heroicon-o-banknotes')
                 ->color('success')
                 ->button()
-                ->visible(fn () => $canAcct && $this->record->customer_balance_amount > 0)
+                ->visible(fn () => $canCustomerPayments && $this->record->customer_balance_amount > 0)
+                ->modalHeading(fn (): string => 'Record customer payment — '.$this->record->invoice_number)
                 ->form([
+                    Forms\Components\Placeholder::make('payment_context')
+                        ->label('Invoice & lead')
+                        ->content(function (): \Illuminate\Contracts\Support\Htmlable {
+                            $this->record->loadMissing('lead');
+                            $lead = $this->record->lead;
+                            $lines = [
+                                '<strong>Invoice:</strong> '.e($this->record->invoice_number),
+                                '<strong>Balance due:</strong> LKR '.number_format((float) $this->record->customer_balance_amount, 2),
+                            ];
+                            if ($lead) {
+                                $ref = $lead->reference_id ? e($lead->reference_id) : '#'.$lead->id;
+                                $name = e($lead->customer_name ?? '—');
+                                $lines[] = "<strong>Lead:</strong> {$ref} — {$name}";
+                            }
+
+                            return new \Illuminate\Support\HtmlString(implode('<br>', $lines));
+                        })
+                        ->columnSpanFull(),
                     Forms\Components\Section::make('Payment receipt')
                         ->schema([
                             Forms\Components\TextInput::make('amount')
@@ -109,26 +130,47 @@ class ViewInvoice extends ViewRecord
                     $this->record->refresh();
                     Notification::make()
                         ->success()
-                        ->title('Payment receipt saved')
-                        ->body('New status: '.ucfirst($this->record->customer_payment_status))
+                        ->title('Payment recorded')
+                        ->body('Customer payment status: '.ucfirst($this->record->customer_payment_status).'.')
                         ->send();
+
+                    $this->redirect(InvoiceResource::getUrl('view', ['record' => $this->record]));
                 })
-                ->modalHeading('Add payment receipt')
-                ->modalButton('Save receipt')
+                ->modalButton('Save payment')
                 ->modalWidth('2xl'),
 
             Action::make('create_vendor_bill')
-                ->label('Add vendor bill')
+                ->label('Create vendor bill')
                 ->icon('heroicon-o-receipt-percent')
                 ->color('success')
                 ->button()
-                ->visible(fn () => $canAcct)
+                ->visible(fn () => $canVendorBills)
+                ->modalHeading(fn (): string => 'Create vendor bill — '.$this->record->invoice_number)
                 ->form([
+                    Forms\Components\Placeholder::make('invoice_lead_context')
+                        ->label('Invoice & lead')
+                        ->content(function (): \Illuminate\Contracts\Support\Htmlable {
+                            $this->record->loadMissing('lead');
+                            $lead = $this->record->lead;
+                            $lines = [
+                                '<strong>Invoice:</strong> '.e($this->record->invoice_number),
+                            ];
+                            if ($lead) {
+                                $ref = $lead->reference_id ? e($lead->reference_id) : '#'.$lead->id;
+                                $name = e($lead->customer_name ?? '—');
+                                $lines[] = "<strong>Lead:</strong> {$ref} — {$name}";
+                            } else {
+                                $lines[] = '<strong>Lead:</strong> —';
+                            }
+
+                            return new \Illuminate\Support\HtmlString(implode('<br>', $lines));
+                        })
+                        ->columnSpanFull(),
                     Forms\Components\Section::make('Vendor bill')
                         ->schema([
                             Forms\Components\Select::make('supplier_id')
                                 ->label('Supplier')
-                                ->relationship('supplier', 'name')
+                                ->options(fn () => Supplier::query()->orderBy('name')->pluck('name', 'id'))
                                 ->searchable()
                                 ->preload()
                                 ->live()
@@ -150,6 +192,10 @@ class ViewInvoice extends ViewRecord
                                 ->numeric()
                                 ->step(0.01)
                                 ->prefix('LKR'),
+                            Forms\Components\DatePicker::make('due_date')
+                                ->label('Due date')
+                                ->nullable()
+                                ->native(false),
                             Forms\Components\Select::make('service_type')
                                 ->label('Service type')
                                 ->options([
@@ -213,12 +259,17 @@ class ViewInvoice extends ViewRecord
                         $data['paid_through'] = null;
                     }
                     VendorBill::create($data);
+                    $this->record->refresh();
+                    $this->record->updateVendorPaymentStatus();
+
                     Notification::make()
                         ->success()
                         ->title('Vendor bill created')
+                        ->body('Bill '.$data['vendor_bill_number'].' is linked to this invoice.')
                         ->send();
+
+                    $this->redirect(InvoiceResource::getUrl('view', ['record' => $this->record]));
                 })
-                ->modalHeading('Create vendor bill')
                 ->modalWidth('3xl'),
         ];
     }

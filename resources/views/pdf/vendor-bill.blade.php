@@ -3,7 +3,7 @@
     $fmt = fn ($n) => number_format((float) $n, 2, '.', ',');
     $descLines = trim((string) ($vendorBill->service_details ?? ''));
     $billDate = $vendorBill->created_at;
-    $dueDate = $vendorBill->invoice?->due_date;
+    $dueDate = $vendorBill->due_date ?? $vendorBill->invoice?->due_date;
     $terms = $vendorBill->invoice?->terms ?? 'Custom';
 @endphp
 <!DOCTYPE html>

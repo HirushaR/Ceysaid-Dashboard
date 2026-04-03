@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\InvoiceResource\RelationManagers;
+namespace App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
 use App\Filament\Resources\InvoiceResource;
+use App\Models\Invoice;
 use App\Models\Supplier;
+use App\Models\VendorBill;
 use App\Services\DocumentNumberService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,10 +15,14 @@ use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class VendorBillsRelationManager extends RelationManager
 {
     protected static string $relationship = 'vendorBills';
+
+    protected static ?string $title = 'Vendor Bills';
 
     protected static ?string $recordTitleAttribute = 'vendor_name';
 
@@ -29,6 +35,35 @@ class VendorBillsRelationManager extends RelationManager
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('invoice_id')
+                    ->label('Invoice')
+                    ->options(fn (): array => $this->getOwnerRecord()
+                        ->invoices()
+                        ->orderByDesc('id')
+                        ->pluck('invoice_number', 'id')
+                        ->all())
+                    ->required()
+                    ->searchable()
+                    ->visibleOn('create'),
+                Forms\Components\Placeholder::make('invoice_on_record')
+                    ->label('Invoice')
+                    ->content(function (?Model $record): \Illuminate\Support\HtmlString {
+                        if (! $record instanceof VendorBill) {
+                            return new \Illuminate\Support\HtmlString('—');
+                        }
+                        $record->loadMissing('invoice');
+                        if (! $record->invoice) {
+                            return new \Illuminate\Support\HtmlString('—');
+                        }
+                        $url = InvoiceResource::getUrl('view', ['record' => $record->invoice]);
+                        $num = e($record->invoice->invoice_number);
+
+                        return new \Illuminate\Support\HtmlString(
+                            '<a href="'.e($url).'" class="text-primary-600 hover:underline">'.$num.'</a>'
+                        );
+                    })
+                    ->visibleOn('edit')
+                    ->columnSpanFull(),
                 Forms\Components\Select::make('supplier_id')
                     ->label('Supplier')
                     ->relationship('supplier', 'name')
@@ -49,10 +84,11 @@ class VendorBillsRelationManager extends RelationManager
                     ->maxLength(255),
                 Forms\Components\TextInput::make('vendor_bill_number')
                     ->label('Vendor bill number')
-                    ->required()
                     ->maxLength(255)
                     ->disabledOn('edit')
-                    ->dehydrated(),
+                    ->dehydrated()
+                    ->hiddenOn('create')
+                    ->placeholder('Assigned when you save'),
                 Forms\Components\TextInput::make('bill_amount')
                     ->label('Bill amount')
                     ->required()
@@ -113,7 +149,15 @@ class VendorBillsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('vendor_name')
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('invoice'))
             ->columns([
+                Tables\Columns\TextColumn::make('invoice.invoice_number')
+                    ->label('Invoice #')
+                    ->searchable()
+                    ->url(fn (VendorBill $record) => $record->invoice
+                        ? InvoiceResource::getUrl('view', ['record' => $record->invoice])
+                        : null)
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('vendor_name')
                     ->label('Vendor')
                     ->searchable()
@@ -160,6 +204,7 @@ class VendorBillsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
+                        unset($data['invoice_on_record']);
                         $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
                         if (($data['payment_status'] ?? '') !== 'paid') {
                             $data['payment_date'] = null;
@@ -168,11 +213,21 @@ class VendorBillsRelationManager extends RelationManager
                         }
 
                         return $data;
-                    }),
+                    })
+                    ->using(function (array $data): Model {
+                        $invoiceId = (int) ($data['invoice_id'] ?? 0);
+                        unset($data['invoice_id']);
+                        $invoice = Invoice::query()
+                            ->where('lead_id', $this->getOwnerRecord()->id)
+                            ->findOrFail($invoiceId);
+
+                        return $invoice->vendorBills()->create($data);
+                    })
+                    ->visible(fn (): bool => $this->getOwnerRecord()->invoices()->exists()),
             ])
-            ->heading(function () {
-                $ownerRecord = $this->getOwnerRecord();
-                $vendorBills = $ownerRecord->vendorBills;
+            ->heading(function (): string {
+                $owner = $this->getOwnerRecord();
+                $vendorBills = $owner->vendorBills()->get();
                 $totalAmount = $vendorBills->sum('bill_amount');
                 $paidAmount = $vendorBills->where('payment_status', 'paid')->sum('bill_amount');
                 $unpaidAmount = $vendorBills->where('payment_status', 'pending')->sum('bill_amount');
@@ -209,7 +264,12 @@ class VendorBillsRelationManager extends RelationManager
                         $record->markAsPending();
                     })
                     ->visible(fn ($record) => $record->isPaid()),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->mutateFormDataUsing(function (array $data): array {
+                        unset($data['invoice_id'], $data['invoice_on_record']);
+
+                        return $data;
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

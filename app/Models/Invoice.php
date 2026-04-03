@@ -223,6 +223,31 @@ class Invoice extends Model
     }
 
     /**
+     * Replace all line items from a Filament repeater state (non-relationship repeater).
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     */
+    public function replaceLineItemsFromFormState(array $lines): void
+    {
+        $this->lineItems()->delete();
+
+        foreach (array_values($lines) as $index => $line) {
+            if (! is_array($line)) {
+                continue;
+            }
+
+            $this->lineItems()->create([
+                'lead_cost_id' => $line['lead_cost_id'] ?? null,
+                'sort_order' => $index,
+                'description' => (string) ($line['description'] ?? ''),
+                'customer_details' => $line['customer_details'] ?? null,
+                'quantity' => $line['quantity'] ?? 1,
+                'rate' => $line['rate'] ?? 0,
+            ]);
+        }
+    }
+
+    /**
      * Set total_amount from line items and refresh customer payment balances.
      */
     public function recalculateTotalsFromLineItems(): void

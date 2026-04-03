@@ -50,4 +50,69 @@ class Quote extends Model
     {
         return (float) $this->lineItems->sum('amount');
     }
+
+    /**
+     * State to merge into the invoice create form for a lead (one quote per lead).
+     * Draft quotes set quote_id; converted quotes prefill lines only.
+     *
+     * @return array<string, mixed>
+     */
+    public static function invoiceFormStateForLeadId(int $leadId): array
+    {
+        $quote = static::query()
+            ->where('lead_id', $leadId)
+            ->with(['lineItems' => fn ($q) => $q->orderBy('sort_order')])
+            ->first();
+
+        $blank = [
+            'quote_id' => null,
+            'subject' => null,
+            'terms' => 'Due on Receipt',
+            'notes' => null,
+            'due_date' => now()->format('Y-m-d'),
+            'lineItems' => [
+                ['description' => '', 'quantity' => 1, 'rate' => 0, 'customer_details' => null],
+            ],
+        ];
+
+        if (! $quote) {
+            return $blank;
+        }
+
+        $data = $quote->attributesForInvoiceForm();
+        $data['quote_id'] = $quote->isConverted() ? null : $quote->id;
+
+        return $data;
+    }
+
+    /**
+     * Map quote data into Filament invoice create form state (line items + common fields).
+     *
+     * @return array<string, mixed>
+     */
+    public function attributesForInvoiceForm(): array
+    {
+        $this->loadMissing(['lineItems' => fn ($q) => $q->orderBy('sort_order')]);
+
+        $lines = $this->lineItems->map(fn ($l) => [
+            'description' => $l->description,
+            'quantity' => $l->quantity,
+            'rate' => $l->rate,
+            'customer_details' => null,
+        ])->values()->all();
+
+        if ($lines === []) {
+            $lines = [
+                ['description' => '', 'quantity' => 1, 'rate' => 0, 'customer_details' => null],
+            ];
+        }
+
+        return [
+            'subject' => $this->subject,
+            'terms' => $this->terms ?? 'Due on Receipt',
+            'notes' => $this->notes,
+            'due_date' => $this->valid_until?->format('Y-m-d') ?? now()->format('Y-m-d'),
+            'lineItems' => $lines,
+        ];
+    }
 }

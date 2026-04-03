@@ -39,13 +39,15 @@ class QuoteResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (Lead $record): string => "{$record->reference_id} — {$record->customer_name}")
                             ->searchable(['reference_id', 'customer_name'])
                             ->required()
-                            ->disabledOn('edit'),
+                            ->disabledOn('edit')
+                            ->helperText('One quote per lead. Number on save: QT/YEAR/LEAD_ID (e.g. QT/2026/42).'),
                         Forms\Components\TextInput::make('quote_number')
                             ->label('Quote number')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->disabledOn('edit')
-                            ->dehydrated(),
+                            ->dehydrated()
+                            ->hiddenOn('create'),
                         Forms\Components\Hidden::make('status')
                             ->default(QuoteStatus::Draft->value)
                             ->dehydrated(),

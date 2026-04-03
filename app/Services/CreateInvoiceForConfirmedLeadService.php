@@ -24,7 +24,7 @@ class CreateInvoiceForConfirmedLeadService
             $invoice = Invoice::create([
                 'lead_id' => $lead->id,
                 'quote_id' => null,
-                'invoice_number' => $this->numbers->nextInvoiceNumber(),
+                'invoice_number' => $this->numbers->nextInvoiceNumberForLead($lead->id),
                 'invoice_date' => now()->toDateString(),
                 'due_date' => now()->toDateString(),
                 'terms' => 'Due on Receipt',

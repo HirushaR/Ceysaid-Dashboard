@@ -2,30 +2,37 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
+use App\Enums\Platform;
+use App\Enums\ServiceStatus;
+use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Resources\DocumentCompleteLeadResource\Pages;
 use App\Models\Lead;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\DocumentCompleteLeadResource\Pages;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Enums\LeadStatus;
-use App\Enums\Platform;
-use App\Enums\ServiceStatus;
 
 class DocumentCompleteLeadResource extends Resource
 {
     protected static ?string $model = Lead::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-identification';
+
     protected static ?string $navigationLabel = 'Visa Leads';
+
     protected static ?string $label = 'Visa Lead';
+
     protected static ?string $pluralLabel = 'Visa Leads';
+
     protected static ?string $navigationGroup = 'Dashboard';
 
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getVisaLeadNotificationCount();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -37,6 +44,7 @@ class DocumentCompleteLeadResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
+
         return $user && ($user->isSales() || $user->isOperation() || $user->isAdmin());
     }
 
@@ -46,7 +54,7 @@ class DocumentCompleteLeadResource extends Resource
         $query = parent::getEloquentQuery()
             ->notArchived()
             ->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
-        
+
         // Filter based on user role and associations
         if ($user) {
             if ($user->isAdmin()) {
@@ -56,17 +64,17 @@ class DocumentCompleteLeadResource extends Resource
                 // Sales users see leads they are assigned to or created
                 return $query->where(function (Builder $query) use ($user) {
                     $query->where('assigned_to', $user->id)
-                          ->orWhere('created_by', $user->id);
+                        ->orWhere('created_by', $user->id);
                 });
             } elseif ($user->isOperation()) {
                 // Operation users see leads they are assigned as operators or created
                 return $query->where(function (Builder $query) use ($user) {
                     $query->where('assigned_operator', $user->id)
-                          ->orWhere('created_by', $user->id);
+                        ->orWhere('created_by', $user->id);
                 });
             }
         }
-        
+
         return $query;
     }
 
@@ -92,7 +100,7 @@ class DocumentCompleteLeadResource extends Resource
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold'),
-                    
+
                 Tables\Columns\TextColumn::make('reference_id')
                     ->label('Reference ID')
                     ->sortable()
@@ -100,61 +108,63 @@ class DocumentCompleteLeadResource extends Resource
                     ->copyable()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('gray'),
-                    
+
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Customer')
                     ->sortable()
                     ->searchable()
                     ->weight('medium')
                     ->description(fn ($record) => $record->customer?->name ? "System: {$record->customer->name}" : null),
-                    
+
                 Tables\Columns\BadgeColumn::make('platform')
                     ->label('Source')
                     ->colors([
                         'info' => 'facebook',
-                        'success' => 'whatsapp', 
+                        'success' => 'whatsapp',
                         'warning' => 'email',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst($state)),
-                    
+
                 Tables\Columns\TextColumn::make('tour')
                     ->label('Tour Package')
                     ->limit(25)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 25 ? $state : null;
                     })
                     ->weight('medium'),
-                    
+
                 Tables\Columns\TextColumn::make('destination')
                     ->label('Destination')
                     ->limit(15)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 15 ? $state : null;
                     })
                     ->color('primary'),
-                    
+
                 Tables\Columns\TextColumn::make('country')
                     ->label('Country')
                     ->badge()
                     ->color('gray')
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
-                    
+
                 Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('Sales Rep')
                     ->sortable()
                     ->searchable()
                     ->placeholder('Unassigned')
                     ->color('info'),
-                    
+
                 Tables\Columns\TextColumn::make('assignedOperator.name')
                     ->label('Operator')
                     ->sortable()
                     ->searchable()
                     ->placeholder('Unassigned')
                     ->color('warning'),
-                    
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors(LeadStatus::colorMap())
@@ -167,8 +177,7 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('hotel_status')
@@ -179,8 +188,7 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('visa_status')
@@ -191,8 +199,7 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
                 Tables\Columns\IconColumn::make('land_package_status')
@@ -203,18 +210,17 @@ class DocumentCompleteLeadResource extends Resource
                         'done' => 'heroicon-o-check-circle',
                         default => 'heroicon-o-question-mark-circle'
                     })
-                    ->color(fn (string $state): string => 
-                        ServiceStatus::tryFrom($state)?->color() ?? 'gray'
+                    ->color(fn (string $state): string => ServiceStatus::tryFrom($state)?->color() ?? 'gray'
                     )
                     ->size(Tables\Columns\IconColumn\IconColumnSize::Medium),
-                    
+
                 Tables\Columns\TextColumn::make('arrival_date')
                     ->label('Travel Date')
                     ->date('M j, Y')
                     ->sortable()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary'),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime('M j, Y')
@@ -260,7 +266,7 @@ class DocumentCompleteLeadResource extends Resource
                     ->button()
                     ->size('sm')
                     ->color('gray')
-                    ->visible(fn() => auth()->user()?->isSales() || auth()->user()?->isOperation() || auth()->user()?->isAdmin()),
+                    ->visible(fn () => auth()->user()?->isSales() || auth()->user()?->isOperation() || auth()->user()?->isAdmin()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -270,7 +276,7 @@ class DocumentCompleteLeadResource extends Resource
             ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
             ->striped()
             ->paginated([10, 25, 50, 100])
-            ->recordUrl(fn($record) => static::getUrl('view', ['record' => $record]));
+            ->recordUrl(fn ($record) => static::getUrl('view', ['record' => $record]));
     }
 
     public static function form(Form $form): Form
@@ -302,13 +308,13 @@ class DocumentCompleteLeadResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('current_status')
                             ->label('Current Status')
-                            ->content(fn($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
+                            ->content(fn ($record) => LeadStatus::tryFrom($record->status)?->label() ?? $record->status ?? ''),
 
                         Forms\Components\Select::make('visa_status')
                             ->label('Visa Status')
                             ->options(ServiceStatus::options())
                             ->default('pending')
-                            ->disabled(fn() => !(auth()->user()?->isSales() || auth()->user()?->isOperation() || auth()->user()?->isAdmin()))
+                            ->disabled(fn () => ! (auth()->user()?->isSales() || auth()->user()?->isOperation() || auth()->user()?->isAdmin()))
                             ->suffixIcon(fn ($state) => match ($state) {
                                 'pending' => 'heroicon-o-clock',
                                 'not_required' => 'heroicon-o-minus-circle',
@@ -379,6 +385,8 @@ class DocumentCompleteLeadResource extends Resource
                     ])
                     ->columns(1),
 
+                LeadQuoteFormSection::make(),
+
                 Forms\Components\Section::make('Attachments')
                     ->schema([
                         Forms\Components\Repeater::make('attachments')
@@ -406,4 +414,4 @@ class DocumentCompleteLeadResource extends Resource
                 Forms\Components\DateTimePicker::make('updated_at')->label('Updated At')->disabled(),
             ]);
     }
-} 
+}

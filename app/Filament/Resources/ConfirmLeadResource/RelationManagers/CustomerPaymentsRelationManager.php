@@ -235,6 +235,11 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ' | Balance: LKR '.number_format($balance, 2);
             })
             ->actions([
+                Tables\Actions\Action::make('downloadReceipt')
+                    ->label('Receipt PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(fn (CustomerPayment $record) => route('finance.customer-payments.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
                         unset($data['invoice_id'], $data['invoice_on_record'], $data['receipt_number_auto']);

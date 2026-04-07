@@ -5,6 +5,7 @@ namespace App\Filament\Resources\InvoiceResource\RelationManagers;
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
 use App\Filament\Resources\InvoiceResource;
+use App\Models\CustomerPayment;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -156,6 +157,11 @@ class CustomerPaymentsRelationManager extends RelationManager
                     ' | Balance: LKR '.number_format($balance, 2);
             })
             ->actions([
+                Tables\Actions\Action::make('downloadReceipt')
+                    ->label('Receipt PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(fn (CustomerPayment $record) => route('finance.customer-payments.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
                         unset($data['receipt_number_auto']);

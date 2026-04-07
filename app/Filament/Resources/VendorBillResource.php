@@ -5,13 +5,14 @@ namespace App\Filament\Resources;
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
 use App\Filament\Resources\VendorBillResource\Pages;
+use App\Filament\Resources\VendorBillResource\RelationManagers;
 use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\VendorBill;
 use App\Traits\HasResourcePermissions;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -153,32 +154,65 @@ class VendorBillResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Vendor payment')
+                Forms\Components\Section::make('Vendor payments')
+                    ->description('Use the payments tab for installments, or Pay balance to record the full remaining amount.')
                     ->schema([
-                        Forms\Components\Select::make('payment_status')
-                            ->label('Payment Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'paid' => 'Paid',
-                            ])
-                            ->default('pending')
-                            ->required()
-                            ->live(),
-                        Forms\Components\DatePicker::make('payment_date')
-                            ->label('Payment Date')
-                            ->visible(fn (Get $get) => $get('payment_status') === 'paid'),
-                        Forms\Components\Select::make('payment_mode')
-                            ->label('Payment mode')
-                            ->options(PaymentMode::options())
-                            ->visible(fn (Get $get) => $get('payment_status') === 'paid')
-                            ->required(fn (Get $get) => $get('payment_status') === 'paid'),
-                        Forms\Components\Select::make('paid_through')
-                            ->label('Paid through')
-                            ->options(DepositAccount::options())
-                            ->visible(fn (Get $get) => $get('payment_status') === 'paid')
-                            ->required(fn (Get $get) => $get('payment_status') === 'paid'),
+                        Forms\Components\Placeholder::make('payment_summary')
+                            ->label('Summary')
+                            ->content(function (?VendorBill $record): string {
+                                if (! $record) {
+                                    return 'Save the bill first, then open the record to add payments.';
+                                }
+                                $record->loadMissing('vendorBillPayments');
+
+                                return 'Bill: LKR '.number_format((float) $record->bill_amount, 2).
+                                    ' | Paid: LKR '.number_format($record->total_paid_amount, 2).
+                                    ' | Balance: LKR '.number_format($record->outstanding_amount, 2).
+                                    ' | Status: '.ucfirst((string) $record->payment_status);
+                            })
+                            ->columnSpanFull(),
+                        Forms\Components\Actions::make([
+                            FormAction::make('pay_balance_detail')
+                                ->label('Pay balance')
+                                ->icon('heroicon-o-banknotes')
+                                ->color('success')
+                                ->visible(fn (VendorBill $record): bool => InvoiceResource::canRecordVendorBills()
+                                    && $record->outstanding_amount > 0)
+                                ->modalHeading('Pay remaining balance')
+                                ->modalDescription(fn (VendorBill $record): string => 'Outstanding: LKR '.number_format($record->outstanding_amount, 2))
+                                ->form([
+                                    Forms\Components\DatePicker::make('payment_date')
+                                        ->label('Payment date')
+                                        ->required()
+                                        ->default(now())
+                                        ->maxDate(now()),
+                                    Forms\Components\Select::make('payment_mode')
+                                        ->label('Payment mode')
+                                        ->options(PaymentMode::options())
+                                        ->required(),
+                                    Forms\Components\Select::make('paid_through')
+                                        ->label('Paid through')
+                                        ->options(DepositAccount::options())
+                                        ->required(),
+                                ])
+                                ->action(function (VendorBill $record, array $data): void {
+                                    $record->markAsPaid(
+                                        $data['payment_date'] ?? null,
+                                        $data['payment_mode'] ?? null,
+                                        $data['paid_through'] ?? null
+                                    );
+                                    $record->refresh();
+                                    \Filament\Notifications\Notification::make()
+                                        ->success()
+                                        ->title('Balance recorded')
+                                        ->body('The full remaining amount was added as one payment.')
+                                        ->send();
+                                }),
+                        ])
+                            ->key('vendor_bill_detail_pay_balance')
+                            ->visibleOn('view'),
                     ])
-                    ->columns(2),
+                    ->visibleOn(['view', 'edit']),
 
                 Forms\Components\Section::make('Additional Notes')
                     ->schema([
@@ -198,6 +232,7 @@ class VendorBillResource extends Resource
                 'invoice.lead',
                 'invoice',
                 'supplier',
+                'vendorBillPayments',
             ]))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.invoice_number')
@@ -254,11 +289,24 @@ class VendorBillResource extends Resource
                         'gray' => 'OTHER',
                     ]),
                 Tables\Columns\TextColumn::make('bill_amount')
-                    ->label('Amount')
+                    ->label('Bill amount')
                     ->money('LKR')
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
+                Tables\Columns\TextColumn::make('total_paid_amount')
+                    ->label('Paid')
+                    ->money('LKR')
+                    ->alignRight()
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->withSum('vendorBillPayments as total_paid_sum', 'amount')
+                            ->orderBy('total_paid_sum', $direction);
+                    }),
+                Tables\Columns\TextColumn::make('outstanding_amount')
+                    ->label('Balance')
+                    ->money('LKR')
+                    ->alignRight()
+                    ->color(fn (VendorBill $record) => $record->outstanding_amount > 0 ? 'warning' : 'success'),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due date')
                     ->date('M j, Y')
@@ -268,9 +316,10 @@ class VendorBillResource extends Resource
                     ->label('Status')
                     ->colors([
                         'warning' => 'pending',
+                        'info' => 'partial',
                         'success' => 'paid',
                     ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
                 Tables\Columns\TextColumn::make('payment_date')
                     ->label('Payment Date')
                     ->date('M j, Y')
@@ -300,6 +349,7 @@ class VendorBillResource extends Resource
                     ->label('Payment Status')
                     ->options([
                         'pending' => 'Pending',
+                        'partial' => 'Partial',
                         'paid' => 'Paid',
                     ]),
                 Tables\Filters\SelectFilter::make('vendor_name')
@@ -335,7 +385,7 @@ class VendorBillResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('mark_paid')
-                    ->label('Mark paid')
+                    ->label('Pay balance')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->form([
@@ -359,10 +409,10 @@ class VendorBillResource extends Resource
                         );
                         \Filament\Notifications\Notification::make()
                             ->success()
-                            ->title('Vendor bill marked as paid')
+                            ->title('Remaining balance recorded as paid')
                             ->send();
                     })
-                    ->visible(fn ($record) => $record->isPending()),
+                    ->visible(fn (VendorBill $record) => $record->outstanding_amount > 0),
                 Tables\Actions\Action::make('mark_pending')
                     ->label('Mark Pending')
                     ->icon('heroicon-o-x-circle')
@@ -372,10 +422,10 @@ class VendorBillResource extends Resource
                         $record->markAsPending();
                         \Filament\Notifications\Notification::make()
                             ->warning()
-                            ->title('Vendor bill marked as pending')
+                            ->title('All vendor payments cleared')
                             ->send();
                     })
-                    ->visible(fn ($record) => $record->isPaid()),
+                    ->visible(fn (VendorBill $record) => $record->total_paid_amount > 0),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
@@ -420,7 +470,7 @@ class VendorBillResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\VendorBillPaymentsRelationManager::class,
         ];
     }
 

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VendorBill extends Model
 {
@@ -32,9 +33,6 @@ class VendorBill extends Model
         'payment_status' => 'string',
     ];
 
-    /**
-     * Get the invoice that owns this vendor bill
-     */
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
@@ -46,76 +44,121 @@ class VendorBill extends Model
     }
 
     /**
-     * Get the lead through the invoice relationship
+     * @return HasMany<VendorBillPayment, $this>
      */
+    public function vendorBillPayments(): HasMany
+    {
+        return $this->hasMany(VendorBillPayment::class)->orderByDesc('payment_date')->orderByDesc('id');
+    }
+
     public function lead()
     {
         return $this->hasOneThrough(Lead::class, Invoice::class, 'id', 'id', 'invoice_id', 'lead_id');
     }
 
-    /**
-     * Check if vendor bill is paid
-     */
+    public function getTotalPaidAmountAttribute(): float
+    {
+        if ($this->relationLoaded('vendorBillPayments')) {
+            return round((float) $this->vendorBillPayments->sum('amount'), 2);
+        }
+
+        return round((float) $this->vendorBillPayments()->sum('amount'), 2);
+    }
+
+    /** Remaining vendor bill balance (bill amount minus payments recorded). */
+    public function getOutstandingAmountAttribute(): float
+    {
+        return round(max(0, (float) $this->bill_amount - $this->total_paid_amount), 2);
+    }
+
     public function isPaid(): bool
     {
         return $this->payment_status === 'paid';
     }
 
-    /**
-     * Check if vendor bill is pending payment
-     */
+    public function isPartial(): bool
+    {
+        return $this->payment_status === 'partial';
+    }
+
     public function isPending(): bool
     {
         return $this->payment_status === 'pending';
     }
 
     /**
-     * Mark vendor bill as paid
+     * Sync aggregate payment fields from vendor_bill_payments rows and refresh invoice vendor status.
+     */
+    public function recalculateFromPayments(): void
+    {
+        $total = (float) $this->vendorBillPayments()->sum('amount');
+        $bill = (float) $this->bill_amount;
+        $last = $this->vendorBillPayments()->orderByDesc('payment_date')->orderByDesc('id')->first();
+
+        if ($total <= 0) {
+            $this->update([
+                'payment_status' => 'pending',
+                'payment_date' => null,
+                'payment_mode' => null,
+                'paid_through' => null,
+            ]);
+
+            return;
+        }
+
+        if ($total + 0.009 >= $bill) {
+            $status = 'paid';
+        } else {
+            $status = 'partial';
+        }
+
+        $this->update([
+            'payment_status' => $status,
+            'payment_date' => $last?->payment_date,
+            'payment_mode' => $last?->payment_mode,
+            'paid_through' => $last?->paid_through,
+        ]);
+    }
+
+    /**
+     * Record a single payment for the remaining balance (legacy / quick-settle).
      */
     public function markAsPaid(null|string|DateTimeInterface $paymentDate = null, ?string $paymentMode = null, ?string $paidThrough = null): void
     {
+        $this->load('vendorBillPayments');
+        $remaining = $this->outstanding_amount;
+        if ($remaining <= 0) {
+            return;
+        }
+
         $date = $paymentDate instanceof DateTimeInterface
             ? $paymentDate
             : ($paymentDate !== null && $paymentDate !== '' ? Carbon::parse($paymentDate) : now());
 
-        $this->update([
-            'payment_status' => 'paid',
+        $this->vendorBillPayments()->create([
+            'amount' => $remaining,
             'payment_date' => $date,
-            'payment_mode' => $paymentMode,
-            'paid_through' => $paidThrough,
+            'payment_mode' => $paymentMode ?? 'bank_transfer',
+            'paid_through' => $paidThrough ?? 'cash',
+            'notes' => null,
         ]);
-
-        $this->invoice->updateVendorPaymentStatus();
     }
 
-    /**
-     * Mark vendor bill as pending
-     */
+    /** Remove all payments (bill returns to unpaid). */
     public function markAsPending(): void
     {
-        $this->update([
-            'payment_status' => 'pending',
-            'payment_date' => null,
-            'payment_mode' => null,
-            'paid_through' => null,
-        ]);
-
-        $this->invoice->updateVendorPaymentStatus();
+        $this->vendorBillPayments()->delete();
     }
 
-    /**
-     * Boot the model and add event listeners
-     */
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        // Update invoice vendor payment status when vendor bill is created, updated, or deleted
-        static::saved(function ($vendorBill) {
+        static::saved(function (VendorBill $vendorBill): void {
             $vendorBill->invoice->updateVendorPaymentStatus();
         });
 
-        static::deleted(function ($vendorBill) {
+        static::deleted(function (VendorBill $vendorBill): void {
             $vendorBill->invoice->updateVendorPaymentStatus();
         });
     }

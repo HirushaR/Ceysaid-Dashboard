@@ -15,7 +15,11 @@ class VendorBillPdfController
             abort(403);
         }
 
-        $vendorBill->load(['invoice.lead', 'supplier']);
+        $vendorBill->load([
+            'invoice.lead',
+            'supplier',
+            'vendorBillPayments' => fn ($q) => $q->orderByDesc('payment_date')->orderByDesc('id'),
+        ]);
 
         if (! $vendorBill->invoice || ! $user->canViewInvoice($vendorBill->invoice)) {
             abort(403);

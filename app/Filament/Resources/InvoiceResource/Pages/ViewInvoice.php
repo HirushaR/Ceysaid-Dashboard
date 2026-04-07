@@ -224,33 +224,6 @@ class ViewInvoice extends ViewRecord
                         ])
                         ->columns(2),
 
-                    Forms\Components\Section::make('Vendor payment')
-                        ->schema([
-                            Forms\Components\Select::make('payment_status')
-                                ->label('Payment status')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'paid' => 'Paid',
-                                ])
-                                ->default('pending')
-                                ->required()
-                                ->live(),
-                            Forms\Components\DatePicker::make('payment_date')
-                                ->label('Payment date')
-                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
-                            Forms\Components\Select::make('payment_mode')
-                                ->label('Payment mode')
-                                ->options(PaymentMode::options())
-                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid')
-                                ->required(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
-                            Forms\Components\Select::make('paid_through')
-                                ->label('Paid through')
-                                ->options(DepositAccount::options())
-                                ->visible(fn (Forms\Get $get) => $get('payment_status') === 'paid')
-                                ->required(fn (Forms\Get $get) => $get('payment_status') === 'paid'),
-                        ])
-                        ->columns(2),
-
                     Forms\Components\Section::make('Notes')
                         ->schema([
                             Forms\Components\Textarea::make('notes')
@@ -262,11 +235,10 @@ class ViewInvoice extends ViewRecord
                 ->action(function (array $data) {
                     $data['invoice_id'] = $this->record->id;
                     $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
-                    if (($data['payment_status'] ?? '') !== 'paid') {
-                        $data['payment_date'] = null;
-                        $data['payment_mode'] = null;
-                        $data['paid_through'] = null;
-                    }
+                    $data['payment_status'] = 'pending';
+                    $data['payment_date'] = null;
+                    $data['payment_mode'] = null;
+                    $data['paid_through'] = null;
                     VendorBill::create($data);
                     $this->record->refresh();
                     $this->record->updateVendorPaymentStatus();

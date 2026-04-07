@@ -18,11 +18,10 @@ class CreateVendorBill extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
-        if (($data['payment_status'] ?? '') !== 'paid') {
-            $data['payment_date'] = null;
-            $data['payment_mode'] = null;
-            $data['paid_through'] = null;
-        }
+        $data['payment_status'] = 'pending';
+        $data['payment_date'] = null;
+        $data['payment_mode'] = null;
+        $data['paid_through'] = null;
 
         return $data;
     }

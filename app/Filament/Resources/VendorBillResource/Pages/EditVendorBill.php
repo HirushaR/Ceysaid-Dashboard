@@ -5,6 +5,7 @@ namespace App\Filament\Resources\VendorBillResource\Pages;
 use App\Filament\Resources\VendorBillResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Validation\ValidationException;
 
 class EditVendorBill extends EditRecord
 {
@@ -17,10 +18,16 @@ class EditVendorBill extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (($data['payment_status'] ?? '') !== 'paid') {
-            $data['payment_date'] = null;
-            $data['payment_mode'] = null;
-            $data['paid_through'] = null;
+        $record = $this->getRecord();
+        $record->loadMissing('vendorBillPayments');
+        $totalPaid = (float) $record->vendorBillPayments->sum('amount');
+        $newAmount = (float) ($data['bill_amount'] ?? $record->bill_amount);
+        if ($newAmount + 0.0001 < $totalPaid) {
+            throw ValidationException::withMessages([
+                'bill_amount' => __('Bill amount cannot be less than total payments recorded (LKR :amount).', [
+                    'amount' => number_format($totalPaid, 2),
+                ]),
+            ]);
         }
 
         return $data;

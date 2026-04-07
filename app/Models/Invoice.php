@@ -302,11 +302,11 @@ class Invoice extends Model
         }
 
         $allPaid = $vendorBills->every(fn ($bill) => $bill->payment_status === 'paid');
-        $anyPaid = $vendorBills->some(fn ($bill) => $bill->payment_status === 'paid');
+        $anyProgress = $vendorBills->some(fn ($bill) => in_array($bill->payment_status, ['paid', 'partial'], true));
 
         if ($allPaid) {
             $this->update(['vendor_payment_status' => 'paid']);
-        } elseif ($anyPaid) {
+        } elseif ($anyProgress) {
             $this->update(['vendor_payment_status' => 'partial']);
         } else {
             $this->update(['vendor_payment_status' => 'pending']);

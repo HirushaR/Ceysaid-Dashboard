@@ -5,13 +5,14 @@ namespace App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
 use App\Filament\Resources\InvoiceResource;
+use App\Filament\Resources\VendorBillResource;
 use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\VendorBill;
 use App\Services\DocumentNumberService;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -115,28 +116,65 @@ class VendorBillsRelationManager extends RelationManager
                     ->label('Service details')
                     ->rows(3)
                     ->columnSpanFull(),
-                Forms\Components\Select::make('payment_status')
-                    ->label('Payment status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
+                Forms\Components\Section::make('Vendor payments')
+                    ->description('Use Pay balance for the full remainder, or open the full vendor bill for installments.')
+                    ->schema([
+                        Forms\Components\Placeholder::make('payment_summary')
+                            ->label('Summary')
+                            ->content(function (?VendorBill $record): string {
+                                if (! $record) {
+                                    return '—';
+                                }
+                                $record->loadMissing('vendorBillPayments');
+
+                                return 'Bill: LKR '.number_format((float) $record->bill_amount, 2).
+                                    ' | Paid: LKR '.number_format($record->total_paid_amount, 2).
+                                    ' | Balance: LKR '.number_format($record->outstanding_amount, 2).
+                                    ' | Status: '.ucfirst((string) $record->payment_status);
+                            })
+                            ->columnSpanFull(),
+                        Forms\Components\Actions::make([
+                            FormAction::make('pay_balance_detail')
+                                ->label('Pay balance')
+                                ->icon('heroicon-o-banknotes')
+                                ->color('success')
+                                ->visible(fn (VendorBill $record): bool => InvoiceResource::canRecordVendorBills()
+                                    && $record->outstanding_amount > 0)
+                                ->modalHeading('Pay remaining balance')
+                                ->modalDescription(fn (VendorBill $record): string => 'Outstanding: LKR '.number_format($record->outstanding_amount, 2))
+                                ->form([
+                                    Forms\Components\DatePicker::make('payment_date')
+                                        ->label('Payment date')
+                                        ->required()
+                                        ->default(now())
+                                        ->maxDate(now()),
+                                    Forms\Components\Select::make('payment_mode')
+                                        ->label('Payment mode')
+                                        ->options(PaymentMode::options())
+                                        ->required(),
+                                    Forms\Components\Select::make('paid_through')
+                                        ->label('Paid through')
+                                        ->options(DepositAccount::options())
+                                        ->required(),
+                                ])
+                                ->action(function (VendorBill $record, array $data): void {
+                                    $record->markAsPaid(
+                                        $data['payment_date'] ?? null,
+                                        $data['payment_mode'] ?? null,
+                                        $data['paid_through'] ?? null
+                                    );
+                                    $record->refresh();
+                                    \Filament\Notifications\Notification::make()
+                                        ->success()
+                                        ->title('Balance recorded')
+                                        ->body('The full remaining amount was added as one payment.')
+                                        ->send();
+                                }),
+                        ])
+                            ->key('confirm_lead_vendor_bill_pay_balance'),
                     ])
-                    ->default('pending')
-                    ->required()
-                    ->live(),
-                Forms\Components\DatePicker::make('payment_date')
-                    ->label('Payment date')
-                    ->visible(fn (Get $get) => $get('payment_status') === 'paid'),
-                Forms\Components\Select::make('payment_mode')
-                    ->label('Payment mode')
-                    ->options(PaymentMode::options())
-                    ->visible(fn (Get $get) => $get('payment_status') === 'paid')
-                    ->required(fn (Get $get) => $get('payment_status') === 'paid'),
-                Forms\Components\Select::make('paid_through')
-                    ->label('Paid through')
-                    ->options(DepositAccount::options())
-                    ->visible(fn (Get $get) => $get('payment_status') === 'paid')
-                    ->required(fn (Get $get) => $get('payment_status') === 'paid'),
+                    ->visibleOn('edit')
+                    ->columnSpanFull(),
                 Forms\Components\Textarea::make('notes')
                     ->label('Notes')
                     ->rows(2)
@@ -149,7 +187,7 @@ class VendorBillsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('vendor_name')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('invoice'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['invoice', 'vendorBillPayments']))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.invoice_number')
                     ->label('Invoice #')
@@ -177,6 +215,15 @@ class VendorBillsRelationManager extends RelationManager
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
+                Tables\Columns\TextColumn::make('total_paid_amount')
+                    ->label('Paid')
+                    ->money('LKR')
+                    ->alignRight(),
+                Tables\Columns\TextColumn::make('outstanding_amount')
+                    ->label('Balance')
+                    ->money('LKR')
+                    ->alignRight()
+                    ->color(fn (VendorBill $record) => $record->outstanding_amount > 0 ? 'warning' : 'success'),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due')
                     ->date('M j, Y')
@@ -186,11 +233,12 @@ class VendorBillsRelationManager extends RelationManager
                     ->label('Status')
                     ->colors([
                         'warning' => 'pending',
+                        'info' => 'partial',
                         'success' => 'paid',
                     ])
                     ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
                 Tables\Columns\TextColumn::make('payment_date')
-                    ->label('Payment date')
+                    ->label('Last payment')
                     ->date('M j, Y')
                     ->placeholder('—'),
             ])
@@ -198,6 +246,7 @@ class VendorBillsRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('payment_status')
                     ->options([
                         'pending' => 'Pending',
+                        'partial' => 'Partial',
                         'paid' => 'Paid',
                     ]),
             ])
@@ -206,11 +255,10 @@ class VendorBillsRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         unset($data['invoice_on_record']);
                         $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
-                        if (($data['payment_status'] ?? '') !== 'paid') {
-                            $data['payment_date'] = null;
-                            $data['payment_mode'] = null;
-                            $data['paid_through'] = null;
-                        }
+                        $data['payment_status'] = 'pending';
+                        $data['payment_date'] = null;
+                        $data['payment_mode'] = null;
+                        $data['paid_through'] = null;
 
                         return $data;
                     })
@@ -227,18 +275,24 @@ class VendorBillsRelationManager extends RelationManager
             ])
             ->heading(function (): string {
                 $owner = $this->getOwnerRecord();
-                $vendorBills = $owner->vendorBills()->get();
+                $vendorBills = $owner->vendorBills()->with('vendorBillPayments')->get();
                 $totalAmount = $vendorBills->sum('bill_amount');
-                $paidAmount = $vendorBills->where('payment_status', 'paid')->sum('bill_amount');
-                $unpaidAmount = $vendorBills->where('payment_status', 'pending')->sum('bill_amount');
+                $paidAmount = $vendorBills->sum(fn (VendorBill $b) => $b->total_paid_amount);
+                $outstanding = $vendorBills->sum(fn (VendorBill $b) => $b->outstanding_amount);
 
                 return 'Vendor Bills — Total: LKR '.number_format($totalAmount, 2).
                     ' | Paid: LKR '.number_format($paidAmount, 2).
-                    ' | Unpaid: LKR '.number_format($unpaidAmount, 2);
+                    ' | Outstanding: LKR '.number_format($outstanding, 2);
             })
             ->actions([
+                Tables\Actions\Action::make('open_vendor_bill')
+                    ->label('Payments')
+                    ->icon('heroicon-o-banknotes')
+                    ->url(fn (VendorBill $record) => VendorBillResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab()
+                    ->color('primary'),
                 Tables\Actions\Action::make('mark_paid')
-                    ->label('Mark paid')
+                    ->label('Pay balance')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->form([
@@ -252,18 +306,18 @@ class VendorBillsRelationManager extends RelationManager
                             $data['payment_mode'] ?? null,
                             $data['paid_through'] ?? null
                         );
-                        \Filament\Notifications\Notification::make()->success()->title('Marked paid')->send();
+                        \Filament\Notifications\Notification::make()->success()->title('Balance recorded')->send();
                     })
-                    ->visible(fn ($record) => $record->isPending()),
+                    ->visible(fn (VendorBill $record) => $record->outstanding_amount > 0),
                 Tables\Actions\Action::make('mark_pending')
-                    ->label('Mark pending')
+                    ->label('Clear payments')
                     ->icon('heroicon-o-x-circle')
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->markAsPending();
                     })
-                    ->visible(fn ($record) => $record->isPaid()),
+                    ->visible(fn (VendorBill $record) => $record->total_paid_amount > 0),
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
                         unset($data['invoice_id'], $data['invoice_on_record']);

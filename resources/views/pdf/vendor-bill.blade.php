@@ -25,6 +25,9 @@
 
     $logoSrc = isset($logoPath) && $logoPath !== '' ? str_replace('\\', '/', $logoPath) : null;
     $paymentStatus = ucfirst((string) ($vendorBill->payment_status ?? 'pending'));
+    $payments = $vendorBill->relationLoaded('vendorBillPayments') ? $vendorBill->vendorBillPayments : $vendorBill->vendorBillPayments()->orderByDesc('payment_date')->orderByDesc('id')->get();
+    $paidSum = (float) $payments->sum('amount');
+    $outstanding = max(0, $total - $paidSum);
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -180,7 +183,8 @@
     </table>
 
     <div class="highlight-box">
-        <h2>Total: LKR {{ $fmt($total) }}</h2>
+        <h2>Bill total: LKR {{ $fmt($total) }}</h2>
+        <p><strong>Paid to date:</strong> LKR {{ $fmt($paidSum) }} &nbsp;|&nbsp; <strong>Balance:</strong> LKR {{ $fmt($outstanding) }}</p>
         <p><strong>Supplier:</strong> {{ $vendorBill->supplier?->name ?? $vendorBill->vendor_name }}</p>
     </div>
 
@@ -252,6 +256,34 @@
             <td>LKR {{ $fmt($total) }}</td>
         </tr>
     </table>
+
+    @if($payments->isNotEmpty())
+        <div class="section">
+            <h3>Payments recorded</h3>
+            <table class="lines">
+                <thead>
+                    <tr>
+                        <th class="ix">#</th>
+                        <th>Date</th>
+                        <th class="num">Amount</th>
+                        <th>Mode</th>
+                        <th>Account</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($payments as $i => $p)
+                        <tr>
+                            <td class="ix">{{ $i + 1 }}</td>
+                            <td>{{ $p->payment_date?->format('d.m.Y') ?? '—' }}</td>
+                            <td class="num">LKR {{ $fmt($p->amount) }}</td>
+                            <td>{{ \App\Enums\PaymentMode::tryFrom((string) $p->payment_mode)?->label() ?? $p->payment_mode }}</td>
+                            <td>{{ \App\Enums\DepositAccount::tryFrom((string) $p->paid_through)?->label() ?? $p->paid_through }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 
     @if($vendorBill->notes)
         <div class="section notes">

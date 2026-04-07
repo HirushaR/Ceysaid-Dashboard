@@ -11,7 +11,7 @@ class InvoicePdfController
     public function __invoke(Invoice $invoice): Response
     {
         $user = auth()->user();
-        if (! $user || (! $user->hasPermission('invoices.view') && ! $user->isAccount() && ! $user->isAdmin())) {
+        if (! $user || ! $user->canViewInvoice($invoice)) {
             abort(403);
         }
 

@@ -17,6 +17,10 @@ class VendorBillPdfController
 
         $vendorBill->load(['invoice.lead', 'supplier']);
 
+        if (! $vendorBill->invoice || ! $user->canViewInvoice($vendorBill->invoice)) {
+            abort(403);
+        }
+
         $filename = str_replace(['/', '\\'], '-', $vendorBill->vendor_bill_number).'.pdf';
         $company = config('ceysaid.company');
         $logoRelative = $company['logo_path'] ?? null;

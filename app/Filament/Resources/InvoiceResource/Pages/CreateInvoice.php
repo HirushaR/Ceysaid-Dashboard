@@ -4,10 +4,12 @@ namespace App\Filament\Resources\InvoiceResource\Pages;
 
 use App\Filament\Resources\InvoiceResource;
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Quote;
 use App\Services\DocumentNumberService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class CreateInvoice extends CreateRecord
 {
@@ -44,6 +46,16 @@ class CreateInvoice extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $user = auth()->user();
+        if ($user && ! $user->canViewAllInvoices() && ($user->isSales() || $user->isOperation())) {
+            $lead = Lead::query()->find((int) ($data['lead_id'] ?? 0));
+            if (! $lead || ! $user->hasLeadAssigned($lead)) {
+                throw ValidationException::withMessages([
+                    'lead_id' => __('You can only create invoices for leads assigned to you.'),
+                ]);
+            }
+        }
+
         $data['invoice_number'] = app(DocumentNumberService::class)->nextInvoiceNumberForLead((int) $data['lead_id']);
         $data['invoice_date'] = $data['invoice_date'] ?? now()->toDateString();
         $data['due_date'] = $data['due_date'] ?? now()->toDateString();

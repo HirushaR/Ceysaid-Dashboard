@@ -11,7 +11,7 @@ class CustomerPaymentPdfController
     public function __invoke(CustomerPayment $customerPayment): Response
     {
         $user = auth()->user();
-        if (! $user || (! $user->hasPermission('invoices.view') && ! $user->isAccount() && ! $user->isAdmin())) {
+        if (! $user) {
             abort(403);
         }
 
@@ -23,6 +23,10 @@ class CustomerPaymentPdfController
         $invoice = $customerPayment->invoice;
         if (! $invoice) {
             abort(404);
+        }
+
+        if (! $user->canViewInvoice($invoice)) {
+            abort(403);
         }
 
         $rn = $customerPayment->receipt_number ?: 'receipt-'.$customerPayment->id;

@@ -47,6 +47,37 @@ class VendorBillResource extends Resource
         return auth()->user()?->canManageAccountingRecords() ?? false;
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user && ! $user->canViewAllInvoices() && ($user->isSales() || $user->isOperation())) {
+            $query->whereHas('invoice', fn (Builder $q) => $q->visibleToUser($user));
+        }
+
+        return $query;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->canViewResource('vendor_bills')) {
+            return false;
+        }
+
+        $record->loadMissing('invoice');
+
+        return $user->canViewInvoice($record->invoice);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -55,7 +86,14 @@ class VendorBillResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('invoice_id')
                             ->label('Invoice')
-                            ->relationship('invoice', 'invoice_number')
+                            ->relationship('invoice', 'invoice_number', function (Builder $query): Builder {
+                                $user = auth()->user();
+                                if (! $user) {
+                                    return $query;
+                                }
+
+                                return $query->visibleToUser($user);
+                            })
                             ->getOptionLabelFromRecordUsing(fn (Invoice $record): string => "{$record->invoice_number} - {$record->lead->customer_name} (LKR {$record->total_amount})"
                             )
                             ->searchable(['invoice_number'])

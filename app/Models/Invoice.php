@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -367,5 +368,27 @@ class Invoice extends Model
         return $query->whereHas('lead', function ($q) use ($destination) {
             $q->where('destination', $destination);
         });
+    }
+
+    /**
+     * Limit invoices to those the user may access (sales/operation: assigned lead only).
+     */
+    public function scopeVisibleToUser(Builder $query, User $user): Builder
+    {
+        if ($user->canViewAllInvoices()) {
+            return $query;
+        }
+
+        if ($user->isSales() || $user->isOperation()) {
+            return $query->whereHas('lead', function (Builder $q) use ($user) {
+                if ($user->isSales()) {
+                    $q->where('assigned_to', $user->id);
+                } else {
+                    $q->where('assigned_operator', $user->id);
+                }
+            });
+        }
+
+        return $query;
     }
 }

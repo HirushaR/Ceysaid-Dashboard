@@ -81,6 +81,39 @@ class User extends Authenticatable
         return $this->isAccount() || $this->isAdmin();
     }
 
+    /** Full invoice list and any invoice record (admin + accounting). */
+    public function canViewAllInvoices(): bool
+    {
+        return $this->isAdmin() || $this->isAccount();
+    }
+
+    /**
+     * Whether the user may open a specific invoice (list filters, view page, PDFs).
+     * Sales/operation users only see invoices whose lead is assigned to them.
+     */
+    public function canViewInvoice(?Invoice $invoice): bool
+    {
+        if (! $invoice) {
+            return false;
+        }
+
+        if (! $this->hasPermission('invoices.view') && ! $this->isAccount() && ! $this->isAdmin()) {
+            return false;
+        }
+
+        if ($this->canViewAllInvoices()) {
+            return true;
+        }
+
+        if ($this->isSales() || $this->isOperation()) {
+            $invoice->loadMissing('lead');
+
+            return $invoice->lead !== null && $this->hasLeadAssigned($invoice->lead);
+        }
+
+        return true;
+    }
+
     public function isHR(): bool
     {
         return $this->role === 'hr';

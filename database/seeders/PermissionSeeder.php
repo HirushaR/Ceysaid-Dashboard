@@ -142,6 +142,7 @@ class PermissionSeeder extends Seeder
                 'description' => 'Access for operation team members',
                 'permissions' => [
                     'leads.view', 'leads.edit',
+                    'invoices.view',
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                     'dashboard.all_leads', 'dashboard.my_sales', 'dashboard.my_operation', 'dashboard.visa_leads', 'dashboard.confirm_leads',
                 ],

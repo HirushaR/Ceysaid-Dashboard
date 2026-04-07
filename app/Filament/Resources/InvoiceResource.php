@@ -92,10 +92,13 @@ class InvoiceResource extends Resource
         return static::canManageInvoiceLinkedFinancialRecords();
     }
 
-    /** @see canManageInvoiceLinkedFinancialRecords() */
+    /**
+     * Recording customer payment receipts against invoices — accounting team and admin only
+     * (not sales/operation with invoices.view alone).
+     */
     public static function canRecordCustomerPayments(): bool
     {
-        return static::canManageInvoiceLinkedFinancialRecords();
+        return auth()->user()?->canManageAccountingRecords() ?? false;
     }
 
     public static function getEloquentQuery(): Builder

@@ -137,4 +137,20 @@ class InvoiceAccessTest extends TestCase
         $this->actingAs($operation);
         $this->assertTrue($operation->canViewInvoice($inv));
     }
+
+    public function test_only_account_team_can_record_customer_payments(): void
+    {
+        $sales = User::factory()->create(['role' => 'sales']);
+        $this->grantInvoiceView($sales);
+        $this->actingAs($sales);
+        $this->assertFalse(InvoiceResource::canRecordCustomerPayments());
+
+        $account = User::factory()->create(['role' => 'account']);
+        $this->actingAs($account);
+        $this->assertTrue(InvoiceResource::canRecordCustomerPayments());
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+        $this->assertTrue(InvoiceResource::canRecordCustomerPayments());
+    }
 }

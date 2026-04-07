@@ -54,7 +54,7 @@ class InvoiceResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->canManageAccountingRecords() ?? false;
+        return auth()->user()?->canEditInvoices() ?? false;
     }
 
     public static function canDelete(Model $record): bool
@@ -511,7 +511,8 @@ class InvoiceResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (Invoice $record): bool => static::canEdit($record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -28,7 +28,7 @@ class ViewInvoice extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        $canAcct = auth()->user()?->canManageAccountingRecords() ?? false;
+        $canEditInvoice = auth()->user()?->canEditInvoices() ?? false;
         $canVendorBills = InvoiceResource::canRecordVendorBills();
         $canCustomerPayments = InvoiceResource::canRecordCustomerPayments();
 
@@ -44,7 +44,7 @@ class ViewInvoice extends ViewRecord
                 ->label('Edit invoice')
                 ->icon('heroicon-o-pencil')
                 ->button()
-                ->visible(fn () => $canAcct),
+                ->visible(fn () => $canEditInvoice),
 
             Action::make('add_customer_payment')
                 ->label('Record customer payment')

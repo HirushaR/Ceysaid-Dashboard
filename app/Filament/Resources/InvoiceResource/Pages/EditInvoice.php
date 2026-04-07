@@ -19,7 +19,7 @@ class EditInvoice extends EditRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return auth()->user()?->canManageAccountingRecords() ?? false;
+        return auth()->user()?->canEditInvoices() ?? false;
     }
 
     protected function mutateFormDataBeforeFill(array $data): array

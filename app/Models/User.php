@@ -81,6 +81,12 @@ class User extends Authenticatable
         return $this->isAccount() || $this->isAdmin();
     }
 
+    /** Invoice record edit (Filament edit page / table) — admin and accounting only, not `invoices.edit` alone. */
+    public function canEditInvoices(): bool
+    {
+        return $this->isAdmin() || $this->isAccount();
+    }
+
     /** Full invoice list and any invoice record (admin + accounting). */
     public function canViewAllInvoices(): bool
     {

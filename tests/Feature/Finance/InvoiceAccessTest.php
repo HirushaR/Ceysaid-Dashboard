@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Finance;
 
+use App\Filament\Resources\InvoiceResource;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Permission;
@@ -25,6 +26,43 @@ class InvoiceAccessTest extends TestCase
             ]
         );
         $user->permissions()->syncWithoutDetaching([$permission->id]);
+    }
+
+    private function grantInvoiceEdit(User $user): void
+    {
+        $permission = Permission::firstOrCreate(
+            ['name' => 'invoices.edit'],
+            [
+                'display_name' => 'Edit Invoices',
+                'resource' => 'invoices',
+                'action' => 'edit',
+                'description' => 'Test',
+            ]
+        );
+        $user->permissions()->syncWithoutDetaching([$permission->id]);
+    }
+
+    public function test_only_admin_and_account_can_edit_invoices(): void
+    {
+        $lead = Lead::factory()->create();
+        $invoice = Invoice::factory()->create(['lead_id' => $lead->id]);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+        $this->assertTrue($admin->canEditInvoices());
+        $this->assertTrue(InvoiceResource::canEdit($invoice));
+
+        $account = User::factory()->create(['role' => 'account']);
+        $this->actingAs($account);
+        $this->assertTrue($account->canEditInvoices());
+        $this->assertTrue(InvoiceResource::canEdit($invoice));
+
+        $sales = User::factory()->create(['role' => 'sales']);
+        $this->grantInvoiceView($sales);
+        $this->grantInvoiceEdit($sales);
+        $this->actingAs($sales);
+        $this->assertFalse($sales->canEditInvoices());
+        $this->assertFalse(InvoiceResource::canEdit($invoice));
     }
 
     public function test_accounting_user_sees_all_invoices(): void

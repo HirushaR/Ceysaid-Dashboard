@@ -4,10 +4,12 @@ namespace App\Filament\Resources\InvoiceResource\Pages;
 
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
+use App\Filament\Forms\VendorBillLineItemsForm;
 use App\Filament\Resources\InvoiceResource;
 use App\Models\CustomerPayment;
 use App\Models\Supplier;
 use App\Models\VendorBill;
+use App\Models\VendorBillLineItem;
 use App\Services\DocumentNumberService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -195,12 +197,6 @@ class ViewInvoice extends ViewRecord
                                 ->label('Vendor name')
                                 ->required()
                                 ->maxLength(255),
-                            Forms\Components\TextInput::make('bill_amount')
-                                ->label('Bill amount')
-                                ->required()
-                                ->numeric()
-                                ->step(0.01)
-                                ->prefix('LKR'),
                             Forms\Components\DatePicker::make('due_date')
                                 ->label('Due date')
                                 ->nullable()
@@ -223,6 +219,12 @@ class ViewInvoice extends ViewRecord
                                 ->columnSpanFull(),
                         ])
                         ->columns(2),
+                    Forms\Components\Section::make('Line items')
+                        ->description('Total bill amount is the sum of line amounts.')
+                        ->schema([
+                            VendorBillLineItemsForm::lineItemsRepeaterEmbedded(),
+                        ])
+                        ->columnSpanFull(),
 
                     Forms\Components\Section::make('Notes')
                         ->schema([
@@ -233,13 +235,28 @@ class ViewInvoice extends ViewRecord
                         ->collapsible(),
                 ])
                 ->action(function (array $data) {
+                    $lineItems = $data['line_items'] ?? [];
+                    unset($data['line_items']);
                     $data['invoice_id'] = $this->record->id;
                     $data['vendor_bill_number'] = app(DocumentNumberService::class)->nextVendorBillNumber();
                     $data['payment_status'] = 'pending';
                     $data['payment_date'] = null;
                     $data['payment_mode'] = null;
                     $data['paid_through'] = null;
-                    VendorBill::create($data);
+                    $data['bill_amount'] = VendorBillLineItem::sumAmountsFromFormArray(is_array($lineItems) ? $lineItems : []);
+                    $bill = VendorBill::create($data);
+                    foreach (array_values(is_array($lineItems) ? $lineItems : []) as $idx => $row) {
+                        if (! is_array($row)) {
+                            continue;
+                        }
+                        $bill->lineItems()->create([
+                            'sort_order' => $idx,
+                            'description' => (string) ($row['description'] ?? ''),
+                            'quantity' => $row['quantity'] ?? 1,
+                            'rate' => $row['rate'] ?? 0,
+                        ]);
+                    }
+                    $bill->syncBillAmountFromLineItems();
                     $this->record->refresh();
                     $this->record->updateVendorPaymentStatus();
 

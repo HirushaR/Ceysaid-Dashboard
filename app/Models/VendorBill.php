@@ -51,6 +51,39 @@ class VendorBill extends Model
         return $this->hasMany(VendorBillPayment::class)->orderByDesc('payment_date')->orderByDesc('id');
     }
 
+    /**
+     * @return HasMany<VendorBillLineItem, $this>
+     */
+    public function lineItems(): HasMany
+    {
+        return $this->hasMany(VendorBillLineItem::class)->orderBy('sort_order');
+    }
+
+    /** Set bill_amount from line item rows and refresh payment status (when lines exist). */
+    public function syncBillAmountFromLineItems(): void
+    {
+        if (! $this->exists) {
+            return;
+        }
+
+        if ($this->lineItems()->count() === 0) {
+            return;
+        }
+
+        $sum = round((float) $this->lineItems()->sum('amount'), 2);
+
+        if (abs((float) $this->bill_amount - $sum) < 0.0001) {
+            $this->refresh();
+            $this->recalculateFromPayments();
+
+            return;
+        }
+
+        $this->update(['bill_amount' => $sum]);
+        $this->refresh();
+        $this->recalculateFromPayments();
+    }
+
     public function lead()
     {
         return $this->hasOneThrough(Lead::class, Invoice::class, 'id', 'id', 'invoice_id', 'lead_id');

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
+use App\Filament\Forms\VendorBillLineItemsForm;
 use App\Filament\Resources\VendorBillResource\Pages;
 use App\Filament\Resources\VendorBillResource\RelationManagers;
 use App\Models\Invoice;
@@ -124,12 +125,6 @@ class VendorBillResource extends Resource
                             ->maxLength(255)
                             ->disabledOn('edit')
                             ->dehydrated(),
-                        Forms\Components\TextInput::make('bill_amount')
-                            ->label('Bill Amount')
-                            ->required()
-                            ->numeric()
-                            ->step(0.01)
-                            ->prefix('LKR'),
                         Forms\Components\DatePicker::make('due_date')
                             ->label('Due date')
                             ->nullable()
@@ -153,6 +148,12 @@ class VendorBillResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Line items')
+                    ->description('Total bill amount is the sum of line amounts.')
+                    ->schema([
+                        VendorBillLineItemsForm::lineItemsRepeater(),
+                    ]),
 
                 Forms\Components\Section::make('Vendor payments')
                     ->description('Use the payments tab for installments, or Pay balance to record the full remaining amount.')
@@ -233,6 +234,7 @@ class VendorBillResource extends Resource
                 'invoice',
                 'supplier',
                 'vendorBillPayments',
+                'lineItems',
             ]))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.invoice_number')

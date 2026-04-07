@@ -4,11 +4,13 @@ namespace App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 
 use App\Enums\DepositAccount;
 use App\Enums\PaymentMode;
+use App\Filament\Forms\VendorBillLineItemsForm;
 use App\Filament\Resources\InvoiceResource;
 use App\Filament\Resources\VendorBillResource;
 use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\VendorBill;
+use App\Models\VendorBillLineItem;
 use App\Services\DocumentNumberService;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action as FormAction;
@@ -90,12 +92,12 @@ class VendorBillsRelationManager extends RelationManager
                     ->dehydrated()
                     ->hiddenOn('create')
                     ->placeholder('Assigned when you save'),
-                Forms\Components\TextInput::make('bill_amount')
-                    ->label('Bill amount')
-                    ->required()
-                    ->numeric()
-                    ->step(0.01)
-                    ->prefix('LKR'),
+                Forms\Components\Section::make('Line items')
+                    ->description('Total bill amount is the sum of line amounts.')
+                    ->schema([
+                        VendorBillLineItemsForm::lineItemsRepeater(),
+                    ])
+                    ->columnSpanFull(),
                 Forms\Components\DatePicker::make('due_date')
                     ->label('Due date')
                     ->nullable()
@@ -187,7 +189,7 @@ class VendorBillsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('vendor_name')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['invoice', 'vendorBillPayments']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['invoice', 'vendorBillPayments', 'lineItems']))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.invoice_number')
                     ->label('Invoice #')
@@ -259,17 +261,33 @@ class VendorBillsRelationManager extends RelationManager
                         $data['payment_date'] = null;
                         $data['payment_mode'] = null;
                         $data['paid_through'] = null;
+                        $data['bill_amount'] = VendorBillLineItem::sumAmountsFromFormArray($data['lineItems'] ?? []);
 
                         return $data;
                     })
                     ->using(function (array $data): Model {
                         $invoiceId = (int) ($data['invoice_id'] ?? 0);
-                        unset($data['invoice_id']);
+                        $lineItems = $data['lineItems'] ?? [];
+                        unset($data['invoice_id'], $data['lineItems']);
                         $invoice = Invoice::query()
                             ->where('lead_id', $this->getOwnerRecord()->id)
                             ->findOrFail($invoiceId);
 
-                        return $invoice->vendorBills()->create($data);
+                        $bill = $invoice->vendorBills()->create($data);
+                        foreach (array_values(is_array($lineItems) ? $lineItems : []) as $idx => $row) {
+                            if (! is_array($row)) {
+                                continue;
+                            }
+                            $bill->lineItems()->create([
+                                'sort_order' => $idx,
+                                'description' => (string) ($row['description'] ?? ''),
+                                'quantity' => $row['quantity'] ?? 1,
+                                'rate' => $row['rate'] ?? 0,
+                            ]);
+                        }
+                        $bill->syncBillAmountFromLineItems();
+
+                        return $bill->fresh();
                     })
                     ->visible(fn (): bool => $this->getOwnerRecord()->invoices()->exists()),
             ])
@@ -321,6 +339,7 @@ class VendorBillsRelationManager extends RelationManager
                 Tables\Actions\EditAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
                         unset($data['invoice_id'], $data['invoice_on_record']);
+                        $data['bill_amount'] = VendorBillLineItem::sumAmountsFromFormArray($data['lineItems'] ?? []);
 
                         return $data;
                     }),

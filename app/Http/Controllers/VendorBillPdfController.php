@@ -18,6 +18,7 @@ class VendorBillPdfController
         $vendorBill->load([
             'invoice.lead',
             'supplier',
+            'lineItems' => fn ($q) => $q->orderBy('sort_order'),
             'vendorBillPayments' => fn ($q) => $q->orderByDesc('payment_date')->orderByDesc('id'),
         ]);
 

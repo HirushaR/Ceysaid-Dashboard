@@ -23,6 +23,11 @@
     $lineTitle = $nl !== false ? substr($itemBlock, 0, $nl) : $itemBlock;
     $lineBody = $nl !== false ? trim(substr($itemBlock, $nl + 1)) : '';
 
+    $pdfLineItems = $vendorBill->relationLoaded('lineItems')
+        ? $vendorBill->lineItems
+        : $vendorBill->lineItems()->orderBy('sort_order')->get();
+    $usePdfLineItems = $pdfLineItems->isNotEmpty();
+
     $logoSrc = isset($logoPath) && $logoPath !== '' ? str_replace('\\', '/', $logoPath) : null;
     $paymentStatus = ucfirst((string) ($vendorBill->payment_status ?? 'pending'));
     $payments = $vendorBill->relationLoaded('vendorBillPayments') ? $vendorBill->vendorBillPayments : $vendorBill->vendorBillPayments()->orderByDesc('payment_date')->orderByDesc('id')->get();
@@ -221,23 +226,40 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="ix">1</td>
-                    <td>
-                        @if($lineBody !== '')
-                            <span class="item-title">{{ $lineTitle }}</span>
-                            {!! nl2br(e($lineBody)) !!}
-                        @else
-                            {!! nl2br(e($lineTitle)) !!}
-                        @endif
-                        @if($vendorBill->notes && stripos($vendorBill->notes, 'non-billable') !== false)
-                            <p style="margin:8px 0 0 0;color:#666;font-size:9px;">Non-Billable</p>
-                        @endif
-                    </td>
-                    <td class="num">{{ $fmt(1) }}</td>
-                    <td class="num">LKR {{ $fmt($total) }}</td>
-                    <td class="num">LKR {{ $fmt($total) }}</td>
-                </tr>
+                @if($usePdfLineItems)
+                    @foreach($pdfLineItems as $i => $line)
+                        <tr>
+                            <td class="ix">{{ $i + 1 }}</td>
+                            <td>
+                                {!! nl2br(e($line->description)) !!}
+                                @if($vendorBill->notes && stripos($vendorBill->notes, 'non-billable') !== false && $loop->first)
+                                    <p style="margin:8px 0 0 0;color:#666;font-size:9px;">Non-Billable</p>
+                                @endif
+                            </td>
+                            <td class="num">{{ $fmt($line->quantity) }}</td>
+                            <td class="num">LKR {{ $fmt($line->rate) }}</td>
+                            <td class="num">LKR {{ $fmt($line->amount) }}</td>
+                        </tr>
+                    @endforeach
+                @else
+                    <tr>
+                        <td class="ix">1</td>
+                        <td>
+                            @if($lineBody !== '')
+                                <span class="item-title">{{ $lineTitle }}</span>
+                                {!! nl2br(e($lineBody)) !!}
+                            @else
+                                {!! nl2br(e($lineTitle)) !!}
+                            @endif
+                            @if($vendorBill->notes && stripos($vendorBill->notes, 'non-billable') !== false)
+                                <p style="margin:8px 0 0 0;color:#666;font-size:9px;">Non-Billable</p>
+                            @endif
+                        </td>
+                        <td class="num">{{ $fmt(1) }}</td>
+                        <td class="num">LKR {{ $fmt($total) }}</td>
+                        <td class="num">LKR {{ $fmt($total) }}</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
     </div>

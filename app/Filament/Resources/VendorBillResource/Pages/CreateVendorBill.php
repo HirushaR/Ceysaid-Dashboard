@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\VendorBillResource\Pages;
 
 use App\Filament\Resources\VendorBillResource;
+use App\Models\VendorBillLineItem;
 use App\Services\DocumentNumberService;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -22,6 +23,9 @@ class CreateVendorBill extends CreateRecord
         $data['payment_date'] = null;
         $data['payment_mode'] = null;
         $data['paid_through'] = null;
+        $data['bill_amount'] = ! empty($data['lineItems']) && is_array($data['lineItems'])
+            ? VendorBillLineItem::sumAmountsFromFormArray($data['lineItems'])
+            : 0;
 
         return $data;
     }

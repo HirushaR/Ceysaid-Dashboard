@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\QuoteStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -44,6 +45,28 @@ class Quote extends Model
     public function isConverted(): bool
     {
         return $this->status === QuoteStatus::Converted;
+    }
+
+    /**
+     * Limit quotes to those the user may access (sales/operation: assigned lead only).
+     */
+    public function scopeVisibleToUser(Builder $query, User $user): Builder
+    {
+        if ($user->canViewAllInvoices()) {
+            return $query;
+        }
+
+        if ($user->isSales() || $user->isOperation()) {
+            return $query->whereHas('lead', function (Builder $q) use ($user) {
+                if ($user->isSales()) {
+                    $q->where('assigned_to', $user->id);
+                } else {
+                    $q->where('assigned_operator', $user->id);
+                }
+            });
+        }
+
+        return $query;
     }
 
     public function totalAmount(): float

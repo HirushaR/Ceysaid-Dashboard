@@ -4,6 +4,7 @@ namespace App\Filament\Resources\QuoteResource\Pages;
 
 use App\Enums\QuoteStatus;
 use App\Filament\Resources\QuoteResource;
+use App\Models\Lead;
 use App\Models\Quote;
 use App\Services\DocumentNumberService;
 use Filament\Notifications\Actions\Action as NotificationAction;
@@ -36,6 +37,16 @@ class CreateQuote extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $user = auth()->user();
+        if ($user && ! $user->canViewAllInvoices() && ($user->isSales() || $user->isOperation())) {
+            $lead = Lead::query()->find((int) ($data['lead_id'] ?? 0));
+            if (! $lead || ! $user->hasLeadAssigned($lead)) {
+                throw ValidationException::withMessages([
+                    'lead_id' => __('You can only create quotes for leads assigned to you.'),
+                ]);
+            }
+        }
+
         if (Quote::query()->where('lead_id', (int) $data['lead_id'])->exists()) {
             throw ValidationException::withMessages([
                 'lead_id' => __('This lead already has a quote.'),

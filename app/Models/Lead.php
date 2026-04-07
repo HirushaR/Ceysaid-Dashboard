@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -200,6 +201,25 @@ class Lead extends Model
     public function scopeArchived($query)
     {
         return $query->whereNotNull('archived_at');
+    }
+
+    /**
+     * Leads the user may select when creating invoices or quotes (sales/ops: assigned only).
+     */
+    public function scopeForFinanceLeadSelection(Builder $query, ?User $user = null): Builder
+    {
+        $user = $user ?? auth()->user();
+        if (! $user || $user->canViewAllInvoices()) {
+            return $query;
+        }
+        if ($user->isSales()) {
+            return $query->where('assigned_to', $user->id);
+        }
+        if ($user->isOperation()) {
+            return $query->where('assigned_operator', $user->id);
+        }
+
+        return $query;
     }
 
     public function isArchived(): bool

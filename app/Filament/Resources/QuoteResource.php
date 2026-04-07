@@ -12,6 +12,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class QuoteResource extends Resource
 {
@@ -27,6 +29,35 @@ class QuoteResource extends Resource
 
     protected static ?string $pluralLabel = 'Quotes';
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user) {
+            $query->visibleToUser($user);
+        }
+
+        return $query;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->canViewResource('quotes')) {
+            return false;
+        }
+
+        return $user->canViewQuote($record);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -35,7 +66,7 @@ class QuoteResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('lead_id')
                             ->label('Lead')
-                            ->relationship('lead', 'reference_id')
+                            ->relationship('lead', 'reference_id', fn (Builder $query): Builder => $query->forFinanceLeadSelection(auth()->user()))
                             ->getOptionLabelFromRecordUsing(fn (Lead $record): string => "{$record->reference_id} — {$record->customer_name}")
                             ->searchable(['reference_id', 'customer_name'])
                             ->required()

@@ -127,23 +127,6 @@ class InvoiceResource extends Resource
         return $user->canViewInvoice($record);
     }
 
-    /** Scope lead dropdown on create to leads this user may invoice. */
-    public static function leadOptionsQuery(Builder $query): Builder
-    {
-        $user = auth()->user();
-        if (! $user || $user->canViewAllInvoices()) {
-            return $query;
-        }
-        if ($user->isSales()) {
-            return $query->where('assigned_to', $user->id);
-        }
-        if ($user->isOperation()) {
-            return $query->where('assigned_operator', $user->id);
-        }
-
-        return $query;
-    }
-
     public static function form(Form $form): Form
     {
         return $form
@@ -152,7 +135,7 @@ class InvoiceResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('lead_id')
                             ->label('Lead')
-                            ->relationship('lead', 'reference_id', fn (Builder $query): Builder => static::leadOptionsQuery($query))
+                            ->relationship('lead', 'reference_id', fn (Builder $query): Builder => $query->forFinanceLeadSelection(auth()->user()))
                             ->getOptionLabelFromRecordUsing(fn (Lead $record): string => "{$record->reference_id} - {$record->customer_name}"
                             )
                             ->searchable(['reference_id', 'customer_name'])

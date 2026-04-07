@@ -11,7 +11,7 @@ class QuotePdfController
     public function __invoke(Quote $quote): Response
     {
         $user = auth()->user();
-        if (! $user || (! $user->hasPermission('quotes.view') && ! $user->isAccount() && ! $user->isAdmin())) {
+        if (! $user || ! $user->canViewQuote($quote)) {
             abort(403);
         }
 

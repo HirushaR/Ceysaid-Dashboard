@@ -114,6 +114,33 @@ class User extends Authenticatable
         return true;
     }
 
+    /**
+     * Whether the user may open a specific quote (list filters, view page, PDFs).
+     * Same lead rules as invoices for sales/operation users.
+     */
+    public function canViewQuote(?Quote $quote): bool
+    {
+        if (! $quote) {
+            return false;
+        }
+
+        if (! $this->hasPermission('quotes.view') && ! $this->isAccount() && ! $this->isAdmin()) {
+            return false;
+        }
+
+        if ($this->canViewAllInvoices()) {
+            return true;
+        }
+
+        if ($this->isSales() || $this->isOperation()) {
+            $quote->loadMissing('lead');
+
+            return $quote->lead !== null && $this->hasLeadAssigned($quote->lead);
+        }
+
+        return true;
+    }
+
     public function isHR(): bool
     {
         return $this->role === 'hr';

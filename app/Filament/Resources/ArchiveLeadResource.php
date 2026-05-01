@@ -20,6 +20,8 @@ class ArchiveLeadResource extends Resource
     protected static ?string $pluralLabel = 'Archive Leads';
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 99;
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

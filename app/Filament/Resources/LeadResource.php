@@ -27,6 +27,8 @@ class LeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 10;
+
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getLeadNotificationCount();

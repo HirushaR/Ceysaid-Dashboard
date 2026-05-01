@@ -22,6 +22,8 @@ class SupplierResource extends Resource
 
     protected static ?string $navigationGroup = 'Finance';
 
+    protected static ?int $navigationSort = 3;
+
     protected static ?string $label = 'Supplier';
 
     protected static ?string $pluralLabel = 'Suppliers';

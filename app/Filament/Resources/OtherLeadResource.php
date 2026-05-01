@@ -27,7 +27,7 @@ class OtherLeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 11;
 
     public static function getEloquentQuery(): Builder
     {

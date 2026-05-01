@@ -26,6 +26,8 @@ class MyCallCenterLeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 22;
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();

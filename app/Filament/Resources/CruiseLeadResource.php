@@ -28,6 +28,8 @@ class CruiseLeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 13;
+
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();

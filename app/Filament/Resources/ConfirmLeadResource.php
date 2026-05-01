@@ -30,6 +30,8 @@ class ConfirmLeadResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 15;
+
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getConfirmLeadNotificationCount();

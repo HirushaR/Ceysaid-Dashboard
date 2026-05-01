@@ -22,6 +22,8 @@ class InternalNotesResource extends Resource
     protected static ?string $pluralModelLabel = 'Internal Notes';
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 17;
+
     public static function getNavigationBadge(): ?string
     {
         $count = NotificationHelper::getInternalNoteUnreadCount();

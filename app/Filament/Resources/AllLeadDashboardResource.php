@@ -23,6 +23,8 @@ class AllLeadDashboardResource extends Resource
     protected static ?string $pluralLabel = 'All Lead Dashboard';
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 20;
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

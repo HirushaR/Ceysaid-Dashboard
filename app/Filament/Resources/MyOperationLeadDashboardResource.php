@@ -28,6 +28,8 @@ class MyOperationLeadDashboardResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 21;
+
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();

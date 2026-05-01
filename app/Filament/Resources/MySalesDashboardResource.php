@@ -28,6 +28,8 @@ class MySalesDashboardResource extends Resource
 
     protected static ?string $navigationGroup = 'Dashboard';
 
+    protected static ?int $navigationSort = 12;
+
     public static function getNavigationBadge(): ?string
     {
         $count = \App\Helpers\NotificationHelper::getSalesNotificationCount();

@@ -37,6 +37,10 @@ class LeadObserver
             'customer_name' => $lead->customer_name,
         ]);
 
+        if ($lead->is_other_lead) {
+            return;
+        }
+
         // Note: "New Lead Assigned" notifications are handled in CreateLead::afterCreate()
         // to ensure correct URL routing to MySalesDashboardResource
         // Only notify manager here if needed

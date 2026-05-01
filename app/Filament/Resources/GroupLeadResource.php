@@ -36,6 +36,7 @@ class GroupLeadResource extends Resource
         }
         $count = Lead::where('assigned_to', $user->id)
             ->where('is_group_lead', true)
+            ->where('is_other_lead', false)
             ->whereNull('deleted_at')
             ->whereNull('archived_at')
             ->count();
@@ -54,6 +55,7 @@ class GroupLeadResource extends Resource
 
         return parent::getEloquentQuery()
             ->notArchived()
+            ->excludingOtherLeads()
             ->where('assigned_to', $user ? $user->id : null)
             ->where('is_group_lead', true);
     }

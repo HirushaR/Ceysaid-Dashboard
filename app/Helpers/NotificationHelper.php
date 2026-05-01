@@ -24,6 +24,7 @@ class NotificationHelper
         return LeadNote::query()
             ->whereHas('lead', function ($q) use ($userId) {
                 $q->whereNull('archived_at')
+                    ->where('is_other_lead', false)
                     ->where(function ($q2) use ($userId) {
                         $q2->where('assigned_to', $userId)
                             ->orWhere('assigned_operator', $userId);

@@ -69,6 +69,7 @@ class AllDepartureResource extends Resource
         $fiveDaysFromNow = Carbon::now()->addDays(5)->format('Y-m-d');
         
         return $query
+            ->excludingOtherLeads()
             ->where('status', LeadStatus::CONFIRMED->value)
             ->whereBetween('depature_date', [$today, $fiveDaysFromNow])
             ->whereDoesntHave('preDepartureCall')

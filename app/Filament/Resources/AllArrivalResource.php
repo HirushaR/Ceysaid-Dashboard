@@ -68,6 +68,7 @@ class AllArrivalResource extends Resource
         $today = Carbon::now()->format('Y-m-d');
         
         return $query
+            ->excludingOtherLeads()
             ->where('status', LeadStatus::CONFIRMED->value)
             ->where('arrival_date', '<=', $today)
             ->whereDoesntHave('postArrivalCall')

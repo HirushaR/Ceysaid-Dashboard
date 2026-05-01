@@ -12,6 +12,7 @@ enum Platform: string
     case TV = 'tv';
     case RETAINER = 'retainer';
     case SUGGESTION = 'suggestion';
+    case OTHER = 'other';
 
     public function label(): string
     {
@@ -24,6 +25,7 @@ enum Platform: string
             self::TV => 'TV',
             self::RETAINER => 'Retainer',
             self::SUGGESTION => 'Suggestion',
+            self::OTHER => 'Other lead',
         };
     }
 
@@ -38,6 +40,7 @@ enum Platform: string
             self::TV => 'info',
             self::RETAINER => 'success',
             self::SUGGESTION => 'gray',
+            self::OTHER => 'gray',
         };
     }
 
@@ -52,6 +55,7 @@ enum Platform: string
             self::TV->value => self::TV->label(),
             self::RETAINER->value => self::RETAINER->label(),
             self::SUGGESTION->value => self::SUGGESTION->label(),
+            self::OTHER->value => self::OTHER->label(),
         ];
     }
 
@@ -86,6 +90,7 @@ enum Platform: string
             self::TV->value => self::TV->color(),
             self::RETAINER->value => self::RETAINER->color(),
             self::SUGGESTION->value => self::SUGGESTION->color(),
+            self::OTHER->value => self::OTHER->color(),
         ];
     }
 } 

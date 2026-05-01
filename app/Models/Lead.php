@@ -44,6 +44,11 @@ class Lead extends Model
         'archived_by',
         'is_group_lead',
         'is_cruise_lead',
+        'is_other_lead',
+        'other_lead_status',
+        'other_lead_details',
+        'other_lead_start_date',
+        'other_lead_end_date',
     ];
 
     protected $casts = [
@@ -55,6 +60,10 @@ class Lead extends Model
         'archived_at' => 'datetime',
         'is_group_lead' => 'boolean',
         'is_cruise_lead' => 'boolean',
+        'is_other_lead' => 'boolean',
+        'other_lead_status' => \App\Enums\OtherLeadStatus::class,
+        'other_lead_start_date' => 'date',
+        'other_lead_end_date' => 'date',
     ];
 
     public function customer()
@@ -196,6 +205,14 @@ class Lead extends Model
     public function scopeNotArchived($query)
     {
         return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Main pipeline / dashboards: exclude lightweight "other leads" (sales-only records).
+     */
+    public function scopeExcludingOtherLeads(Builder $query): Builder
+    {
+        return $query->where('is_other_lead', false);
     }
 
     public function scopeArchived($query)

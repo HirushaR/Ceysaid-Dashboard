@@ -46,6 +46,7 @@ class MySalesDashboardResource extends Resource
 
         return parent::getEloquentQuery()
             ->notArchived()
+            ->excludingOtherLeads()
             ->where('assigned_to', $user ? $user->id : null);
     }
 

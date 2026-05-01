@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\LeadStatus;
+use App\Enums\OtherLeadStatus;
 use App\Enums\Platform;
 use App\Models\Customer;
 use App\Models\Lead;
@@ -45,7 +46,20 @@ class LeadFactory extends Factory
             'land_package_status' => $this->faker->randomElement(['pending', 'in_progress', 'done']),
             'is_group_lead' => false,
             'is_cruise_lead' => false,
+            'is_other_lead' => false,
         ];
+    }
+
+    public function otherLead(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_other_lead' => true,
+            'other_lead_status' => OtherLeadStatus::Draft->value,
+            'platform' => Platform::OTHER->value,
+            'customer_id' => null,
+            'is_group_lead' => false,
+            'is_cruise_lead' => false,
+        ]);
     }
 
     public function confirmed(): static

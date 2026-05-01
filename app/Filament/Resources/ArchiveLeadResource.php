@@ -32,6 +32,7 @@ class ArchiveLeadResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->excludingOtherLeads()
             ->whereNotNull('archived_at')
             ->whereNull('deleted_at');
     }

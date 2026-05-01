@@ -81,6 +81,7 @@ class ConfirmLeadResource extends Resource
         $user = auth()->user();
         $query = parent::getEloquentQuery()
             ->notArchived()
+            ->excludingOtherLeads()
             ->whereIn('status', [LeadStatus::CONFIRMED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]);
 
         // Filter based on user role and associations

@@ -37,6 +37,7 @@ class MyOperationLeadDashboardResource extends Resource
 
         // Count leads assigned to this operation user
         $count = Lead::where('assigned_operator', $user->id)
+            ->where('is_other_lead', false)
             ->whereNull('deleted_at')
             ->count();
 
@@ -92,6 +93,7 @@ class MyOperationLeadDashboardResource extends Resource
 
         return parent::getEloquentQuery()
             ->notArchived()
+            ->excludingOtherLeads()
             ->where('assigned_operator', $user ? $user->id : null);
     }
 

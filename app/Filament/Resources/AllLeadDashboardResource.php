@@ -81,7 +81,7 @@ class AllLeadDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery()->notArchived();
+        $query = parent::getEloquentQuery()->notArchived()->excludingOtherLeads();
         
         // Admin users can see all leads, operation users see only INFO_GATHER_COMPLETE
         if (!$user || !$user->isAdmin()) {

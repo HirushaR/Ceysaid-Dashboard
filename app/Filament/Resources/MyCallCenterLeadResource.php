@@ -31,6 +31,7 @@ class MyCallCenterLeadResource extends Resource
         $user = auth()->user();
         return parent::getEloquentQuery()
             ->notArchived()
+            ->excludingOtherLeads()
             ->where('created_by', $user ? $user->id : 0);
     }
 

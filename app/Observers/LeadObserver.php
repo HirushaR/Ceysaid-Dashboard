@@ -269,17 +269,6 @@ class LeadObserver
                 $lead
             );
         }
-
-        if ($newStatus === LeadStatus::CONFIRMED->value && $oldStatus !== LeadStatus::CONFIRMED->value) {
-            try {
-                app(\App\Services\CreateInvoiceForConfirmedLeadService::class)->createIfNeeded($lead);
-            } catch (\Throwable $e) {
-                Log::error('Failed to auto-create invoice for confirmed lead', [
-                    'lead_id' => $lead->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
     }
 
     /**

@@ -19,7 +19,7 @@ class FinanceFlowsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_lead_confirmed_creates_invoice_from_lead_costs(): void
+    public function test_lead_confirmed_does_not_auto_create_invoice_with_lead_costs(): void
     {
         $lead = Lead::factory()->create(['status' => LeadStatus::SENT_TO_CUSTOMER->value]);
         LeadCost::create([
@@ -38,33 +38,24 @@ class FinanceFlowsTest extends TestCase
         $lead->update(['status' => LeadStatus::CONFIRMED->value]);
 
         $lead->refresh();
-        $this->assertCount(1, $lead->invoices);
-        $invoice = $lead->invoices->first();
-        $this->assertSame('INV/'.now()->year.'/'.$lead->id, $invoice->invoice_number);
-        $this->assertEquals(200.00, (float) $invoice->total_amount);
-        $this->assertCount(2, $invoice->lineItems);
+        $this->assertCount(0, $lead->invoices);
     }
 
-    public function test_lead_confirmed_with_no_costs_creates_shell_invoice(): void
+    public function test_lead_confirmed_does_not_auto_create_invoice_without_lead_costs(): void
     {
         $lead = Lead::factory()->create(['status' => LeadStatus::SENT_TO_CUSTOMER->value]);
         $lead->update(['status' => LeadStatus::CONFIRMED->value]);
         $lead->refresh();
-        $this->assertCount(1, $lead->invoices);
-        $invoice = $lead->invoices->first();
-        $this->assertSame('INV/'.now()->year.'/'.$lead->id, $invoice->invoice_number);
-        $this->assertEquals(0.0, (float) $invoice->total_amount);
-        $this->assertCount(1, $invoice->lineItems);
-        $this->assertStringContainsString('Pending pricing', $invoice->lineItems->first()->description);
+        $this->assertCount(0, $lead->invoices);
     }
 
-    public function test_updating_confirmed_lead_does_not_add_second_invoice(): void
+    public function test_updating_confirmed_lead_still_has_no_auto_invoice(): void
     {
         $lead = Lead::factory()->create(['status' => LeadStatus::SENT_TO_CUSTOMER->value]);
         $lead->update(['status' => LeadStatus::CONFIRMED->value]);
-        $n = $lead->invoices()->count();
+        $this->assertSame(0, $lead->fresh()->invoices()->count());
         $lead->update(['subject' => 'Updated subject']);
-        $this->assertEquals($n, $lead->fresh()->invoices()->count());
+        $this->assertSame(0, $lead->fresh()->invoices()->count());
     }
 
     public function test_quote_converts_to_invoice(): void

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SupplierPayablesResource\Pages;
 
 use App\Filament\Resources\SupplierPayablesResource;
 use App\Filament\Resources\SupplierResource;
+use App\Services\SupplierBankBookService;
 use Filament\Actions;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
@@ -67,6 +68,15 @@ class ViewSupplierPayable extends ViewRecord
                             ->state(fn ($record) => $record->vendorBills()->count()),
                     ])
                     ->columns(2),
+                Components\Section::make('Transaction history (bank book)')
+                    ->description('Vendor bills increase the balance (In); payments reduce it (Out).')
+                    ->schema([
+                        Components\TextEntry::make('bank_book')
+                            ->hiddenLabel()
+                            ->columnSpanFull()
+                            ->html()
+                            ->state(fn ($record) => app(SupplierBankBookService::class)->renderTableHtml($record)),
+                    ]),
             ]);
     }
 }

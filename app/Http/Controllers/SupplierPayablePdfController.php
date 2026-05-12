@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use App\Services\SupplierBankBookService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,18 +17,7 @@ class SupplierPayablePdfController
             abort(403);
         }
 
-        $openBills = $supplier->vendorBills()
-            ->whereIn('payment_status', ['pending', 'partial'])
-            ->with(['invoice.lead', 'vendorBillPayments'])
-            ->orderByRaw('CASE WHEN due_date IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('due_date')
-            ->get();
-
-        $payments = $supplier->vendorBillPayments()
-            ->with(['vendorBill.invoice.lead'])
-            ->orderByDesc('payment_date')
-            ->orderByDesc('id')
-            ->get();
+        $bankBookRows = app(SupplierBankBookService::class)->rows($supplier);
 
         $filename = 'Supplier-payable-'.Str::slug($supplier->name).'-'.$supplier->id.'.pdf';
         $company = config('ceysaid.company');
@@ -37,8 +27,7 @@ class SupplierPayablePdfController
 
         $pdf = Pdf::loadView('pdf.supplier-payable', [
             'supplier' => $supplier,
-            'openBills' => $openBills,
-            'payments' => $payments,
+            'bankBookRows' => $bankBookRows,
             'company' => $company,
             'logoPath' => $logoPath,
         ]);

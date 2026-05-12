@@ -1,20 +1,14 @@
 @php
-    use App\Enums\DepositAccount;
-    use App\Enums\PaymentMode;
-
     $fmt = fn ($n) => number_format((float) $n, 2, '.', ',');
-    $logoSrc = isset($logoPath) && $logoPath !== '' ? str_replace('\\', '/', $logoPath) : null;
-    $totalPayable = $supplier->totalOutstandingPayable();
-    $bankLabel = fn (?string $v) => $v ? (DepositAccount::tryFrom($v)?->label() ?? ucfirst(str_replace('_', ' ', $v))) : '—';
-    $modeLabel = fn (?string $v) => $v ? (PaymentMode::tryFrom($v)?->label() ?? $v) : '—';
-    $leadLabel = function ($lead) {
-        if (! $lead) {
+    $fmtInOut = function (?float $v) use ($fmt) {
+        if ($v === null || abs($v) < 0.00001) {
             return '—';
         }
-        $ref = $lead->reference_id ?: '#'.$lead->id;
 
-        return $ref.' — '.$lead->customer_name;
+        return 'LKR '.$fmt($v);
     };
+    $logoSrc = isset($logoPath) && $logoPath !== '' ? str_replace('\\', '/', $logoPath) : null;
+    $totalPayable = $supplier->totalOutstandingPayable();
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -64,8 +58,8 @@
     </table>
 
     <div class="highlight-box">
-        <h2>Total to pay: LKR {{ $fmt($totalPayable) }}</h2>
-        <p>Outstanding vendor bill balances for this supplier.</p>
+        <h2>Closing balance (to pay): LKR {{ $fmt($totalPayable) }}</h2>
+        <p>Bank book: vendor bills (In) and payments (Out) in date order.</p>
     </div>
 
     @if($supplier->bank_details)
@@ -76,67 +70,29 @@
     @endif
 
     <div class="section">
-        <h3>What you owe (by lead)</h3>
-        <table class="lines">
-            <thead>
-                <tr>
-                    <th>Lead</th>
-                    <th class="num" style="width:14%;">Pay by</th>
-                    <th class="num" style="width:16%;">Amount to pay</th>
-                    <th style="width:18%;">Bill #</th>
-                    <th style="width:12%;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($openBills as $bill)
-                    @php
-                        $lead = $bill->invoice?->lead;
-                    @endphp
-                    <tr>
-                        <td>{{ $leadLabel($lead) }}</td>
-                        <td class="num">{{ $bill->due_date?->format('d.m.Y') ?? '—' }}</td>
-                        <td class="num">LKR {{ $fmt($bill->outstanding_amount) }}</td>
-                        <td>{{ $bill->vendor_bill_number }}</td>
-                        <td>{{ ucfirst((string) $bill->payment_status) }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" style="color:#666;">No outstanding bills.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <h3>Payment history</h3>
+        <h3>Transaction history (bank book)</h3>
         <table class="lines">
             <thead>
                 <tr>
                     <th class="num" style="width:12%;">Date</th>
-                    <th>Lead</th>
-                    <th class="num" style="width:14%;">Amount</th>
-                    <th style="width:18%;">Bank / account</th>
-                    <th style="width:14%;">Mode</th>
-                    <th style="width:14%;">Bill #</th>
+                    <th>Description</th>
+                    <th class="num" style="width:14%;">In</th>
+                    <th class="num" style="width:14%;">Out</th>
+                    <th class="num" style="width:14%;">Balance</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($payments as $payment)
-                    @php
-                        $pLead = $payment->vendorBill?->invoice?->lead;
-                    @endphp
+                @forelse($bankBookRows as $row)
                     <tr>
-                        <td class="num">{{ optional($payment->payment_date)->format('d.m.Y') ?? '—' }}</td>
-                        <td>{{ $leadLabel($pLead) }}</td>
-                        <td class="num">LKR {{ $fmt($payment->amount) }}</td>
-                        <td>{{ $bankLabel($payment->paid_through) }}</td>
-                        <td>{{ $modeLabel($payment->payment_mode) }}</td>
-                        <td>{{ $payment->vendorBill?->vendor_bill_number ?? '—' }}</td>
+                        <td class="num">{{ isset($row['date']) && $row['date'] ? $row['date']->format('d.m.Y') : '—' }}</td>
+                        <td>{{ $row['description'] }}</td>
+                        <td class="num">{{ $fmtInOut($row['in'] ?? null) }}</td>
+                        <td class="num">{{ $fmtInOut($row['out'] ?? null) }}</td>
+                        <td class="num"><strong>LKR {{ $fmt($row['balance']) }}</strong></td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="color:#666;">No payments recorded.</td>
+                        <td colspan="5" style="color:#666;">No transactions.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -144,7 +100,7 @@
     </div>
 
     <div class="footer-note">
-        This report lists supplier payables and recorded vendor payments for internal finance use.
+        In = vendor bill total recorded; Out = payment to supplier. Balance is running amount owed before the next transaction.
     </div>
 
     <p class="doc-notice">Figures are taken from vendor bills and payment entries in TravelSync.</p>

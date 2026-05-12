@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SupplierPayablesResource\Pages;
-use App\Filament\Resources\SupplierPayablesResource\RelationManagers;
 use App\Models\Supplier;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -111,9 +110,6 @@ class SupplierPayablesResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            RelationManagers\SupplierOpenPayablesRelationManager::class,
-            RelationManagers\SupplierPaymentHistoryRelationManager::class,
-        ];
+        return [];
     }
 }

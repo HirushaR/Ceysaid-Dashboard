@@ -83,11 +83,12 @@ class AllLeadDashboardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery()->notArchived()->excludingOtherLeads();
-        
-        // Admin users can see all leads, operation users see only INFO_GATHER_COMPLETE
-        if (!$user || !$user->isAdmin()) {
-            $query->where('status', \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value);
+        $query = parent::getEloquentQuery()->notArchived();
+
+        // Admin users can see all leads (including other leads). Operation users: pipeline handoff only.
+        if (! $user || ! $user->isAdmin()) {
+            $query->where('is_other_lead', false)
+                ->where('status', \App\Enums\LeadStatus::INFO_GATHER_COMPLETE->value);
         }
         
         return $query;
@@ -114,7 +115,23 @@ class AllLeadDashboardResource extends Resource
                 ->sortable()
                 ->searchable()
                 ->copyable()
-                ->formatStateUsing(fn ($state, $record) => $record && $record->is_cruise_lead ? "CL-{$state}" : ($record && $record->is_group_lead ? "GL-{$state}" : (string) $state))
+                ->formatStateUsing(function (Tables\Columns\TextColumn $column, $state): string {
+                    $record = $column->getRecord();
+                    if (! $record instanceof Lead) {
+                        return (string) $state;
+                    }
+                    if ($record->is_other_lead) {
+                        return $record->reference_id ?: "OL-{$state}";
+                    }
+                    if ($record->is_cruise_lead) {
+                        return "CL-{$state}";
+                    }
+                    if ($record->is_group_lead) {
+                        return "GL-{$state}";
+                    }
+
+                    return (string) $state;
+                })
                 ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                 ->color('primary')
                 ->weight('bold'),
@@ -128,8 +145,28 @@ class AllLeadDashboardResource extends Resource
                 
             Tables\Columns\BadgeColumn::make('status')
                 ->label('Status')
-                ->colors(LeadStatus::colorMap())
-                ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state),
+                ->formatStateUsing(function (Tables\Columns\TextColumn $column, $state): string {
+                    $record = $column->getRecord();
+                    if ($record instanceof Lead && $record->is_other_lead) {
+                        $s = $record->other_lead_status;
+
+                        return $s instanceof \App\Enums\OtherLeadStatus ? $s->label() : (string) $s;
+                    }
+
+                    return LeadStatus::tryFrom((string) $state)?->label() ?? (string) $state;
+                })
+                ->color(function (Tables\Columns\TextColumn $column): string {
+                    $record = $column->getRecord();
+                    if ($record instanceof Lead && $record->is_other_lead) {
+                        $s = $record->other_lead_status;
+
+                        return $s instanceof \App\Enums\OtherLeadStatus ? $s->color() : 'gray';
+                    }
+
+                    $state = $record instanceof Lead ? $record->status : null;
+
+                    return LeadStatus::tryFrom((string) $state)?->color() ?? 'secondary';
+                }),
                 
             Tables\Columns\TextColumn::make('priority')
                 ->label('Priority')
@@ -277,7 +314,9 @@ class AllLeadDashboardResource extends Resource
                 Tables\Actions\CreateAction::make()
                     ->visible(fn() => auth()->user()?->isAdmin()),
             ])
-            ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
+            ->recordClasses(fn ($record) => $record->is_other_lead
+                ? 'other-lead-row'
+                : ($record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null)))
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

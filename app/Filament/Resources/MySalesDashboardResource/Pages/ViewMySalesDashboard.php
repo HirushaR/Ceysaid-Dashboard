@@ -305,12 +305,18 @@ class ViewMySalesDashboard extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            \Filament\Actions\EditAction::make()
-                ->label('Edit')
-                ->icon('heroicon-o-pencil')
-                ->button(),
+        $editAction = \Filament\Actions\EditAction::make()
+            ->label('Edit')
+            ->icon('heroicon-o-pencil')
+            ->button()
+            ->visible(fn (): bool => ! $this->record->is_other_lead || \App\Filament\Resources\OtherLeadResource::canEdit($this->record));
 
+        if ($this->record->is_other_lead && \App\Filament\Resources\OtherLeadResource::canEdit($this->record)) {
+            $editAction = $editAction->url(\App\Filament\Resources\OtherLeadResource::getUrl('edit', ['record' => $this->record]));
+        }
+
+        return [
+            $editAction,
             \Filament\Actions\Action::make('add_note')
                 ->label('Add Internal Note')
                 ->icon('heroicon-o-document-text')
@@ -353,7 +359,7 @@ class ViewMySalesDashboard extends ViewRecord
                         ->title('Lead marked as Info Gather Complete.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
+                ->visible(fn ($record) => ! $record->is_other_lead && $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
             \Filament\Actions\Action::make('sent_to_customer')
                 ->label('Sent to Customer')
                 ->color('success')
@@ -369,7 +375,7 @@ class ViewMySalesDashboard extends ViewRecord
                         ->title('Lead marked as Sent to Customer.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
+                ->visible(fn ($record) => ! $record->is_other_lead && $record->status === \App\Enums\LeadStatus::OPERATION_COMPLETE->value),
             \Filament\Actions\Action::make('confirm_lead')
                 ->label('Confirm Lead')
                 ->color('info')
@@ -385,7 +391,7 @@ class ViewMySalesDashboard extends ViewRecord
                         ->title('Lead confirmed successfully.')
                         ->send();
                 })
-                ->visible(fn ($record) => $record->status === \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value),
+                ->visible(fn ($record) => ! $record->is_other_lead && $record->status === \App\Enums\LeadStatus::SENT_TO_CUSTOMER->value),
         ];
     }
 
@@ -482,6 +488,9 @@ class ViewMySalesDashboard extends ViewRecord
     private function getLeadUrlForUser(User $user, \App\Models\Lead $lead): string
     {
         if ($user->isSales()) {
+            if ($lead->is_other_lead && \App\Filament\Resources\OtherLeadResource::canView($lead)) {
+                return \App\Filament\Resources\OtherLeadResource::getUrl('view', ['record' => $lead]);
+            }
             if ($lead->is_cruise_lead) {
                 return \App\Filament\Resources\CruiseLeadResource::getUrl('view', ['record' => $lead]);
             }

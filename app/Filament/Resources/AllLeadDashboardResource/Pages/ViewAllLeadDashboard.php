@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AllLeadDashboardResource\Pages;
 
+use App\Enums\OtherLeadStatus;
 use App\Filament\Resources\AllLeadDashboardResource;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
@@ -34,7 +35,7 @@ class ViewAllLeadDashboard extends ViewRecord
                 ->icon('heroicon-o-user-plus')
                 ->color('success')
                 ->button()
-                ->visible(fn () => $user && $user->isOperation() && ! $isAssignedToMe)
+                ->visible(fn () => $user && $user->isOperation() && ! $isAssignedToMe && ! $this->record->is_other_lead)
                 ->action(function () {
                     $user = auth()->user();
                     $this->record->status = \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value;
@@ -163,6 +164,37 @@ class ViewAllLeadDashboard extends ViewRecord
                             ]),
                     ])
                     ->columns(1),
+
+                Components\Section::make('Other lead')
+                    ->visible(fn (\App\Models\Lead $record): bool => $record->is_other_lead)
+                    ->schema([
+                        Components\TextEntry::make('other_lead_status')
+                            ->label('Other lead status')
+                            ->badge()
+                            ->formatStateUsing(function ($state): string {
+                                $s = $state instanceof OtherLeadStatus ? $state : OtherLeadStatus::tryFrom((string) $state);
+
+                                return $s?->label() ?? '';
+                            })
+                            ->color(function ($state): string {
+                                $s = $state instanceof OtherLeadStatus ? $state : OtherLeadStatus::tryFrom((string) $state);
+
+                                return $s?->color() ?? 'gray';
+                            }),
+                        Components\TextEntry::make('other_lead_start_date')
+                            ->label('Start date')
+                            ->date('M j, Y')
+                            ->placeholder('—'),
+                        Components\TextEntry::make('other_lead_end_date')
+                            ->label('End date')
+                            ->date('M j, Y')
+                            ->placeholder('—'),
+                        Components\TextEntry::make('other_lead_details')
+                            ->label('Details')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
 
                 // Customer Information
                 Components\Section::make('Customer Information')

@@ -32,7 +32,7 @@ class OtherLeadIsolationTest extends TestCase
         $this->assertSame(0, OtherLeadResource::getEloquentQuery()->whereKey($lead->id)->count());
     }
 
-    public function test_standard_lead_resource_query_excludes_other_leads(): void
+    public function test_my_sales_dashboard_includes_assigned_other_leads(): void
     {
         $sales = User::factory()->create(['role' => 'sales']);
         $other = Lead::factory()->otherLead()->create([
@@ -48,6 +48,6 @@ class OtherLeadIsolationTest extends TestCase
         $this->actingAs($sales);
         $ids = \App\Filament\Resources\MySalesDashboardResource::getEloquentQuery()->pluck('id')->all();
         $this->assertContains($standard->id, $ids);
-        $this->assertNotContains($other->id, $ids);
+        $this->assertContains($other->id, $ids);
     }
 }

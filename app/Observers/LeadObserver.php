@@ -455,6 +455,16 @@ class LeadObserver
 
         // Role-based URL routing
         if ($user->isSales()) {
+            if ($lead->is_other_lead && \App\Filament\Resources\OtherLeadResource::canView($lead)) {
+                return \App\Filament\Resources\OtherLeadResource::getUrl('view', ['record' => $lead]);
+            }
+            if ($lead->is_cruise_lead) {
+                return \App\Filament\Resources\CruiseLeadResource::getUrl('view', ['record' => $lead]);
+            }
+            if ($lead->is_group_lead) {
+                return \App\Filament\Resources\GroupLeadResource::getUrl('view', ['record' => $lead]);
+            }
+
             return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
         } elseif ($user->isOperation()) {
             return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);

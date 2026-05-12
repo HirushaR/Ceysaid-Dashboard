@@ -6,6 +6,7 @@ use App\Enums\LeadStatus;
 use App\Enums\Platform;
 use App\Filament\Forms\LeadQuoteFormSection;
 use App\Filament\Resources\MySalesDashboardResource\Pages;
+use App\Filament\Resources\OtherLeadResource;
 use App\Models\Lead;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -48,7 +49,6 @@ class MySalesDashboardResource extends Resource
 
         return parent::getEloquentQuery()
             ->notArchived()
-            ->excludingOtherLeads()
             ->where('assigned_to', $user ? $user->id : null);
     }
 
@@ -107,7 +107,23 @@ class MySalesDashboardResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->copyable()
-                    ->formatStateUsing(fn ($state, $record) => $record && $record->is_cruise_lead ? "CL-{$state}" : ($record && $record->is_group_lead ? "GL-{$state}" : (string) $state))
+                    ->formatStateUsing(function (Tables\Columns\TextColumn $column, $state): string {
+                        $record = $column->getRecord();
+                        if (! $record instanceof Lead) {
+                            return (string) $state;
+                        }
+                        if ($record->is_other_lead) {
+                            return $record->reference_id ?: "OL-{$state}";
+                        }
+                        if ($record->is_cruise_lead) {
+                            return "CL-{$state}";
+                        }
+                        if ($record->is_group_lead) {
+                            return "GL-{$state}";
+                        }
+
+                        return (string) $state;
+                    })
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Small)
                     ->color('primary')
                     ->weight('bold')
@@ -133,9 +149,28 @@ class MySalesDashboardResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->color(fn (string $state): string => LeadStatus::tryFrom($state)?->color() ?? 'secondary'
-                    )
-                    ->formatStateUsing(fn ($state) => LeadStatus::tryFrom($state)?->label() ?? $state)
+                    ->formatStateUsing(function (Tables\Columns\TextColumn $column, $state): string {
+                        $record = $column->getRecord();
+                        if ($record instanceof Lead && $record->is_other_lead) {
+                            $s = $record->other_lead_status;
+
+                            return $s instanceof \App\Enums\OtherLeadStatus ? $s->label() : (string) $s;
+                        }
+
+                        return LeadStatus::tryFrom((string) $state)?->label() ?? (string) $state;
+                    })
+                    ->color(function (Tables\Columns\TextColumn $column): string {
+                        $record = $column->getRecord();
+                        if ($record instanceof Lead && $record->is_other_lead) {
+                            $s = $record->other_lead_status;
+
+                            return $s instanceof \App\Enums\OtherLeadStatus ? $s->color() : 'gray';
+                        }
+
+                        $state = $record instanceof Lead ? $record->status : null;
+
+                        return LeadStatus::tryFrom((string) $state)?->color() ?? 'secondary';
+                    })
                     ->alignCenter()
                     ->width('180px'),
 
@@ -175,12 +210,40 @@ class MySalesDashboardResource extends Resource
                     ->searchable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(function (Lead $record) {
+                        if ($record->is_other_lead && OtherLeadResource::canView($record)) {
+                            return OtherLeadResource::getUrl('view', ['record' => $record]);
+                        }
 
-                Tables\Actions\EditAction::make(),
+                        return static::getUrl('view', ['record' => $record]);
+                    }),
+
+                Tables\Actions\EditAction::make()
+                    ->url(function (Lead $record): ?string {
+                        if ($record->is_other_lead) {
+                            if (OtherLeadResource::canEdit($record)) {
+                                return OtherLeadResource::getUrl('edit', ['record' => $record]);
+                            }
+                            if (OtherLeadResource::canView($record)) {
+                                return OtherLeadResource::getUrl('view', ['record' => $record]);
+                            }
+                        }
+
+                        return null;
+                    })
+                    ->visible(fn (Lead $record) => ! $record->is_other_lead || OtherLeadResource::canEdit($record)),
             ])
-            ->recordUrl(fn ($record) => static::getUrl('view', ['record' => $record]))
-            ->recordClasses(fn ($record) => $record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null))
+            ->recordUrl(function (Lead $record) {
+                if ($record->is_other_lead && OtherLeadResource::canView($record)) {
+                    return OtherLeadResource::getUrl('view', ['record' => $record]);
+                }
+
+                return static::getUrl('view', ['record' => $record]);
+            })
+            ->recordClasses(fn (Lead $record) => $record->is_other_lead
+                ? 'other-lead-row'
+                : ($record->is_cruise_lead ? 'cruise-lead-row' : ($record->is_group_lead ? 'group-lead-row' : null)))
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }

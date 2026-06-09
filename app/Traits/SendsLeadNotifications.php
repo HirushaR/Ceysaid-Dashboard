@@ -2,17 +2,16 @@
 
 namespace App\Traits;
 
+use App\Enums\LeadStatus;
+use App\Filament\Resources\AllLeadDashboardResource;
+use App\Filament\Resources\LeadResource;
+use App\Filament\Resources\MyOperationLeadDashboardResource;
+use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\Lead;
 use App\Models\User;
-use App\Enums\LeadStatus;
-use Filament\Notifications\Notification;
+use App\Support\FilamentNotificationDispatcher;
 use Filament\Notifications\Actions\Action;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
-use App\Notifications\LeadDatabaseNotification;
-use App\Filament\Resources\LeadResource;
-use App\Filament\Resources\MySalesDashboardResource;
-use App\Filament\Resources\MyOperationLeadDashboardResource;
-use App\Filament\Resources\AllLeadDashboardResource;
+use Filament\Notifications\Notification;
 
 trait SendsLeadNotifications
 {
@@ -26,7 +25,7 @@ trait SendsLeadNotifications
                 $refId = $lead->reference_id ?: "ID: {$lead->id}";
                 // Use MySalesDashboardResource URL for "New Lead Assigned" notifications
                 $leadUrl = MySalesDashboardResource::getUrl('view', ['record' => $lead]);
-                
+
                 $filamentNotification = Notification::make()
                     ->title('New Lead Assigned')
                     ->body("You have been assigned a new lead: {$lead->customer_name} (Ref: {$refId})")
@@ -39,8 +38,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                $lead->assignedUser->notify(new LeadDatabaseNotification($filamentNotification, $lead->id));
-                event(new DatabaseNotificationsSent($lead->assignedUser));
+                FilamentNotificationDispatcher::send($lead->assignedUser, $filamentNotification, $lead->id);
             } catch (\Exception $e) {
                 \Log::error('Failed to send notification', ['error' => $e->getMessage()]);
             }
@@ -79,7 +77,7 @@ trait SendsLeadNotifications
     private function handleAssignmentChange(Lead $lead, $oldAssignedTo, $newAssignedTo): void
     {
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
-        
+
         if ($newAssignedTo && $lead->assignedUser) {
             $leadUrl = $this->getLeadUrlForUser($lead->assignedUser, $lead);
             $notification = Notification::make()
@@ -94,8 +92,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            $lead->assignedUser->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($lead->assignedUser));
+            FilamentNotificationDispatcher::send($lead->assignedUser, $notification, $lead->id);
         }
 
         if ($oldAssignedTo && $oldAssignedTo != $newAssignedTo) {
@@ -114,8 +111,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                $oldUser->notify(new LeadDatabaseNotification($notification, $lead->id));
-                event(new DatabaseNotificationsSent($oldUser));
+                FilamentNotificationDispatcher::send($oldUser, $notification, $lead->id);
             }
         }
     }
@@ -125,7 +121,7 @@ trait SendsLeadNotifications
         if ($newOperatorId && $lead->assignedOperator) {
             $refId = $lead->reference_id ?: "ID: {$lead->id}";
             $leadUrl = $this->getLeadUrlForUser($lead->assignedOperator, $lead);
-            
+
             $notification = Notification::make()
                 ->title('Lead Assigned to You (Operator)')
                 ->body("Lead {$refId} ({$lead->customer_name}) has been assigned to you for operations")
@@ -138,8 +134,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            $lead->assignedOperator->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($lead->assignedOperator));
+            FilamentNotificationDispatcher::send($lead->assignedOperator, $notification, $lead->id);
         }
     }
 
@@ -168,8 +163,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                $operationUser->notify(new LeadDatabaseNotification($notification, $lead->id));
-                event(new DatabaseNotificationsSent($operationUser));
+                FilamentNotificationDispatcher::send($operationUser, $notification, $lead->id);
             }
         }
 
@@ -181,14 +175,14 @@ trait SendsLeadNotifications
         if ($lead->assigned_operator && $lead->assignedOperator) {
             $recipients->push($lead->assignedOperator);
         }
-        if ($lead->created_by && $lead->creator && !$recipients->contains('id', $lead->created_by)) {
+        if ($lead->created_by && $lead->creator && ! $recipients->contains('id', $lead->created_by)) {
             $recipients->push($lead->creator);
         }
 
         foreach ($recipients->unique('id') as $recipient) {
             // Get the correct URL based on recipient's role
             $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
-            
+
             $notification = Notification::make()
                 ->title('Lead Status Changed')
                 ->body("Lead {$refId} ({$lead->customer_name}) status changed from '{$oldStatusLabel}' to '{$newStatusLabel}'")
@@ -201,8 +195,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($recipient));
+            FilamentNotificationDispatcher::send($recipient, $notification, $lead->id);
         }
     }
 
@@ -228,10 +221,10 @@ trait SendsLeadNotifications
         }
 
         $refId = $lead->reference_id ?: "ID: {$lead->id}";
-        
+
         foreach ($recipients->unique('id') as $recipient) {
             $leadUrl = $this->getLeadUrlForUser($recipient, $lead);
-            
+
             $notification = Notification::make()
                 ->title('Service Status Updated')
                 ->body("{$serviceLabel} status for lead {$refId} ({$lead->customer_name}) changed from '{$oldStatusLabel}' to '{$newStatusLabel}'")
@@ -244,8 +237,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($recipient));
+            FilamentNotificationDispatcher::send($recipient, $notification, $lead->id);
         }
     }
 

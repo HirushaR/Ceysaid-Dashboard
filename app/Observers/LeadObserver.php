@@ -10,9 +10,8 @@ use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\Lead;
 use App\Models\LeadActionLog;
 use App\Models\User;
-use App\Notifications\LeadDatabaseNotification;
+use App\Support\FilamentNotificationDispatcher;
 use Filament\Notifications\Actions\Action;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -255,8 +254,7 @@ class LeadObserver
                             ->url($leadUrl),
                     ]);
 
-                $operationUser->notify(new LeadDatabaseNotification($notification, $lead->id));
-                event(new DatabaseNotificationsSent($operationUser));
+                FilamentNotificationDispatcher::send($operationUser, $notification, $lead->id);
             }
         }
 
@@ -398,6 +396,10 @@ class LeadObserver
         string $icon = 'heroicon-o-information-circle',
         ?Lead $lead = null
     ): void {
+        if (! FilamentNotificationDispatcher::enabled()) {
+            return;
+        }
+
         try {
             Log::info('LeadObserver::sendNotification called', [
                 'user_id' => $user->id,
@@ -425,14 +427,11 @@ class LeadObserver
                 ]);
             }
 
-            $user->notify(new LeadDatabaseNotification($filamentNotification, $lead?->id));
+            FilamentNotificationDispatcher::send($user, $filamentNotification, $lead?->id);
 
             Log::info('LeadObserver::sendNotification - Notification sent successfully', [
                 'user_id' => $user->id,
             ]);
-
-            // Dispatch event for real-time updates (if Echo is configured)
-            event(new DatabaseNotificationsSent($user));
         } catch (\Exception $e) {
             Log::error('Failed to send notification', [
                 'user_id' => $user->id,

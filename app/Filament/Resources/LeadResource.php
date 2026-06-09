@@ -281,6 +281,22 @@ class LeadResource extends Resource
                                 ->options(Platform::optionsWithIndex())
                                 ->required()
                                 ->native(false),
+                            Forms\Components\TextInput::make('meta_ad_id')
+                                ->label('Meta Ad ID')
+                                ->disabled()
+                                ->visible(fn ($record) => filled($record?->meta_ad_id))
+                                ->suffixAction(
+                                    Forms\Components\Actions\Action::make('open_ad')
+                                        ->icon('heroicon-o-arrow-top-right-on-square')
+                                        ->label('Open ad')
+                                        ->url(fn ($record) => $record?->adUrl())
+                                        ->openUrlInNewTab()
+                                        ->visible(fn ($record) => filled($record?->adUrl()))
+                                ),
+                            Forms\Components\TextInput::make('meta_ctwa_clid')
+                                ->label('Meta Click ID (ctwa_clid)')
+                                ->disabled()
+                                ->visible(fn ($record) => filled($record?->meta_ctwa_clid)),
                         ]),
                     Forms\Components\Textarea::make('tour')
                         ->label('Tour Requirements')

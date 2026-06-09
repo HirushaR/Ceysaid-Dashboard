@@ -63,6 +63,14 @@ return [
             ],
         ],
 
+        'whatsapp-media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/whatsapp-media'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         // Dedicated disk for lead attachments
         'lead-attachments' => [
             'driver' => 's3',

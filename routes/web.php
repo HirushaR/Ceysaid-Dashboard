@@ -6,6 +6,7 @@ use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\SupplierPayablePdfController;
 use App\Http\Controllers\SupplierPayablesSummaryPdfController;
 use App\Http\Controllers\VendorBillPdfController;
+use App\Http\Controllers\WhatsAppMediaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,4 +20,5 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/finance/customer-payments/{customerPayment}/pdf', CustomerPaymentPdfController::class)->name('finance.customer-payments.pdf');
     Route::get('/finance/supplier-payables/pdf', SupplierPayablesSummaryPdfController::class)->name('finance.supplier-payables.summary-pdf');
     Route::get('/finance/supplier-payables/{supplier}/pdf', SupplierPayablePdfController::class)->name('finance.supplier-payables.pdf');
+    Route::get('/admin/whatsapp-media/{message}', [WhatsAppMediaController::class, 'show'])->name('whatsapp.media');
 });

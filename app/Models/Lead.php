@@ -17,6 +17,8 @@ class Lead extends Model
         'customer_name',
         'customer_id',
         'platform',
+        'meta_ad_id',
+        'meta_ctwa_clid',
         'tour',
         'message',
         'created_by',
@@ -142,6 +144,27 @@ class Lead extends Model
     public function notes()
     {
         return $this->hasMany(LeadNote::class)->orderBy('created_at', 'desc');
+    }
+
+    public function whatsAppConversation()
+    {
+        return $this->hasOne(WhatsAppConversation::class, 'lead_id');
+    }
+
+    public function adUrl(): ?string
+    {
+        if ($this->relationLoaded('whatsAppConversation') || $this->whatsAppConversation) {
+            $url = $this->whatsAppConversation?->adUrl();
+            if ($url) {
+                return $url;
+            }
+        }
+
+        if (filled($this->meta_ad_id)) {
+            return 'https://www.facebook.com/adsmanager/manage/ads?selected_ad_ids='.$this->meta_ad_id;
+        }
+
+        return null;
     }
 
     /**

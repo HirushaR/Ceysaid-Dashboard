@@ -8,12 +8,11 @@ use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\LeadNote;
 use App\Models\User;
-use App\Notifications\LeadDatabaseNotification;
+use App\Support\FilamentNotificationDispatcher;
 use Filament\Forms;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Actions\Action as NotificationAction;
-use Filament\Notifications\Events\DatabaseNotificationsSent;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -392,8 +391,7 @@ class ViewCruiseLead extends ViewRecord
                         ->button()
                         ->url($leadUrl),
                 ]);
-            $recipient->notify(new LeadDatabaseNotification($notification, $lead->id));
-            event(new DatabaseNotificationsSent($recipient));
+            FilamentNotificationDispatcher::send($recipient, $notification, $lead->id);
         }
     }
 

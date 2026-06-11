@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\Concerns\WhatsAppConversationTableColumns;
 use App\Filament\Resources\WhatsAppInboxResource\Pages;
 use App\Models\WhatsAppConversation;
 use Filament\Notifications\Notification;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppInboxResource extends Resource
 {
+    use WhatsAppConversationTableColumns;
+
     protected static ?string $model = WhatsAppConversation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
@@ -83,31 +86,21 @@ class WhatsAppInboxResource extends Resource
             ->persistSortInSession(false)
             ->defaultKeySort(false)
             ->columns([
-                Tables\Columns\TextColumn::make('contact.profile_name')
-                    ->label('Contact')
-                    ->description(fn (WhatsAppConversation $record): string => $record->contact?->phone ?? '')
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('contact', function (Builder $query) use ($search) {
-                            $query->where('profile_name', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%");
-                        });
-                    }),
-                Tables\Columns\TextColumn::make('referral_source_id')
-                    ->label('Ad ID')
-                    ->placeholder('Direct message')
-                    ->copyable()
-                    ->url(fn (WhatsAppConversation $record): ?string => $record->adUrl())
-                    ->openUrlInNewTab()
-                    ->toggleable(),
+                static::contactColumn(),
+                static::adIdColumn(),
                 Tables\Columns\TextColumn::make('referral_headline')
                     ->label('Ad headline')
-                    ->limit(40)
+                    ->width('12rem')
+                    ->wrap(false)
+                    ->limit(32)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+
+                        return is_string($state) && strlen($state) > 32 ? $state : null;
+                    })
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('last_message_preview')
-                    ->label('Last message')
-                    ->limit(60)
-                    ->placeholder('No messages yet'),
+                static::lastMessageColumn(),
                 Tables\Columns\TextColumn::make('last_message_at')
                     ->label('Last activity')
                     ->since(timezone: config('app.timezone'))

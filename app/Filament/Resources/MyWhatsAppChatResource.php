@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\Concerns\WhatsAppConversationTableColumns;
 use App\Filament\Resources\MyWhatsAppChatResource\Pages;
 use App\Models\WhatsAppConversation;
 use Filament\Resources\Resource;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class MyWhatsAppChatResource extends Resource
 {
+    use WhatsAppConversationTableColumns;
+
     protected static ?string $model = WhatsAppConversation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-inbox';
@@ -99,29 +102,10 @@ class MyWhatsAppChatResource extends Resource
             ->persistSortInSession(false)
             ->defaultKeySort(false)
             ->columns([
-                Tables\Columns\TextColumn::make('contact.profile_name')
-                    ->label('Contact')
-                    ->description(fn (WhatsAppConversation $record): string => $record->contact?->phone ?? '')
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('contact', function (Builder $query) use ($search) {
-                            $query->where('profile_name', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%");
-                        });
-                    }),
-                Tables\Columns\TextColumn::make('assignedUser.name')
-                    ->label('Assigned to')
-                    ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
-                Tables\Columns\TextColumn::make('referral_source_id')
-                    ->label('Ad ID')
-                    ->placeholder('Direct message')
-                    ->copyable()
-                    ->url(fn (WhatsAppConversation $record): ?string => $record->adUrl())
-                    ->openUrlInNewTab()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('last_message_preview')
-                    ->label('Last message')
-                    ->limit(60)
-                    ->placeholder('No messages yet'),
+                static::contactColumn(),
+                static::assignedToColumn(),
+                static::adIdColumn(),
+                static::lastMessageColumn(),
                 Tables\Columns\TextColumn::make('lead.reference_id')
                     ->label('Lead')
                     ->placeholder('—')

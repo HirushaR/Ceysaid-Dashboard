@@ -68,7 +68,8 @@ class WhatsAppInboxResource extends Resource
     {
         return parent::getEloquentQuery()
             ->unassigned()
-            ->with(['contact', 'lead']);
+            ->with(['contact', 'lead'])
+            ->orderByRecentActivity();
     }
 
     public static function table(Table $table): Table

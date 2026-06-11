@@ -65,10 +65,11 @@ class WhatsAppConversation extends Model
 
     public function scopeOrderByRecentActivity(Builder $query): Builder
     {
+        $table = $query->getModel()->getTable();
+
         return $query
-            ->orderByRaw('(unread_count > 0) DESC')
-            ->orderByRaw('COALESCE(last_message_at, updated_at, created_at) DESC')
-            ->orderByDesc('id');
+            ->orderByRaw("COALESCE({$table}.last_message_at, {$table}.updated_at, {$table}.created_at) DESC")
+            ->orderByDesc("{$table}.id");
     }
 
     public function syncFromLatestMessage(): void

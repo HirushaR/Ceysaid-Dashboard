@@ -85,7 +85,7 @@ class MyWhatsAppChatResource extends Resource
             $query->assignedToUser($user->id);
         }
 
-        return $query;
+        return $query->orderByRecentActivity();
     }
 
     public static function table(Table $table): Table

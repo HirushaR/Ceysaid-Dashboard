@@ -233,13 +233,46 @@ class ConversationPage extends ViewRecord
      */
     private function attachmentRules(): array
     {
-        $imageMax = config('whatsapp.max_image_size_kb');
         $documentMax = config('whatsapp.max_document_size_kb');
-        $mimes = implode(',', config('whatsapp.allowed_media_mimes', []));
 
         return [
-            'attachment' => ['required', 'file', 'mimes:'.$mimes, 'max:'.$documentMax],
+            'attachment' => [
+                'required',
+                'file',
+                'max:'.$documentMax,
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $value instanceof TemporaryUploadedFile) {
+                        $fail('Invalid attachment.');
+
+                        return;
+                    }
+
+                    if (! $this->isAllowedAttachment($value)) {
+                        $fail('Unsupported file type for WhatsApp.');
+                    }
+                },
+            ],
             'replyBody' => ['nullable', 'string', 'max:4096'],
         ];
+    }
+
+    private function isAllowedAttachment(TemporaryUploadedFile $file): bool
+    {
+        $mimeType = strtolower($file->getMimeType() ?: '');
+        $extension = strtolower($file->getClientOriginalExtension() ?: '');
+        $allowedMimes = array_map('strtolower', config('whatsapp.allowed_media_mimes', []));
+        $allowedExtensions = array_map('strtolower', config('whatsapp.allowed_media_extensions', []));
+
+        if (in_array($mimeType, $allowedMimes, true)) {
+            return true;
+        }
+
+        // Some browsers/OS report PDFs and Office files as octet-stream.
+        if (in_array($mimeType, ['application/octet-stream', 'binary/octet-stream'], true)
+            && in_array($extension, $allowedExtensions, true)) {
+            return true;
+        }
+
+        return in_array($extension, $allowedExtensions, true);
     }
 }

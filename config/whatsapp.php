@@ -46,6 +46,17 @@ return [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ],
 
+    /*
+    | File extensions allowed when the browser reports an ambiguous MIME type
+    | (e.g. application/octet-stream for some PDFs).
+    */
+    'allowed_media_extensions' => [
+        'jpg', 'jpeg', 'png', 'webp',
+        'mp4', '3gp',
+        'mp3', 'ogg', 'aac', 'm4a',
+        'pdf', 'doc', 'docx', 'xls', 'xlsx',
+    ],
+
     'max_image_size_kb' => (int) env('WHATSAPP_MAX_IMAGE_SIZE_KB', 5120),
 
     'max_document_size_kb' => (int) env('WHATSAPP_MAX_DOCUMENT_SIZE_KB', 16384),

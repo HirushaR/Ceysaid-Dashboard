@@ -175,6 +175,10 @@ class WhatsAppWebhookHandler
         ]);
 
         $message->update(['status' => $statusValue]);
+
+        if ($message->isOutbound()) {
+            $message->conversation?->syncFromLatestMessage();
+        }
     }
 
     private function findContactProfile(array $value, string $waId): array

@@ -182,7 +182,17 @@ class ConversationPage extends ViewRecord
 
         SendWhatsAppMessageJob::dispatch($message->id);
 
-        $this->record->syncFromLatestMessage();
+        $preview = $body
+            ?: ($hasAttachment
+                ? '['.ucfirst($message->type).': '.($message->media_filename ?? 'attachment').']'
+                : '');
+
+        $this->record->update([
+            'last_message_at' => $message->sent_at ?? $message->created_at,
+            'last_message_preview' => Str::limit($preview, 120),
+        ]);
+
+        $this->record->refresh();
 
         $this->replyBody = '';
         $this->attachment = null;

@@ -239,16 +239,22 @@ class ConversationPage extends ViewRecord
      */
     private function attachmentRules(): array
     {
-        $documentMax = config('whatsapp.max_document_size_kb');
-
         return [
             'attachment' => [
                 'required',
                 'file',
-                'max:'.$documentMax,
+                'max:'.$this->maxAttachmentSizeKb(),
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     if (! $value instanceof TemporaryUploadedFile) {
                         $fail('Invalid attachment.');
+
+                        return;
+                    }
+
+                    $sizeKb = (int) ceil($value->getSize() / 1024);
+
+                    if ($sizeKb > $this->maxAttachmentSizeKb($value)) {
+                        $fail($this->attachmentSizeLimitMessage($value));
 
                         return;
                     }
@@ -280,5 +286,28 @@ class ConversationPage extends ViewRecord
         }
 
         return in_array($extension, $allowedExtensions, true);
+    }
+
+    private function maxAttachmentSizeKb(?TemporaryUploadedFile $file = null): int
+    {
+        if ($file) {
+            $mimeType = strtolower($file->getMimeType() ?: '');
+
+            if (str_starts_with($mimeType, 'image/')) {
+                return (int) config('whatsapp.max_image_size_kb', 5120);
+            }
+        }
+
+        return (int) config('whatsapp.max_document_size_kb', 16384);
+    }
+
+    private function attachmentSizeLimitMessage(TemporaryUploadedFile $file): string
+    {
+        $mimeType = strtolower($file->getMimeType() ?: '');
+        $limitMb = str_starts_with($mimeType, 'image/')
+            ? (int) config('whatsapp.max_image_size_kb', 5120) / 1024
+            : (int) config('whatsapp.max_document_size_kb', 16384) / 1024;
+
+        return "File is too large for WhatsApp (max {$limitMb} MB for this file type).";
     }
 }

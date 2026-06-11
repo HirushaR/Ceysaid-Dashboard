@@ -9,6 +9,14 @@ class ListWhatsAppConversations extends ListRecords
 {
     protected static string $resource = WhatsAppInboxResource::class;
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->tableSortColumn = null;
+        $this->tableSortDirection = null;
+    }
+
     protected function getHeaderActions(): array
     {
         return [];

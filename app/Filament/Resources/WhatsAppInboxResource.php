@@ -75,8 +75,12 @@ class WhatsAppInboxResource extends Resource
     {
         return $table
             ->poll('15s')
-            ->defaultSort('last_message_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->reorder()->orderByRecentActivity())
+            ->defaultSort(
+                fn (Builder $query): Builder => $query->reorder()->orderByRecentActivity(),
+                'desc',
+            )
+            ->persistSortInSession(false)
+            ->defaultKeySort(false)
             ->columns([
                 Tables\Columns\TextColumn::make('contact.profile_name')
                     ->label('Contact')
@@ -106,8 +110,7 @@ class WhatsAppInboxResource extends Resource
                 Tables\Columns\TextColumn::make('last_message_at')
                     ->label('Last activity')
                     ->since(timezone: config('app.timezone'))
-                    ->dateTimeTooltip(timezone: config('app.timezone'))
-                    ->sortable(),
+                    ->dateTimeTooltip(timezone: config('app.timezone')),
                 Tables\Columns\TextColumn::make('unread_count')
                     ->label('Unread')
                     ->badge()

@@ -90,6 +90,8 @@ class SendWhatsAppMessageJob implements ShouldQueue
                 'status' => 'sent',
                 'sent_at' => now(),
             ]);
+
+            $message->conversation?->syncFromLatestMessage();
         } catch (\Throwable $e) {
             Log::channel('whatsapp')->error('Failed to send outbound WhatsApp message', [
                 'message_id' => $message->id,

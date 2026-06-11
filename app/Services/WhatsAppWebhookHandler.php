@@ -319,19 +319,7 @@ class WhatsAppWebhookHandler
 
                                 $existingMessage->update(['sent_at' => $sentAt]);
 
-                                $conversation = $existingMessage->conversation;
-                                if ($conversation) {
-                                    $latest = $conversation->messages()
-                                        ->orderByDesc('sent_at')
-                                        ->orderByDesc('id')
-                                        ->first();
-
-                                    if ($latest) {
-                                        $conversation->update([
-                                            'last_message_at' => $latest->sent_at ?? $latest->created_at,
-                                        ]);
-                                    }
-                                }
+                                $existingMessage->conversation?->syncFromLatestMessage();
 
                                 $updated++;
                             }

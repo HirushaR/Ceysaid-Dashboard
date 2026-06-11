@@ -75,7 +75,7 @@ class WhatsAppConversation extends Model
     public function syncFromLatestMessage(): void
     {
         $latest = $this->messages()
-            ->orderByDesc('sent_at')
+            ->orderByRaw('COALESCE(sent_at, created_at) DESC')
             ->orderByDesc('id')
             ->first();
 

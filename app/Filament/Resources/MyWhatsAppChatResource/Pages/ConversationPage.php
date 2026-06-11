@@ -164,9 +164,9 @@ class ConversationPage extends ViewRecord
                 'media_filename' => $stored['filename'],
                 'status' => 'pending',
                 'sent_by_user_id' => auth()->id(),
+                'sent_at' => now(),
             ]);
 
-            $preview = $body ?: '['.ucfirst($stored['type']).': '.$stored['filename'].']';
         } else {
             $message = WhatsAppMessage::create([
                 'whatsapp_conversation_id' => $this->record->id,
@@ -176,9 +176,8 @@ class ConversationPage extends ViewRecord
                 'body' => $body,
                 'status' => 'pending',
                 'sent_by_user_id' => auth()->id(),
+                'sent_at' => now(),
             ]);
-
-            $preview = $body;
         }
 
         SendWhatsAppMessageJob::dispatch($message->id);

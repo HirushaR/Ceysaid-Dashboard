@@ -183,10 +183,7 @@ class ConversationPage extends ViewRecord
 
         SendWhatsAppMessageJob::dispatch($message->id);
 
-        $this->record->update([
-            'last_message_at' => now(),
-            'last_message_preview' => Str::limit($preview, 120),
-        ]);
+        $this->record->syncFromLatestMessage();
 
         $this->replyBody = '';
         $this->attachment = null;

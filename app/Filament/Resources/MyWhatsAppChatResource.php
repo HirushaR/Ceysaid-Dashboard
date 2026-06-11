@@ -93,6 +93,7 @@ class MyWhatsAppChatResource extends Resource
         return $table
             ->poll('15s')
             ->defaultSort('last_message_at', 'desc')
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->reorder()->orderByRecentActivity())
             ->columns([
                 Tables\Columns\TextColumn::make('contact.profile_name')
                     ->label('Contact')

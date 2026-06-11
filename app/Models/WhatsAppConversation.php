@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class WhatsAppConversation extends Model
 {
@@ -60,6 +61,34 @@ class WhatsAppConversation extends Model
     public function scopeAssignedToUser(Builder $query, int $userId): Builder
     {
         return $query->where('assigned_to', $userId);
+    }
+
+    public function scopeOrderByRecentActivity(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw('(unread_count > 0) DESC')
+            ->orderByRaw('COALESCE(last_message_at, updated_at, created_at) DESC')
+            ->orderByDesc('id');
+    }
+
+    public function syncFromLatestMessage(): void
+    {
+        $latest = $this->messages()
+            ->orderByDesc('sent_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $latest) {
+            return;
+        }
+
+        $preview = $latest->body
+            ?: ($latest->media_filename ?: '['.ucfirst($latest->type).']');
+
+        $this->update([
+            'last_message_at' => $latest->sent_at ?? $latest->created_at,
+            'last_message_preview' => Str::limit($preview, 120),
+        ]);
     }
 
     public function isAssigned(): bool

@@ -132,12 +132,8 @@ class WhatsAppWebhookHandler
                 DownloadWhatsAppMediaJob::dispatch($whatsappMessage);
             }
 
-            $conversation->update([
-                'last_message_at' => $sentAt,
-                'last_message_preview' => Str::limit($parsed['preview'], 120),
-            ]);
-
             $conversation->incrementUnread();
+            $conversation->syncFromLatestMessage();
         });
 
         if ($whatsappMessage) {

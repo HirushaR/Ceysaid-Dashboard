@@ -20,7 +20,7 @@ class BackfillWhatsAppReferralsCommand extends Command
         $activity = 0;
 
         WhatsAppConversation::query()
-            ->with(['messages' => fn ($query) => $query->orderByRaw('COALESCE(sent_at, created_at) DESC')->orderByDesc('id')->limit(1)])
+            ->with(['messages' => fn ($query) => $query->orderByDesc('id')->limit(1)])
             ->chunkById(100, function ($conversations) use (&$activity): void {
                 foreach ($conversations as $conversation) {
                     $conversation->syncFromLatestMessage();

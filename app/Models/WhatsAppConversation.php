@@ -74,8 +74,9 @@ class WhatsAppConversation extends Model
 
     public function syncFromLatestMessage(): void
     {
+        // Use highest message id — always matches the most recently inserted message,
+        // even when outbound sent_at was null (old bug) or the queue has not run yet.
         $latest = $this->messages()
-            ->orderByRaw('COALESCE(sent_at, created_at) DESC')
             ->orderByDesc('id')
             ->first();
 

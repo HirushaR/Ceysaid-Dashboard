@@ -4,10 +4,10 @@ namespace App\Jobs;
 
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsAppApiService;
+use App\Support\WhatsAppMediaStorage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class DownloadWhatsAppMediaJob implements ShouldQueue
 {
@@ -36,10 +36,13 @@ class DownloadWhatsAppMediaJob implements ShouldQueue
             }
 
             $response = $api->downloadMedia($downloadUrl);
-            $extension = $this->guessExtension($message->media_mime_type);
-            $path = 'conversations/'.$message->whatsapp_conversation_id.'/'.$message->wamid.$extension;
-
-            Storage::disk(config('whatsapp.media_disk'))->put($path, $response->body());
+            $path = WhatsAppMediaStorage::storeContents(
+                $message->whatsapp_conversation_id,
+                $message->wamid,
+                $response->body(),
+                $message->media_mime_type,
+                $message->media_filename,
+            );
 
             $message->update(['media_path' => $path]);
         } catch (\Throwable $e) {
@@ -51,18 +54,5 @@ class DownloadWhatsAppMediaJob implements ShouldQueue
 
             throw $e;
         }
-    }
-
-    private function guessExtension(?string $mimeType): string
-    {
-        return match ($mimeType) {
-            'image/jpeg' => '.jpg',
-            'image/png' => '.png',
-            'image/webp' => '.webp',
-            'video/mp4' => '.mp4',
-            'audio/ogg', 'audio/ogg; codecs=opus' => '.ogg',
-            'application/pdf' => '.pdf',
-            default => '.bin',
-        };
     }
 }

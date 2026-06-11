@@ -19,6 +19,7 @@ class WhatsAppMessage extends Model
         'referral',
         'media_id',
         'media_mime_type',
+        'media_filename',
         'media_path',
         'status',
         'sent_by_user_id',
@@ -76,5 +77,44 @@ class WhatsAppMessage extends Model
     public function isOutbound(): bool
     {
         return $this->direction === 'outbound';
+    }
+
+    public function hasMedia(): bool
+    {
+        return filled($this->media_path) || filled($this->media_id);
+    }
+
+    public function isImage(): bool
+    {
+        return $this->type === 'image'
+            || str_starts_with((string) $this->media_mime_type, 'image/');
+    }
+
+    public function isVideo(): bool
+    {
+        return $this->type === 'video'
+            || str_starts_with((string) $this->media_mime_type, 'video/');
+    }
+
+    public function isAudio(): bool
+    {
+        return $this->type === 'audio'
+            || str_starts_with((string) $this->media_mime_type, 'audio/');
+    }
+
+    public function mediaLabel(): string
+    {
+        if ($this->media_filename) {
+            return $this->media_filename;
+        }
+
+        return match ($this->type) {
+            'image' => 'Image',
+            'video' => 'Video',
+            'audio' => 'Audio',
+            'document' => 'Document',
+            'sticker' => 'Sticker',
+            default => ucfirst($this->type),
+        };
     }
 }

@@ -104,22 +104,42 @@
                                 <p class="whitespace-pre-wrap">{{ $message->body }}</p>
                             @endif
 
-                            @if ($message->media_path && str_starts_with((string) $message->media_mime_type, 'image/'))
-                                <img
-                                    src="{{ route('whatsapp.media', $message) }}"
-                                    alt="WhatsApp media"
-                                    class="mt-2 max-h-64 rounded-lg"
-                                />
+                            @if ($message->media_path && $message->isImage())
+                                <a href="{{ route('whatsapp.media', $message) }}" target="_blank" rel="noopener noreferrer">
+                                    <img
+                                        src="{{ route('whatsapp.media', $message) }}"
+                                        alt="{{ $message->mediaLabel() }}"
+                                        class="mt-2 max-h-64 rounded-lg"
+                                    />
+                                </a>
+                            @elseif ($message->media_path && $message->isVideo())
+                                <video
+                                    controls
+                                    preload="metadata"
+                                    class="mt-2 max-h-64 w-full rounded-lg"
+                                >
+                                    <source src="{{ route('whatsapp.media', $message) }}" type="{{ $message->media_mime_type }}">
+                                </video>
+                            @elseif ($message->media_path && $message->isAudio())
+                                <audio controls preload="metadata" class="mt-2 w-full max-w-xs">
+                                    <source src="{{ route('whatsapp.media', $message) }}" type="{{ $message->media_mime_type }}">
+                                </audio>
                             @elseif ($message->media_path)
                                 <a
                                     href="{{ route('whatsapp.media', $message) }}"
                                     target="_blank"
-                                    class="mt-2 inline-flex text-xs underline"
+                                    rel="noopener noreferrer"
+                                    @class([
+                                        'mt-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
+                                        'bg-white/20 text-white hover:bg-white/30' => $message->isOutbound(),
+                                        'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100' => $message->isInbound(),
+                                    ])
                                 >
-                                    Download {{ ucfirst($message->type) }}
+                                    <x-heroicon-o-paper-clip class="h-3.5 w-3.5" />
+                                    {{ $message->mediaLabel() }}
                                 </a>
                             @elseif ($message->media_id && ! $message->media_path)
-                                <p class="mt-1 text-xs opacity-70">Media downloading…</p>
+                                <p class="mt-1 text-xs opacity-70">Attachment downloading…</p>
                             @endif
 
                             <div @class([
@@ -155,11 +175,52 @@
                     @error('replyBody')
                         <p class="text-xs text-danger-600">{{ $message }}</p>
                     @enderror
-                    <div class="flex justify-end">
-                        <x-filament::button type="submit">
-                            Send reply
+
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                                <x-heroicon-o-paper-clip class="h-4 w-4" />
+                                <span>Attach file</span>
+                                <input
+                                    type="file"
+                                    wire:model="attachment"
+                                    class="hidden"
+                                    accept="image/jpeg,image/png,image/webp,video/mp4,video/3gpp,audio/mpeg,audio/ogg,audio/aac,application/pdf,.doc,.docx,.xls,.xlsx"
+                                />
+                            </label>
+                            <span class="text-[11px] text-gray-500 dark:text-gray-400">
+                                Images, PDF, video, audio (max {{ (int) config('whatsapp.max_document_size_kb') / 1024 }}MB)
+                            </span>
+                        </div>
+
+                        <x-filament::button type="submit" wire:loading.attr="disabled" wire:target="attachment,sendReply">
+                            <span wire:loading.remove wire:target="attachment,sendReply">Send</span>
+                            <span wire:loading wire:target="attachment,sendReply">Sending…</span>
                         </x-filament::button>
                     </div>
+
+                    <div wire:loading wire:target="attachment" class="text-xs text-gray-500 dark:text-gray-400">
+                        Uploading attachment…
+                    </div>
+
+                    @error('attachment')
+                        <p class="text-xs text-danger-600">{{ $message }}</p>
+                    @enderror
+
+                    @if ($attachment)
+                        <div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs dark:bg-gray-800">
+                            <span class="truncate text-gray-700 dark:text-gray-200">
+                                {{ $attachment->getClientOriginalName() }}
+                            </span>
+                            <button
+                                type="button"
+                                wire:click="removeAttachment"
+                                class="text-danger-600 hover:underline"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    @endif
                 </form>
             </div>
         </div>

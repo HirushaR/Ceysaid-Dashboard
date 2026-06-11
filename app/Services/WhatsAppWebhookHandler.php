@@ -123,6 +123,7 @@ class WhatsAppWebhookHandler
                 'referral' => $referral,
                 'media_id' => $parsed['media_id'],
                 'media_mime_type' => $parsed['media_mime_type'],
+                'media_filename' => $parsed['media_filename'] ?? null,
                 'status' => 'received',
                 'sent_at' => $sentAt,
             ]);
@@ -204,6 +205,7 @@ class WhatsAppWebhookHandler
                 'preview' => $message['text']['body'] ?? '[Text message]',
                 'media_id' => null,
                 'media_mime_type' => null,
+                'media_filename' => null,
             ],
             'image' => [
                 'type' => 'image',
@@ -211,6 +213,7 @@ class WhatsAppWebhookHandler
                 'preview' => $message['image']['caption'] ?? '[Image]',
                 'media_id' => $message['image']['id'] ?? null,
                 'media_mime_type' => $message['image']['mime_type'] ?? null,
+                'media_filename' => null,
             ],
             'document' => [
                 'type' => 'document',
@@ -218,6 +221,7 @@ class WhatsAppWebhookHandler
                 'preview' => $message['document']['filename'] ?? '[Document]',
                 'media_id' => $message['document']['id'] ?? null,
                 'media_mime_type' => $message['document']['mime_type'] ?? null,
+                'media_filename' => $message['document']['filename'] ?? null,
             ],
             'audio' => [
                 'type' => 'audio',
@@ -225,6 +229,7 @@ class WhatsAppWebhookHandler
                 'preview' => '[Audio]',
                 'media_id' => $message['audio']['id'] ?? null,
                 'media_mime_type' => $message['audio']['mime_type'] ?? null,
+                'media_filename' => null,
             ],
             'video' => [
                 'type' => 'video',
@@ -232,6 +237,7 @@ class WhatsAppWebhookHandler
                 'preview' => $message['video']['caption'] ?? '[Video]',
                 'media_id' => $message['video']['id'] ?? null,
                 'media_mime_type' => $message['video']['mime_type'] ?? null,
+                'media_filename' => null,
             ],
             'sticker' => [
                 'type' => 'sticker',
@@ -239,6 +245,7 @@ class WhatsAppWebhookHandler
                 'preview' => '[Sticker]',
                 'media_id' => $message['sticker']['id'] ?? null,
                 'media_mime_type' => $message['sticker']['mime_type'] ?? null,
+                'media_filename' => null,
             ],
             'location' => [
                 'type' => 'location',
@@ -246,6 +253,7 @@ class WhatsAppWebhookHandler
                 'preview' => '[Location]',
                 'media_id' => null,
                 'media_mime_type' => null,
+                'media_filename' => null,
             ],
             default => [
                 'type' => $type,
@@ -253,6 +261,7 @@ class WhatsAppWebhookHandler
                 'preview' => '['.ucfirst($type).' message]',
                 'media_id' => null,
                 'media_mime_type' => null,
+                'media_filename' => null,
             ],
         };
     }

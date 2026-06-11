@@ -8,14 +8,19 @@ use App\Jobs\SendWhatsAppMessageJob;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsAppLeadService;
+use App\Support\WhatsAppMediaStorage;
 use Filament\Actions;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class ConversationPage extends ViewRecord
 {
+    use WithFileUploads;
+
     protected static string $resource = MyWhatsAppChatResource::class;
 
     protected static string $view = 'filament.resources.whats-app-inbox-resource.pages.conversation-page';
@@ -25,6 +30,8 @@ class ConversationPage extends ViewRecord
     protected static bool $shouldRegisterNavigation = false;
 
     public string $replyBody = '';
+
+    public $attachment = null;
 
     public function mount(int|string $record): void
     {
@@ -129,38 +136,73 @@ class ConversationPage extends ViewRecord
     {
         $this->authorizeAccess();
 
-        $this->validate([
-            'replyBody' => ['required', 'string', 'max:4096'],
-        ]);
+        $hasAttachment = $this->attachment instanceof TemporaryUploadedFile
+            || (is_object($this->attachment) && method_exists($this->attachment, 'getRealPath'));
 
-        $body = trim($this->replyBody);
+        $this->validate(
+            $hasAttachment ? $this->attachmentRules() : ['replyBody' => ['required', 'string', 'max:4096']],
+            [
+                'replyBody.required' => 'Type a message or attach a file.',
+                'attachment.mimes' => 'Unsupported file type for WhatsApp.',
+                'attachment.max' => 'File is too large for WhatsApp.',
+            ],
+        );
 
-        $message = WhatsAppMessage::create([
-            'whatsapp_conversation_id' => $this->record->id,
-            'wamid' => 'local-'.Str::uuid(),
-            'direction' => 'outbound',
-            'type' => 'text',
-            'body' => $body,
-            'status' => 'pending',
-            'sent_by_user_id' => auth()->id(),
-        ]);
+        $body = trim($this->replyBody) ?: null;
+
+        if ($hasAttachment) {
+            $stored = WhatsAppMediaStorage::storeUploadedFile($this->record->id, $this->attachment);
+
+            $message = WhatsAppMessage::create([
+                'whatsapp_conversation_id' => $this->record->id,
+                'wamid' => 'local-'.Str::uuid(),
+                'direction' => 'outbound',
+                'type' => $stored['type'],
+                'body' => $body,
+                'media_path' => $stored['path'],
+                'media_mime_type' => $stored['mime_type'],
+                'media_filename' => $stored['filename'],
+                'status' => 'pending',
+                'sent_by_user_id' => auth()->id(),
+            ]);
+
+            $preview = $body ?: '['.ucfirst($stored['type']).': '.$stored['filename'].']';
+        } else {
+            $message = WhatsAppMessage::create([
+                'whatsapp_conversation_id' => $this->record->id,
+                'wamid' => 'local-'.Str::uuid(),
+                'direction' => 'outbound',
+                'type' => 'text',
+                'body' => $body,
+                'status' => 'pending',
+                'sent_by_user_id' => auth()->id(),
+            ]);
+
+            $preview = $body;
+        }
 
         SendWhatsAppMessageJob::dispatch($message->id);
 
         $this->record->update([
             'last_message_at' => now(),
-            'last_message_preview' => Str::limit($body, 120),
+            'last_message_preview' => Str::limit($preview, 120),
         ]);
 
         $this->replyBody = '';
+        $this->attachment = null;
 
         $this->record->load(['contact', 'lead', 'messages.sentByUser']);
 
         Notification::make()
             ->title('Message queued')
-            ->body('Your reply is being sent via WhatsApp.')
+            ->body($hasAttachment ? 'Your attachment is being sent via WhatsApp.' : 'Your reply is being sent via WhatsApp.')
             ->success()
             ->send();
+    }
+
+    public function removeAttachment(): void
+    {
+        $this->attachment = null;
     }
 
     public function refreshMessages(): void
@@ -173,5 +215,20 @@ class ConversationPage extends ViewRecord
         return static::getResource()::getEloquentQuery()
             ->with(['contact', 'lead', 'messages.sentByUser'])
             ->findOrFail($key);
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    private function attachmentRules(): array
+    {
+        $imageMax = config('whatsapp.max_image_size_kb');
+        $documentMax = config('whatsapp.max_document_size_kb');
+        $mimes = implode(',', config('whatsapp.allowed_media_mimes', []));
+
+        return [
+            'attachment' => ['required', 'file', 'mimes:'.$mimes, 'max:'.$documentMax],
+            'replyBody' => ['nullable', 'string', 'max:4096'],
+        ];
     }
 }

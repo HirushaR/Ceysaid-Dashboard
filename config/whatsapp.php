@@ -26,6 +26,30 @@ return [
 
     'media_disk' => env('WHATSAPP_MEDIA_DISK', 'whatsapp-media'),
 
+    /*
+    | Allowed outbound attachment MIME types (Meta WhatsApp Cloud API limits apply).
+    */
+    'allowed_media_mimes' => [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'video/mp4',
+        'video/3gpp',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/ogg',
+        'audio/aac',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+
+    'max_image_size_kb' => (int) env('WHATSAPP_MAX_IMAGE_SIZE_KB', 5120),
+
+    'max_document_size_kb' => (int) env('WHATSAPP_MAX_DOCUMENT_SIZE_KB', 16384),
+
     'graph_base_url' => 'https://graph.facebook.com',
 
     'log_inbound_messages' => env('WHATSAPP_LOG_INBOUND_MESSAGES', true),

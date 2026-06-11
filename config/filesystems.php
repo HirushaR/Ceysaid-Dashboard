@@ -63,13 +63,26 @@ return [
             ],
         ],
 
-        'whatsapp-media' => [
-            'driver' => 'local',
-            'root' => storage_path('app/whatsapp-media'),
-            'serve' => false,
+        'whatsapp-media' => array_filter([
+            'driver' => env('WHATSAPP_MEDIA_DRIVER', 'local'),
+            'root' => env('WHATSAPP_MEDIA_DRIVER', 'local') === 's3'
+                ? env('WHATSAPP_MEDIA_S3_ROOT', 'whatsapp-media')
+                : storage_path('app/whatsapp-media'),
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
             'throw' => false,
             'report' => false,
-        ],
+            'serve' => false,
+            'options' => [
+                'CacheControl' => 'max-age=86400',
+            ],
+        ]),
 
         // Dedicated disk for lead attachments
         'lead-attachments' => [

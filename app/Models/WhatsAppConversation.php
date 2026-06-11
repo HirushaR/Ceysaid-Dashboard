@@ -77,6 +77,7 @@ class WhatsAppConversation extends Model
         // Use highest message id — always matches the most recently inserted message,
         // even when outbound sent_at was null (old bug) or the queue has not run yet.
         $latest = $this->messages()
+            ->reorder()
             ->orderByDesc('id')
             ->first();
 
@@ -141,6 +142,7 @@ class WhatsAppConversation extends Model
     public function adImageUrl(): ?string
     {
         $referral = $this->messages()
+            ->reorder()
             ->whereNotNull('referral')
             ->orderBy('id')
             ->value('referral');

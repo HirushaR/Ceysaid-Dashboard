@@ -82,11 +82,11 @@ class ConversationPage extends ViewRecord
                 ->button(),
         ];
 
-        if ($this->record->lead_id) {
+        if ($leadUrl = $this->leadViewUrl()) {
             $actions[] = Actions\Action::make('view_lead')
                 ->label('View lead')
                 ->icon('heroicon-o-user')
-                ->url(LeadResource::getUrl('view', ['record' => $this->record->lead]))
+                ->url($leadUrl)
                 ->button();
         }
 
@@ -215,6 +215,17 @@ class ConversationPage extends ViewRecord
         return static::getResource()::getEloquentQuery()
             ->with(['contact', 'lead', 'messages.sentByUser'])
             ->findOrFail($key);
+    }
+
+    public function leadViewUrl(): ?string
+    {
+        $record = $this->record->lead ?? $this->record->lead_id;
+
+        if (! $record) {
+            return null;
+        }
+
+        return LeadResource::getUrl('view', ['record' => $record]);
     }
 
     /**

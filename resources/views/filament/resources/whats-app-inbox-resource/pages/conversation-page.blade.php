@@ -13,15 +13,15 @@
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <div class="flex flex-wrap items-center justify-end gap-2">
-                            @if ($record->lead_id)
+                            @if ($this->leadViewUrl())
                                 <x-filament::button
                                     tag="a"
-                                    href="{{ \App\Filament\Resources\LeadResource::getUrl('view', ['record' => $record->lead]) }}"
+                                    href="{{ $this->leadViewUrl() }}"
                                     color="gray"
                                     icon="heroicon-o-user"
                                     size="sm"
                                 >
-                                    View lead{{ $record->lead?->reference_id ? ': '.$record->lead->reference_id : '' }}
+                                    View lead{{ $record->lead?->reference_id ? ': '.$record->lead->reference_id : ($record->lead_id ? ' #'.$record->lead_id : '') }}
                                 </x-filament::button>
                             @else
                                 {{ ($this->getAction('createLead')) }}

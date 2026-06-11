@@ -120,8 +120,8 @@ class MyWhatsAppChatResource extends Resource
                 Tables\Columns\TextColumn::make('lead.reference_id')
                     ->label('Lead')
                     ->placeholder('—')
-                    ->url(fn (WhatsAppConversation $record): ?string => $record->lead
-                        ? LeadResource::getUrl('view', ['record' => $record->lead])
+                    ->url(fn (WhatsAppConversation $record): ?string => ($record->lead ?? $record->lead_id)
+                        ? LeadResource::getUrl('view', ['record' => $record->lead ?? $record->lead_id])
                         : null),
                 Tables\Columns\TextColumn::make('last_message_at')
                     ->label('Last activity')

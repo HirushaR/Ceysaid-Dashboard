@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MyWhatsAppChatResource\Pages;
 
 use App\Filament\Resources\LeadResource;
+use App\Filament\Resources\MySalesDashboardResource;
 use App\Filament\Resources\MyWhatsAppChatResource;
 use App\Jobs\SendWhatsAppMessageJob;
 use App\Models\WhatsAppConversation;
@@ -126,7 +127,7 @@ class ConversationPage extends ViewRecord
                     ->actions([
                         \Filament\Notifications\Actions\Action::make('view')
                             ->label('View lead')
-                            ->url(LeadResource::getUrl('view', ['record' => $lead])),
+                            ->url($this->leadViewUrlFor($lead)),
                     ])
                     ->send();
             });
@@ -231,7 +232,18 @@ class ConversationPage extends ViewRecord
             return null;
         }
 
-        return LeadResource::getUrl('view', ['record' => $record]);
+        return $this->leadViewUrlFor($record);
+    }
+
+    protected function leadViewUrlFor(\App\Models\Lead|int $lead): string
+    {
+        $user = auth()->user();
+
+        if ($user?->isSales()) {
+            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+        }
+
+        return LeadResource::getUrl('view', ['record' => $lead]);
     }
 
     /**

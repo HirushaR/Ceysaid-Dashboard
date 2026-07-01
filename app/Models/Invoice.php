@@ -15,6 +15,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'lead_id',
+        'tour_id',
         'quote_id',
         'invoice_number',
         'invoice_date',
@@ -45,6 +46,13 @@ class Invoice extends Model
                 $invoice->customer_payment_status = 'pending';
                 $invoice->balance_amount = $invoice->total_amount;
             }
+
+            if (! $invoice->tour_id && $invoice->lead_id) {
+                $lead = Lead::query()->find($invoice->lead_id);
+                if ($lead?->tour_id) {
+                    $invoice->tour_id = $lead->tour_id;
+                }
+            }
         });
 
         // Update vendor payment status when invoice is created
@@ -70,6 +78,11 @@ class Invoice extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function tour(): BelongsTo
+    {
+        return $this->belongsTo(Tour::class);
     }
 
     public function quote(): BelongsTo

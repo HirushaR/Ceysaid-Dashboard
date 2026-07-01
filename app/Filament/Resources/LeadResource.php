@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\LeadStatus;
 use App\Enums\Platform;
 use App\Enums\Priority;
+use App\Filament\Forms\LeadTourFormFields;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
 use App\Traits\HasResourcePermissions;
@@ -312,6 +313,7 @@ class LeadResource extends Resource
                         ->live()
                         ->afterStateUpdated(fn ($set, $state) => $state && $set('is_cruise_lead', false))
                         ->helperText('Mark this lead as a group lead. Only one of Group or Cruise can be selected.'),
+                    LeadTourFormFields::tourSelect(),
                     Forms\Components\Toggle::make('is_cruise_lead')
                         ->label('Cruise lead')
                         ->default(false)

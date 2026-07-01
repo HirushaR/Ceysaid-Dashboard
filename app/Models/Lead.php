@@ -45,6 +45,7 @@ class Lead extends Model
         'archived_at',
         'archived_by',
         'is_group_lead',
+        'tour_id',
         'is_cruise_lead',
         'is_other_lead',
         'other_lead_status',
@@ -67,6 +68,18 @@ class Lead extends Model
         'other_lead_start_date' => 'date',
         'other_lead_end_date' => 'date',
     ];
+
+    public function tourMaster()
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
+
+    public function getBookedPaxAttribute(): int
+    {
+        return (int) ($this->number_of_adults ?? 0)
+            + (int) ($this->number_of_children ?? 0)
+            + (int) ($this->number_of_infants ?? 0);
+    }
 
     public function customer()
     {

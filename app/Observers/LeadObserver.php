@@ -18,6 +18,32 @@ use Illuminate\Support\Facades\Log;
 class LeadObserver
 {
     /**
+     * Handle the Lead "saving" event.
+     */
+    public function saving(Lead $lead): void
+    {
+        if (
+            $lead->is_group_lead
+            && $lead->status === LeadStatus::CONFIRMED->value
+            && ! $lead->tour_id
+        ) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'tour_id' => 'A tour must be selected for confirmed group bookings.',
+            ]);
+        }
+    }
+
+    /**
+     * Handle the Lead "updated" event — sync tour_id to invoices when changed.
+     */
+    public function saved(Lead $lead): void
+    {
+        if ($lead->wasChanged('tour_id')) {
+            $lead->invoices()->update(['tour_id' => $lead->tour_id]);
+        }
+    }
+
+    /**
      * Handle the Lead "created" event.
      */
     public function created(Lead $lead): void

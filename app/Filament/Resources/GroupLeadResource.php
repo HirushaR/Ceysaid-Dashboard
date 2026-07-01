@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\LeadStatus;
 use App\Enums\Platform;
 use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Forms\LeadTourFormFields;
 use App\Filament\Resources\GroupLeadResource\Pages;
 use App\Models\Lead;
 use Filament\Forms;
@@ -243,6 +244,7 @@ class GroupLeadResource extends Resource
 
                 Forms\Components\Section::make('Travel Details')
                     ->schema([
+                        LeadTourFormFields::tourSelect(alwaysVisible: true),
                         Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\TextInput::make('country')->label('Country')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn ($context) => $context === 'view'),

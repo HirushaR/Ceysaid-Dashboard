@@ -355,6 +355,7 @@ class InvoiceResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with([
                 'lead',
+                'tour',
                 'vendorBills',
                 'customerPayments',
             ]))
@@ -385,6 +386,12 @@ class InvoiceResource extends Resource
                     })
                     ->url(fn ($record) => $record->lead ? route('filament.admin.resources.leads.view', ['record' => $record->lead]) : null)
                     ->color('info'),
+                Tables\Columns\TextColumn::make('tour.tour_code')
+                    ->label('Tour code')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('lead.customer_name')
                     ->label('Customer')
                     ->searchable()
@@ -468,6 +475,11 @@ class InvoiceResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                Tables\Filters\SelectFilter::make('tour_id')
+                    ->label('Tour')
+                    ->relationship('tour', 'tour_code')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('customer_payment_status')
                     ->label('Customer Payment Status')
                     ->options([

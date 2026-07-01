@@ -352,6 +352,11 @@ class User extends Authenticatable
         return $this->hasMany(Lead::class, 'created_by')->whereNull('archived_at');
     }
 
+    public function whatsappChatFolders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WhatsAppChatFolder::class)->orderBy('position')->orderBy('name');
+    }
+
     /**
      * Get remaining leave balances for the current calendar year
      */

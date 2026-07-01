@@ -8,9 +8,12 @@ use App\Filament\Resources\MyWhatsAppChatResource;
 use App\Jobs\SendWhatsAppMessageJob;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
+use App\Models\WhatsAppChatFolder;
+use App\Services\WhatsAppChatFolderService;
 use App\Services\WhatsAppLeadService;
 use App\Support\WhatsAppMediaStorage;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -40,7 +43,7 @@ class ConversationPage extends ViewRecord
 
         $this->authorizeAccess();
 
-        $this->record->load(['contact', 'lead', 'messages.sentByUser']);
+        $this->record->load(['contact', 'lead', 'folder', 'messages.sentByUser']);
         $this->record->markAsRead();
     }
 
@@ -101,7 +104,60 @@ class ConversationPage extends ViewRecord
                 ->button();
         }
 
+        if ($moveToFolder = $this->moveToFolderAction()) {
+            $actions[] = $moveToFolder;
+        }
+
         return $actions;
+    }
+
+    protected function moveToFolderAction(): ?Actions\Action
+    {
+        $user = auth()->user();
+        $folderService = app(WhatsAppChatFolderService::class);
+
+        if (! $folderService->userCanManageFolders($user)) {
+            return null;
+        }
+
+        if ($user->isSales() && ! $this->record->isAssignedTo($user)) {
+            return null;
+        }
+
+        if ($user->isAdmin() && ! $this->record->isAssigned()) {
+            return null;
+        }
+
+        return Actions\Action::make('moveToFolder')
+            ->label($this->record->folder_id ? 'Change folder' : 'Move to folder')
+            ->icon('heroicon-o-folder')
+            ->color('gray')
+            ->button()
+            ->form([
+                Forms\Components\Select::make('folder_id')
+                    ->label('Folder')
+                    ->options(fn (): array => $folderService->folderOptionsForUser($user))
+                    ->placeholder('Unfiled')
+                    ->nullable()
+                    ->searchable(),
+            ])
+            ->fillForm([
+                'folder_id' => $this->record->folder_id,
+            ])
+            ->action(function (array $data) use ($folderService, $user): void {
+                $folder = isset($data['folder_id']) && $data['folder_id']
+                    ? WhatsAppChatFolder::query()->find($data['folder_id'])
+                    : null;
+
+                $folderService->moveConversation($this->record, $user, $folder);
+
+                $this->record->refresh()->load(['contact', 'lead', 'folder', 'messages.sentByUser']);
+
+                Notification::make()
+                    ->title($folder ? 'Chat moved to folder' : 'Chat removed from folder')
+                    ->success()
+                    ->send();
+            });
     }
 
     public function createLeadAction(): Actions\Action
@@ -198,7 +254,7 @@ class ConversationPage extends ViewRecord
         $this->replyBody = '';
         $this->attachment = null;
 
-        $this->record->load(['contact', 'lead', 'messages.sentByUser']);
+        $this->record->load(['contact', 'lead', 'folder', 'messages.sentByUser']);
 
         Notification::make()
             ->title('Message queued')
@@ -214,7 +270,7 @@ class ConversationPage extends ViewRecord
 
     public function refreshMessages(): void
     {
-        $this->record->load(['contact', 'lead', 'messages.sentByUser']);
+        $this->record->load(['contact', 'lead', 'folder', 'messages.sentByUser']);
     }
 
     protected function resolveRecord(int|string $key): WhatsAppConversation

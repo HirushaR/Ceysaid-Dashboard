@@ -17,6 +17,7 @@ class WhatsAppConversation extends Model
         'lead_id',
         'assigned_to',
         'assigned_at',
+        'folder_id',
         'referral_source_id',
         'referral_source_type',
         'referral_source_url',
@@ -46,6 +47,11 @@ class WhatsAppConversation extends Model
     public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(WhatsAppChatFolder::class, 'folder_id');
     }
 
     public function scopeUnassigned(Builder $query): Builder

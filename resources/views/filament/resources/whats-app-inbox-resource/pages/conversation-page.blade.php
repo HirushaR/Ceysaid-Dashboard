@@ -10,6 +10,11 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400">
                             {{ $record->contact?->phone }}
                         </p>
+                        @if ($record->folder)
+                            <p class="mt-1 text-xs text-primary-600 dark:text-primary-400">
+                                Folder: {{ $record->folder->name }}
+                            </p>
+                        @endif
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <div class="flex flex-wrap items-center justify-end gap-2">

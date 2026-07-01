@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\Concerns\ManagesWhatsAppChatFolders;
 use App\Filament\Resources\Concerns\WhatsAppConversationTableColumns;
 use App\Filament\Resources\MyWhatsAppChatResource\Pages;
 use App\Models\WhatsAppConversation;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MyWhatsAppChatResource extends Resource
 {
+    use ManagesWhatsAppChatFolders;
     use WhatsAppConversationTableColumns;
 
     protected static ?string $model = WhatsAppConversation::class;
@@ -80,7 +82,7 @@ class MyWhatsAppChatResource extends Resource
     {
         $query = parent::getEloquentQuery()
             ->assigned()
-            ->with(['contact', 'lead', 'assignedUser']);
+            ->with(['contact', 'lead', 'assignedUser', 'folder']);
 
         $user = auth()->user();
 
@@ -104,6 +106,7 @@ class MyWhatsAppChatResource extends Resource
             ->columns([
                 static::contactColumn(),
                 static::assignedToColumn(),
+                static::folderColumn(),
                 static::adIdColumn(),
                 static::lastMessageColumn(),
                 Tables\Columns\TextColumn::make('lead.reference_id')
@@ -135,10 +138,16 @@ class MyWhatsAppChatResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->whereNull('lead_id')),
             ])
             ->actions([
+                static::moveToFolderAction(),
                 Tables\Actions\Action::make('open')
                     ->label('Open chat')
                     ->icon('heroicon-o-chat-bubble-left-ellipsis')
                     ->url(fn (WhatsAppConversation $record): string => static::getUrl('view', ['record' => $record])),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    static::moveToFolderBulkAction(),
+                ]),
             ])
             ->recordUrl(fn (WhatsAppConversation $record): string => static::getUrl('view', ['record' => $record]));
     }

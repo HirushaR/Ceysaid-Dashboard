@@ -42,11 +42,7 @@ class SalesKPIWidget extends BaseWidget
         ])->count();
         
         // Get conversion metrics
-        $convertedLeads = (clone $assignedLeadsQuery)->whereIn('status', [
-            LeadStatus::CONFIRMED->value,
-            LeadStatus::OPERATION_COMPLETE->value,
-            LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value
-        ])->count();
+        $convertedLeads = (clone $assignedLeadsQuery)->converted()->count();
         
         $conversionRate = $totalAssignedLeads > 0 ? round(($convertedLeads / $totalAssignedLeads) * 100, 1) : 0;
         
@@ -81,7 +77,7 @@ class SalesKPIWidget extends BaseWidget
                 ->color('primary'),
                 
             Stat::make('Conversion Rate', $conversionRate . '%')
-                ->description($convertedLeads . ' converted out of ' . $totalAssignedLeads . 
+                ->description($convertedLeads . ' converted out of ' . $totalAssignedLeads . ' assigned leads' .
                              ' (Leads that reached confirmed, operation complete, or document upload complete status)')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger')),

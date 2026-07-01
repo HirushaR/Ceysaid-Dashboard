@@ -171,33 +171,35 @@ class AnalyticsTest extends TestCase
 
     public function test_conversion_rate_calculation()
     {
-        // Create leads
-        $lead1 = Lead::factory()->create([
+        Lead::factory()->create([
             'status' => LeadStatus::NEW->value,
+            'assigned_to' => null,
             'created_at' => now()->subDays(5),
         ]);
 
-        $lead2 = Lead::factory()->create([
+        Lead::factory()->create([
             'status' => LeadStatus::CONFIRMED->value,
+            'assigned_to' => $this->salesUser->id,
             'created_at' => now()->subDays(3),
         ]);
 
-        $lead3 = Lead::factory()->create([
+        Lead::factory()->create([
             'status' => LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value,
+            'assigned_to' => $this->salesUser->id,
             'created_at' => now()->subDays(2),
         ]);
 
         $startDate = now()->subDays(10);
         $endDate = now();
 
-        $totalLeads = Lead::forDateRange($startDate, $endDate)->count();
-        $convertedLeads = Lead::forDateRange($startDate, $endDate)->converted()->count();
+        $totalAssignedLeads = Lead::forDateRange($startDate, $endDate)->assigned()->count();
+        $convertedLeads = Lead::forDateRange($startDate, $endDate)->assigned()->converted()->count();
 
-        $conversionRate = $totalLeads > 0 ? ($convertedLeads / $totalLeads) * 100 : 0;
+        $conversionRate = $totalAssignedLeads > 0 ? ($convertedLeads / $totalAssignedLeads) * 100 : 0;
 
-        $this->assertEquals(3, $totalLeads);
+        $this->assertEquals(2, $totalAssignedLeads);
         $this->assertEquals(2, $convertedLeads);
-        $this->assertEquals(66.67, round($conversionRate, 2));
+        $this->assertEquals(100.0, round($conversionRate, 2));
     }
 
     public function test_revenue_calculation()

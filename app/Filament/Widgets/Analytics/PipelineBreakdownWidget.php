@@ -4,9 +4,11 @@ namespace App\Filament\Widgets\Analytics;
 
 use App\Models\Lead;
 use App\Enums\LeadStatus;
+use App\Services\AnalyticsFilterStore;
 use App\Services\DateRangeService;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Cache;
+use Livewire\Attributes\On;
 
 class PipelineBreakdownWidget extends ChartWidget
 {
@@ -15,13 +17,18 @@ class PipelineBreakdownWidget extends ChartWidget
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
 
+    #[On('analytics-filters-applied')]
+    public function refreshAnalytics(): void
+    {
+        //
+    }
+
     protected function getData(): array
     {
-        $analyticsPage = $this->getAnalyticsPage();
-        $dateRange = $analyticsPage->getDateRange();
-        $filters = $analyticsPage->getFilters();
-        
-        $cacheKey = 'pipeline_breakdown_' . $analyticsPage->getCacheKey();
+        $dateRange = AnalyticsFilterStore::getDateRange();
+        $filters = AnalyticsFilterStore::getFilters();
+
+        $cacheKey = 'pipeline_breakdown_'.AnalyticsFilterStore::getCacheKey();
         
         return Cache::remember($cacheKey, 300, function () use ($dateRange, $filters) {
             $startDate = $dateRange->getStartDate();
@@ -126,11 +133,6 @@ class PipelineBreakdownWidget extends ChartWidget
         if (isset($filters['pipeline_stage'])) {
             $query->where('status', $filters['pipeline_stage']);
         }
-    }
-
-    protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard
-    {
-        return \App\Filament\Pages\AnalyticsDashboard::getCurrentInstance() ?? app(\App\Filament\Pages\AnalyticsDashboard::class);
     }
 
     public static function canView(): bool

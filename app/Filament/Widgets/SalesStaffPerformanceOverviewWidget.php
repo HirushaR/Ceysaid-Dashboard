@@ -40,12 +40,13 @@ class SalesStaffPerformanceOverviewWidget extends BaseWidget
         }
 
         // Calculate overall performance metrics
-        $totalLeads = Lead::whereIn('assigned_to', $salesUsers->pluck('id'))->count();
-        $convertedLeads = Lead::whereIn('assigned_to', $salesUsers->pluck('id'))
-            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
+        $totalAssignedLeads = Lead::assigned()->whereIn('assigned_to', $salesUsers->pluck('id'))->count();
+        $convertedLeads = Lead::assigned()
+            ->whereIn('assigned_to', $salesUsers->pluck('id'))
+            ->converted()
             ->count();
-        
-        $conversionRate = $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
+
+        $conversionRate = $totalAssignedLeads > 0 ? round(($convertedLeads / $totalAssignedLeads) * 100, 1) : 0;
         
         $totalRevenue = Invoice::whereHas('lead', function($query) use ($salesUsers) {
             $query->whereIn('assigned_to', $salesUsers->pluck('id'));
@@ -67,8 +68,8 @@ class SalesStaffPerformanceOverviewWidget extends BaseWidget
 
         // Get top performer
         $topPerformer = User::where('role', 'sales')
-            ->withCount(['leads as converted_leads_count' => function($query) {
-                $query->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete']);
+            ->withCount(['leads as converted_leads_count' => function ($query) {
+                $query->converted();
             }])
             ->orderByDesc('converted_leads_count')
             ->first();
@@ -80,7 +81,7 @@ class SalesStaffPerformanceOverviewWidget extends BaseWidget
                 ->color('primary'),
                 
             Stat::make('Overall Conversion Rate', $conversionRate . '%')
-                ->description($convertedLeads . ' converted out of ' . $totalLeads . ' total leads' . 
+                ->description($convertedLeads . ' converted out of ' . $totalAssignedLeads . ' assigned leads' .
                              ' (Leads that reached confirmed, operation complete, or document upload complete status)')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger')),

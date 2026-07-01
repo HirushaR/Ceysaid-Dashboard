@@ -5,19 +5,26 @@ namespace App\Filament\Widgets\Analytics;
 use App\Models\User;
 use App\Models\Lead;
 use App\Models\Invoice;
+use App\Services\AnalyticsFilterStore;
 use App\Services\DateRangeService;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class SalesStaffPerformanceWidget extends StatsOverviewWidget
 {
     protected ?string $heading = 'Sales Staff Performance';
-    protected ?string $description = 'Top performers showing revenue, leads, and conversion metrics. Converted Leads = confirmed/operation complete/document upload complete. Conversion Rate = (Converted Leads ÷ Total Leads) × 100';
+    protected ?string $description = 'Top performers showing revenue, leads, and conversion metrics. Converted Leads = confirmed/operation complete/document upload complete. Conversion Rate = (Converted Leads ÷ Total Assigned Leads) × 100';
     protected static ?int $sort = 2;
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
+
+    #[On('analytics-filters-applied')]
+    public function refreshAnalytics(): void
+    {
+        //
+    }
 
     protected function getStats(): array
     {
@@ -45,13 +52,15 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
         $topPerformers = array_slice($performanceData, 0, 4);
         
         foreach ($topPerformers as $index => $staff) {
+            $totalAssignedLeads = $staff['total_assigned_leads'] ?? $staff['total_leads'] ?? 0;
+
             $stats[] = Stat::make($staff['name'], 'LKR ' . number_format($staff['total_revenue'], 0, ',', '.'))
                 ->description(
-                    $staff['total_leads'] . ' leads • ' . 
+                    $totalAssignedLeads . ' assigned • ' .
                     $staff['converted_leads'] . ' converted (' . $staff['conversion_rate'] . '%) • ' .
-                    'Avg: LKR ' . number_format($staff['avg_deal_size'], 0, ',', '.') . 
+                    'Avg: LKR ' . number_format($staff['avg_deal_size'], 0, ',', '.') .
                     "\n" . 'Converted Leads: Leads that reached confirmed, operation complete, or document upload complete status' .
-                    "\n" . 'Conversion Rate: Percentage of total leads successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)'
+                    "\n" . 'Conversion Rate: Percentage of assigned leads successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)'
                 )
                 ->color($this->getPerformanceColor($staff['conversion_rate']))
                 ->chart($this->getMiniChart($staff));
@@ -62,11 +71,10 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
 
     protected function getPerformanceData()
     {
-        $analyticsPage = $this->getAnalyticsPage();
-        $dateRange = $analyticsPage->getDateRange();
-        $filters = $analyticsPage->getFilters();
-        
-        $cacheKey = 'sales_staff_performance_' . $analyticsPage->getCacheKey();
+        $dateRange = AnalyticsFilterStore::getDateRange();
+        $filters = AnalyticsFilterStore::getFilters();
+
+        $cacheKey = 'sales_staff_performance_v2_'.AnalyticsFilterStore::getCacheKey();
         
         return Cache::remember($cacheKey, 300, function () use ($dateRange, $filters) {
             $startDate = $dateRange->getStartDate();
@@ -86,31 +94,22 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
                     continue;
                 }
 
-                // Get leads assigned to this sales user
-                $leadsQuery = Lead::where('assigned_to', $userId);
-                
-                // Apply date range filter
-                $leadsQuery->whereBetween('created_at', [$startDate, $endDate]);
-                
-                // Apply other filters
+                $leadsQuery = Lead::query()
+                    ->assigned()
+                    ->where('assigned_to', $userId)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+
                 if (isset($filters['lead_source'])) {
                     $leadsQuery->where('platform', $filters['lead_source']);
                 }
-                
+
                 if (isset($filters['pipeline_stage'])) {
                     $leadsQuery->where('status', $filters['pipeline_stage']);
                 }
 
-                $totalLeads = $leadsQuery->count();
-                
-                // Get converted leads
-                $convertedLeads = (clone $leadsQuery)->whereIn('status', [
-                    'confirmed', 
-                    'operation_complete', 
-                    'document_upload_complete'
-                ])->count();
-                
-                $conversionRate = $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
+                $totalAssignedLeads = $leadsQuery->count();
+                $convertedLeads = (clone $leadsQuery)->converted()->count();
+                $conversionRate = $totalAssignedLeads > 0 ? round(($convertedLeads / $totalAssignedLeads) * 100, 1) : 0;
                 
                 // Get revenue from invoices
                 $revenueQuery = Invoice::whereHas('lead', function($query) use ($userId, $startDate, $endDate) {
@@ -145,7 +144,7 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
                 $performanceData[] = [
                     'id' => $userId,
                     'name' => $user->name,
-                    'total_leads' => $totalLeads,
+                    'total_assigned_leads' => $totalAssignedLeads,
                     'converted_leads' => $convertedLeads,
                     'conversion_rate' => $conversionRate,
                     'total_revenue' => $totalRevenue,
@@ -180,11 +179,6 @@ class SalesStaffPerformanceWidget extends StatsOverviewWidget
             $staff['total_revenue'] / 1000,
             $staff['avg_deal_size'] / 1000,
         ];
-    }
-
-    protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard
-    {
-        return \App\Filament\Pages\AnalyticsDashboard::getCurrentInstance() ?? app(\App\Filament\Pages\AnalyticsDashboard::class);
     }
 
     public static function canView(): bool

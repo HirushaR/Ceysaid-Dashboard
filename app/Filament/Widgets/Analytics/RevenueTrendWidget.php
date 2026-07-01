@@ -3,10 +3,12 @@
 namespace App\Filament\Widgets\Analytics;
 
 use App\Models\Invoice;
+use App\Services\AnalyticsFilterStore;
 use App\Services\DateRangeService;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class RevenueTrendWidget extends ChartWidget
 {
@@ -15,13 +17,18 @@ class RevenueTrendWidget extends ChartWidget
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
 
+    #[On('analytics-filters-applied')]
+    public function refreshAnalytics(): void
+    {
+        //
+    }
+
     protected function getData(): array
     {
-        $analyticsPage = $this->getAnalyticsPage();
-        $dateRange = $analyticsPage->getDateRange();
-        $filters = $analyticsPage->getFilters();
-        
-        $cacheKey = 'revenue_trend_' . $analyticsPage->getCacheKey();
+        $dateRange = AnalyticsFilterStore::getDateRange();
+        $filters = AnalyticsFilterStore::getFilters();
+
+        $cacheKey = 'revenue_trend_'.AnalyticsFilterStore::getCacheKey();
         
         return Cache::remember($cacheKey, 300, function () use ($dateRange, $filters) {
             $interval = $dateRange->getInterval();
@@ -180,11 +187,6 @@ class RevenueTrendWidget extends ChartWidget
                 $q->where('status', $filters['pipeline_stage']);
             });
         }
-    }
-
-    protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard
-    {
-        return \App\Filament\Pages\AnalyticsDashboard::getCurrentInstance() ?? app(\App\Filament\Pages\AnalyticsDashboard::class);
     }
 
     public static function canView(): bool

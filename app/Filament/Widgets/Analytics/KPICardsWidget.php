@@ -5,24 +5,30 @@ namespace App\Filament\Widgets\Analytics;
 use App\Models\Lead;
 use App\Models\Invoice;
 use App\Models\CallCenterCall;
+use App\Services\AnalyticsFilterStore;
 use App\Services\DateRangeService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class KPICardsWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
 
+    #[On('analytics-filters-applied')]
+    public function refreshAnalytics(): void
+    {
+        //
+    }
+
     protected function getStats(): array
     {
-        $analyticsPage = $this->getAnalyticsPage();
-        $dateRange = $analyticsPage->getDateRange();
-        $filters = $analyticsPage->getFilters();
-        
-        $cacheKey = 'kpi_cards_' . $analyticsPage->getCacheKey();
+        $dateRange = AnalyticsFilterStore::getDateRange();
+        $filters = AnalyticsFilterStore::getFilters();
+
+        $cacheKey = 'kpi_cards_'.AnalyticsFilterStore::getCacheKey();
         
         return Cache::remember($cacheKey, 300, function () use ($dateRange, $filters) {
             return [
@@ -70,22 +76,24 @@ class KPICardsWidget extends BaseWidget
 
     protected function getConversionRateStat(DateRangeService $dateRange, array $filters): Stat
     {
-        $leadsQuery = Lead::query()
+        $assignedQuery = Lead::query()
+            ->assigned()
             ->whereBetween('created_at', [$dateRange->getStartDate(), $dateRange->getEndDate()]);
-        $this->applyFilters($leadsQuery, $filters);
-        $totalLeads = $leadsQuery->count();
+        $this->applyFilters($assignedQuery, $filters);
+        $totalAssignedLeads = $assignedQuery->count();
 
         $convertedQuery = Lead::query()
-            ->whereBetween('created_at', [$dateRange->getStartDate(), $dateRange->getEndDate()])
-            ->whereIn('status', ['confirmed', 'document_upload_complete']);
+            ->assigned()
+            ->converted()
+            ->whereBetween('created_at', [$dateRange->getStartDate(), $dateRange->getEndDate()]);
         $this->applyFilters($convertedQuery, $filters);
         $convertedLeads = $convertedQuery->count();
 
-        $conversionRate = $totalLeads > 0 ? ($convertedLeads / $totalLeads) * 100 : 0;
+        $conversionRate = $totalAssignedLeads > 0 ? ($convertedLeads / $totalAssignedLeads) * 100 : 0;
 
         return Stat::make('Conversion Rate', number_format($conversionRate, 1) . '%')
-            ->description($convertedLeads . ' of ' . $totalLeads . ' leads converted' . 
-                         ' (Leads that reached confirmed or document upload complete status)')
+            ->description($convertedLeads . ' of ' . $totalAssignedLeads . ' assigned leads converted' .
+                         ' (Confirmed, operation complete, or document upload complete)')
             ->color($conversionRate >= 20 ? 'success' : ($conversionRate >= 10 ? 'warning' : 'danger'));
     }
 
@@ -218,11 +226,6 @@ class KPICardsWidget extends BaseWidget
         }
         
         return number_format($absChange, 1) . '% ' . $direction . ' from previous period';
-    }
-
-    protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard
-    {
-        return \App\Filament\Pages\AnalyticsDashboard::getCurrentInstance() ?? app(\App\Filament\Pages\AnalyticsDashboard::class);
     }
 
     public static function canView(): bool

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeadStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -216,9 +217,18 @@ class Lead extends Model
         return $query->where('status', $stage);
     }
 
+    public function scopeAssigned($query)
+    {
+        return $query->whereNotNull('assigned_to');
+    }
+
     public function scopeConverted($query)
     {
-        return $query->whereIn('status', ['confirmed', 'document_upload_complete']);
+        return $query->whereIn('status', [
+            LeadStatus::CONFIRMED->value,
+            LeadStatus::OPERATION_COMPLETE->value,
+            LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value,
+        ]);
     }
 
     public function scopeActive($query)

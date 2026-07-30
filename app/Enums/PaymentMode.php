@@ -7,6 +7,7 @@ enum PaymentMode: string
     case Cash = 'cash';
     case BankTransfer = 'bank_transfer';
     case CreditCard = 'credit_card';
+    case Cheque = 'cheque';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum PaymentMode: string
             self::Cash => 'Cash',
             self::BankTransfer => 'Bank transfer',
             self::CreditCard => 'Credit card',
+            self::Cheque => 'Cheque',
         };
     }
 

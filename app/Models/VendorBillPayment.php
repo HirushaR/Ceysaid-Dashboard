@@ -9,6 +9,7 @@ class VendorBillPayment extends Model
 {
     protected $fillable = [
         'vendor_bill_id',
+        'supplier_payment_id',
         'amount',
         'payment_date',
         'payment_mode',
@@ -24,6 +25,11 @@ class VendorBillPayment extends Model
     public function vendorBill(): BelongsTo
     {
         return $this->belongsTo(VendorBill::class);
+    }
+
+    public function supplierPayment(): BelongsTo
+    {
+        return $this->belongsTo(SupplierPayment::class);
     }
 
     protected static function boot(): void

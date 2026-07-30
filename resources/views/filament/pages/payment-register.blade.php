@@ -88,9 +88,17 @@
                             </td>
                             <td class="whitespace-nowrap px-3 py-3">{{ $payment->reference ?: '#'.$payment->id }}</td>
                             <td class="whitespace-nowrap px-3 py-3">
-                                <a class="text-primary-600 hover:underline" href="{{ \App\Filament\Resources\InvoiceResource::getUrl('view', ['record' => $payment->invoice_id]) }}">
-                                    {{ $payment->invoice_number }}
-                                </a>
+                                @if ($payment->invoice_id)
+                                    <a class="text-primary-600 hover:underline" href="{{ \App\Filament\Resources\InvoiceResource::getUrl('view', ['record' => $payment->invoice_id]) }}">
+                                        {{ $payment->invoice_number }}
+                                    </a>
+                                @elseif ($payment->supplier_payment_id)
+                                    <a class="text-primary-600 hover:underline" href="{{ \App\Filament\Resources\SupplierPaymentResource::getUrl('view', ['record' => $payment->supplier_payment_id]) }}">
+                                        Multiple bills
+                                    </a>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-3">{{ $payment->lead_reference ?: '#'.$payment->lead_id }}</td>
                             <td class="px-3 py-3">{{ $payment->party ?: '—' }}</td>

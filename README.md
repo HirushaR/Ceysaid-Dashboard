@@ -12,6 +12,17 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Project documentation
+
+| Document | Description |
+|----------|-------------|
+| [WHATSAPP_INTEGRATION.md](WHATSAPP_INTEGRATION.md) | Meta WhatsApp Cloud API setup + Ceysaid chat code (webhooks, send, Filament inbox) |
+| [ANALYTICS_SETUP.md](ANALYTICS_SETUP.md) | Analytics / lead source setup |
+| [NOTIFICATION_SYSTEM_PLAN.md](NOTIFICATION_SYSTEM_PLAN.md) | Notification system plan |
+| [NOTIFICATION_IMPLEMENTATION_SUMMARY.md](NOTIFICATION_IMPLEMENTATION_SUMMARY.md) | Notification implementation summary |
+| [NOTIFICATION_TESTING_GUIDE.md](NOTIFICATION_TESTING_GUIDE.md) | Notification testing |
+| [SALES_PERFORMANCE_DOCUMENTATION.md](SALES_PERFORMANCE_DOCUMENTATION.md) | Sales performance |
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

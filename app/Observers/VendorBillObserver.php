@@ -12,6 +12,18 @@ class VendorBillObserver
         'updated_at',
     ];
 
+    public function saving(VendorBill $vendorBill): void
+    {
+        $vendorBill->loadMissing('invoice.lead');
+        $lead = $vendorBill->invoice?->lead;
+
+        if ($lead?->is_group_lead && ! $lead->tour_id) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'invoice_id' => 'Cannot add vendor bills for group leads without a linked tour.',
+            ]);
+        }
+    }
+
     public function created(VendorBill $vendorBill): void
     {
         $vendorBill->loadMissing('invoice.lead', 'invoice');

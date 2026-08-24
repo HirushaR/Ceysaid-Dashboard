@@ -23,6 +23,11 @@ class Supplier extends Model
         return $this->hasMany(VendorBill::class);
     }
 
+    public function supplierPayments(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
+
     /**
      * All payment rows across vendor bills for this supplier (newest first when queried with orderBy).
      */

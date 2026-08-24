@@ -61,7 +61,7 @@ class ViewSalesStaffPerformance extends ViewRecord
                         Grid::make(4)
                             ->schema([
                                 TextEntry::make('total_leads')
-                                    ->label('Total Leads')
+                                    ->label('Assigned Leads')
                                     ->numeric()
                                     ->getStateUsing(function ($record) {
                                         return $record->leads()->count();
@@ -74,24 +74,20 @@ class ViewSalesStaffPerformance extends ViewRecord
                                     ->numeric()
                                     ->color('success')
                                     ->getStateUsing(function ($record) {
-                                        return $record->leads()
-                                            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
-                                            ->count();
+                                        return $record->leads()->converted()->count();
                                     }),
                                 
                                 TextEntry::make('conversion_rate')
                                     ->label('Conversion Rate')
-                                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
-                                    ->tooltip('Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
+                                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of assigned leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
+                                    ->tooltip('Percentage of assigned leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
                                     ->formatStateUsing(fn ($state) => $state . '%')
                                     ->color(fn ($state) => $state >= 20 ? 'success' : ($state >= 10 ? 'warning' : 'danger'))
                                     ->getStateUsing(function ($record) {
-                                        $totalLeads = $record->leads()->count();
-                                        $convertedLeads = $record->leads()
-                                            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
-                                            ->count();
-                                        
-                                        return $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
+                                        $totalAssignedLeads = $record->leads()->count();
+                                        $convertedLeads = $record->leads()->converted()->count();
+
+                                        return $totalAssignedLeads > 0 ? round(($convertedLeads / $totalAssignedLeads) * 100, 1) : 0;
                                     }),
                                 
                                 TextEntry::make('total_revenue')

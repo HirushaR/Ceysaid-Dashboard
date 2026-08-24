@@ -96,6 +96,10 @@ class VendorBillPaymentsRelationManager extends RelationManager
                     ->sortable()
                     ->alignRight()
                     ->weight('bold'),
+                Tables\Columns\TextColumn::make('supplierPayment.payment_number')
+                    ->label('Supplier payment')
+                    ->placeholder('Single bill / legacy')
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('payment_mode')
                     ->label('Mode')
                     ->formatStateUsing(fn ($state) => PaymentMode::tryFrom((string) $state)?->label() ?? (string) $state),
@@ -147,14 +151,12 @@ class VendorBillPaymentsRelationManager extends RelationManager
                     ->visible(fn (): bool => $this->getOwnerRecord()->outstanding_amount > 0),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn ($record): bool => $record->supplier_payment_id === null),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn ($record): bool => $record->supplier_payment_id === null),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->heading(function (): string {
                 $bill = $this->getOwnerRecord();
 

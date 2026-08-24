@@ -9,6 +9,8 @@ class DocumentNumberService
 {
     public const TYPE_VENDOR_BILL = 'vb';
 
+    public const TYPE_SUPPLIER_PAYMENT = 'sp';
+
     /** Per-lead customer payment receipt: CR/{year}/{lead_id}/{seq} */
     public const TYPE_CUSTOMER_RECEIPT = 'cr';
 
@@ -33,6 +35,11 @@ class DocumentNumberService
     public function nextVendorBillNumber(): string
     {
         return $this->allocate(self::TYPE_VENDOR_BILL, 'VB');
+    }
+
+    public function nextSupplierPaymentNumber(): string
+    {
+        return $this->allocate(self::TYPE_SUPPLIER_PAYMENT, 'SP');
     }
 
     /**

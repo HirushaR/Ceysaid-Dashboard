@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\LeadCost;
 use App\Models\Quote;
 use App\Models\QuoteLineItem;
+use App\Models\Tour;
 use App\Models\User;
 use App\Services\ConvertQuoteToInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -115,5 +116,24 @@ class FinanceFlowsTest extends TestCase
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);
         $this->assertTrue(InvoiceResource::canCreate());
+    }
+
+    public function test_lead_tour_change_syncs_invoice_tour_id(): void
+    {
+        $tourA = Tour::factory()->create();
+        $tourB = Tour::factory()->create();
+        $lead = Lead::factory()->create([
+            'is_group_lead' => true,
+            'tour_id' => $tourA->id,
+            'status' => LeadStatus::CONFIRMED->value,
+        ]);
+        $invoice = Invoice::factory()->create([
+            'lead_id' => $lead->id,
+            'tour_id' => $tourA->id,
+        ]);
+
+        $lead->update(['tour_id' => $tourB->id]);
+
+        $this->assertSame($tourB->id, $invoice->fresh()->tour_id);
     }
 }

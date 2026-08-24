@@ -1,39 +1,37 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <!-- Filters Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex justify-between items-center mb-4">
+        <div class="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+            <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Filters</h3>
-                <div class="flex gap-2">
-                    @foreach ($this->getHeaderActions() as $action)
-                        {{ $action }}
-                    @endforeach
+                <div class="flex shrink-0 gap-2">
+                    <x-filament::button wire:click="resetFilters" color="gray" icon="heroicon-o-arrow-path">
+                        Reset
+                    </x-filament::button>
+                    <x-filament::button wire:click="applyFilters" icon="heroicon-o-funnel">
+                        Apply filters
+                    </x-filament::button>
                 </div>
             </div>
             {{ $this->form }}
         </div>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            @foreach ($this->getHeaderWidgets() as $widget)
-                @livewire($widget)
-            @endforeach
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            @livewire(\App\Filament\Widgets\Analytics\KPICardsWidget::class, key('analytics-kpi'))
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            @foreach ($this->getFooterWidgets() as $widget)
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-                    @livewire($widget)
-                </div>
-            @endforeach
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            @livewire(\App\Filament\Widgets\Analytics\SalesStaffPerformanceWidget::class, key('analytics-sales-staff'))
+            @livewire(\App\Filament\Widgets\Analytics\LeadsTrendWidget::class, key('analytics-leads-trend'))
+            @livewire(\App\Filament\Widgets\Analytics\RevenueTrendWidget::class, key('analytics-revenue-trend'))
+            @livewire(\App\Filament\Widgets\Analytics\SalesPerformanceWidget::class, key('analytics-sales-performance'))
+            @livewire(\App\Filament\Widgets\Analytics\PipelineBreakdownWidget::class, key('analytics-pipeline'))
+            @livewire(\App\Filament\Widgets\Analytics\OperationsWorkloadWidget::class, key('analytics-operations'))
         </div>
 
-        <!-- Leave Calendar (Full Width) - Admin Only -->
         @auth
             @if(auth()->user()->isAdmin())
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-                    @livewire(\App\Filament\Widgets\LeaveCalendarWidget::class)
+                <div class="rounded-lg bg-white shadow dark:bg-gray-800">
+                    @livewire(\App\Filament\Widgets\LeaveCalendarWidget::class, key('analytics-leave-calendar'))
                 </div>
             @endif
         @endauth

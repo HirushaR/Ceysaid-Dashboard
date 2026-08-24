@@ -80,7 +80,7 @@ class SalesStaffPerformanceResource extends Resource
                     ->toggleable(),
                 
                 TextColumn::make('total_leads')
-                    ->label('Total Leads')
+                    ->label('Assigned Leads')
                     ->numeric()
                     ->alignCenter()
                     ->getStateUsing(function (User $record) {
@@ -105,14 +105,14 @@ class SalesStaffPerformanceResource extends Resource
                         
                         return $record->leads()
                             ->whereBetween('created_at', [$startDate, $endDate])
-                            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
+                            ->converted()
                             ->count();
                     }),
                 
                 TextColumn::make('conversion_rate')
                     ->label('Conversion Rate')
-                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
-                    ->tooltip('Percentage of total leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
+                    ->label(fn () => new \Illuminate\Support\HtmlString('Conversion Rate <span class="text-xs text-gray-500 cursor-help" data-tooltip="Percentage of assigned leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)">ⓘ</span>'))
+                    ->tooltip('Percentage of assigned leads that were successfully converted (≥20% = Excellent, 10-19% = Good, <10% = Needs Improvement)')
                     ->formatStateUsing(fn ($state) => $state . '%')
                     ->alignCenter()
                     ->color(fn ($state) => $state >= 20 ? 'success' : ($state >= 10 ? 'warning' : 'danger'))
@@ -120,16 +120,16 @@ class SalesStaffPerformanceResource extends Resource
                         $startDate = request('start_date', now()->subDays(30));
                         $endDate = request('end_date', now());
                         
-                        $totalLeads = $record->leads()
+                        $totalAssignedLeads = $record->leads()
                             ->whereBetween('created_at', [$startDate, $endDate])
                             ->count();
-                        
+
                         $convertedLeads = $record->leads()
                             ->whereBetween('created_at', [$startDate, $endDate])
-                            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
+                            ->converted()
                             ->count();
-                        
-                        return $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
+
+                        return $totalAssignedLeads > 0 ? round(($convertedLeads / $totalAssignedLeads) * 100, 1) : 0;
                     }),
                 
                 TextColumn::make('total_revenue')
@@ -157,7 +157,7 @@ class SalesStaffPerformanceResource extends Resource
                         
                         $convertedLeads = $record->leads()
                             ->whereBetween('created_at', [$startDate, $endDate])
-                            ->whereIn('status', ['confirmed', 'operation_complete', 'document_upload_complete'])
+                            ->converted()
                             ->count();
                         
                         $totalRevenue = Invoice::whereHas('lead', function($query) use ($record, $startDate, $endDate) {

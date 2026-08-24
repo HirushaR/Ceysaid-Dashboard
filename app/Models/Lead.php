@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeadStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -45,6 +46,7 @@ class Lead extends Model
         'archived_at',
         'archived_by',
         'is_group_lead',
+        'tour_id',
         'is_cruise_lead',
         'is_other_lead',
         'other_lead_status',
@@ -67,6 +69,18 @@ class Lead extends Model
         'other_lead_start_date' => 'date',
         'other_lead_end_date' => 'date',
     ];
+
+    public function tourMaster()
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
+
+    public function getBookedPaxAttribute(): int
+    {
+        return (int) ($this->number_of_adults ?? 0)
+            + (int) ($this->number_of_children ?? 0)
+            + (int) ($this->number_of_infants ?? 0);
+    }
 
     public function customer()
     {
@@ -203,9 +217,18 @@ class Lead extends Model
         return $query->where('status', $stage);
     }
 
+    public function scopeAssigned($query)
+    {
+        return $query->whereNotNull('assigned_to');
+    }
+
     public function scopeConverted($query)
     {
-        return $query->whereIn('status', ['confirmed', 'document_upload_complete']);
+        return $query->whereIn('status', [
+            LeadStatus::CONFIRMED->value,
+            LeadStatus::OPERATION_COMPLETE->value,
+            LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value,
+        ]);
     }
 
     public function scopeActive($query)

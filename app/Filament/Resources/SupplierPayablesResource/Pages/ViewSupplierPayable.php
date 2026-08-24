@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SupplierPayablesResource\Pages;
 
 use App\Filament\Resources\SupplierPayablesResource;
+use App\Filament\Resources\SupplierPaymentResource;
 use App\Filament\Resources\SupplierResource;
 use App\Services\SupplierBankBookService;
 use Filament\Actions;
@@ -22,6 +23,13 @@ class ViewSupplierPayable extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('record_bulk_payment')
+                ->label('Record bulk payment')
+                ->icon('heroicon-o-banknotes')
+                ->color('success')
+                ->url(fn (): string => SupplierPaymentResource::getUrl('create', [
+                    'supplier_id' => $this->record->id,
+                ])),
             Actions\Action::make('download_pdf')
                 ->label('Download PDF')
                 ->icon('heroicon-o-arrow-down-tray')

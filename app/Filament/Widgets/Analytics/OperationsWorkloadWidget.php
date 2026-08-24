@@ -4,10 +4,12 @@ namespace App\Filament\Widgets\Analytics;
 
 use App\Models\User;
 use App\Models\CallCenterCall;
+use App\Services\AnalyticsFilterStore;
 use App\Services\DateRangeService;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class OperationsWorkloadWidget extends ChartWidget
 {
@@ -16,13 +18,18 @@ class OperationsWorkloadWidget extends ChartWidget
     protected static ?string $pollingInterval = '30s';
     protected static bool $isLazy = true;
 
+    #[On('analytics-filters-applied')]
+    public function refreshAnalytics(): void
+    {
+        //
+    }
+
     protected function getData(): array
     {
-        $analyticsPage = $this->getAnalyticsPage();
-        $dateRange = $analyticsPage->getDateRange();
-        $filters = $analyticsPage->getFilters();
-        
-        $cacheKey = 'operations_workload_' . $analyticsPage->getCacheKey();
+        $dateRange = AnalyticsFilterStore::getDateRange();
+        $filters = AnalyticsFilterStore::getFilters();
+
+        $cacheKey = 'operations_workload_'.AnalyticsFilterStore::getCacheKey();
         
         return Cache::remember($cacheKey, 300, function () use ($dateRange, $filters) {
             $startDate = $dateRange->getStartDate();
@@ -121,11 +128,6 @@ class OperationsWorkloadWidget extends ChartWidget
         if (isset($filters['operation_user'])) {
             $query->where('call_center_calls.assigned_call_center_user', $filters['operation_user']);
         }
-    }
-
-    protected function getAnalyticsPage(): \App\Filament\Pages\AnalyticsDashboard
-    {
-        return \App\Filament\Pages\AnalyticsDashboard::getCurrentInstance() ?? app(\App\Filament\Pages\AnalyticsDashboard::class);
     }
 
     public static function canView(): bool

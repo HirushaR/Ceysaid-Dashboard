@@ -6,6 +6,7 @@ use App\Enums\LeadStatus;
 use App\Enums\Platform;
 use App\Enums\ServiceStatus;
 use App\Filament\Forms\LeadQuoteFormSection;
+use App\Filament\Forms\LeadTourFormFields;
 use App\Filament\Resources\ConfirmLeadResource\Pages;
 use App\Filament\Resources\ConfirmLeadResource\RelationManagers;
 use App\Models\Lead;
@@ -349,6 +350,8 @@ class ConfirmLeadResource extends Resource
 
                 Forms\Components\Section::make('Travel Details')
                     ->schema([
+                        LeadTourFormFields::tourSelect(useRecordForGroupCheck: true)
+                            ->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\TextInput::make('subject')->label('Subject')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\TextInput::make('country')->label('Country')->disabled(fn ($context) => $context === 'view'),
                         Forms\Components\TextInput::make('destination')->label('Destination')->disabled(fn ($context) => $context === 'view'),

@@ -2,85 +2,82 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Invoice;
-use App\Models\VendorBill;
+use App\Enums\TourStatus;
+use App\Models\Tour;
+use App\Services\TourFinanceFilterStore;
+use App\Services\TourFinanceReportService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class ProfitStatsWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
-    
+
     protected static ?int $sort = 5;
+
+    #[On('tour-finance-filters-applied')]
+    public function refreshStats(): void
+    {
+        //
+    }
 
     protected function getStats(): array
     {
-        // Only show this widget to admins
-        if (!Auth::user()?->isAdmin()) {
+        $user = Auth::user();
+        if (! $user?->isAdmin() && ! $user?->isAccount()) {
             return [];
         }
 
+        $service = app(TourFinanceReportService::class);
+        $filters = TourFinanceFilterStore::get();
         $now = now();
-        
-        // Calculate total profit (total revenue - total vendor costs)
-        $totalRevenue = Invoice::sum('total_amount');
-        $totalVendorCosts = VendorBill::sum('bill_amount');
-        $totalProfit = $totalRevenue - $totalVendorCosts;
 
-        // Calculate this month profit
-        $thisMonthRevenue = Invoice::whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
-            ->sum('total_amount');
-        $thisMonthVendorCosts = VendorBill::whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
-            ->sum('bill_amount');
-        $thisMonthProfit = $thisMonthRevenue - $thisMonthVendorCosts;
+        $allToursProfit = $service->tourWiseProfit($filters)->sum('gross_profit');
 
-        // Calculate this week profit
-        $thisWeekRevenue = Invoice::whereBetween('created_at', [
-            $now->startOfWeek(),
-            $now->endOfWeek()
-        ])->sum('total_amount');
-        $thisWeekVendorCosts = VendorBill::whereBetween('created_at', [
-            $now->startOfWeek(),
-            $now->endOfWeek()
-        ])->sum('bill_amount');
-        $thisWeekProfit = $thisWeekRevenue - $thisWeekVendorCosts;
+        $thisMonthKey = $now->format('Y-m');
+        $monthFilters = array_merge($filters, [
+            'departure_from' => $now->copy()->startOfMonth()->toDateString(),
+            'departure_to' => $now->copy()->endOfMonth()->toDateString(),
+        ]);
+        $thisMonthRow = $service->departureMonthProfit($monthFilters)->firstWhere('month_key', $thisMonthKey);
+        $thisMonthProfit = (float) ($thisMonthRow['gross_profit'] ?? 0);
 
-        // Calculate today profit
-        $todayRevenue = Invoice::whereDate('created_at', $now->toDateString())
-            ->sum('total_amount');
-        $todayVendorCosts = VendorBill::whereDate('created_at', $now->toDateString())
-            ->sum('bill_amount');
-        $todayProfit = $todayRevenue - $todayVendorCosts;
+        $openToursQuery = Tour::query()->where('status', TourStatus::Open);
+        if (! empty($filters['tour_id'])) {
+            $openToursQuery->where('id', $filters['tour_id']);
+        }
+        $openToursCount = $openToursQuery->count();
+        $urgentGaps = $service->tourCashGap($filters)->where('is_urgent', true)->count();
 
         return [
-            Stat::make('Total Profit', 'LKR ' . number_format($totalProfit, 2))
-                ->description('All time')
+            Stat::make('Expected tour profit', 'LKR '.number_format($allToursProfit, 2))
+                ->description('All tours (sales − vendor cost)')
                 ->descriptionIcon('heroicon-m-chart-bar')
-                ->color($totalProfit >= 0 ? 'success' : 'danger'),
-                
-            Stat::make('This Month', 'LKR ' . number_format($thisMonthProfit, 2))
-                ->description($now->format('F Y'))
+                ->color($allToursProfit >= 0 ? 'success' : 'danger'),
+
+            Stat::make('Departure-month profit', 'LKR '.number_format($thisMonthProfit, 2))
+                ->description($now->format('F Y').' (departed tours)')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color($thisMonthProfit >= 0 ? 'success' : 'danger'),
-                
-            Stat::make('This Week', 'LKR ' . number_format($thisWeekProfit, 2))
-                ->description($now->startOfWeek()->format('M j') . ' - ' . $now->endOfWeek()->format('M j'))
-                ->descriptionIcon('heroicon-m-calendar')
-                ->color($thisWeekProfit >= 0 ? 'success' : 'danger'),
-                
-            Stat::make('Today', 'LKR ' . number_format($todayProfit, 2))
-                ->description($now->format('l, M j'))
-                ->descriptionIcon('heroicon-m-clock')
-                ->color($todayProfit >= 0 ? 'success' : 'danger'),
+
+            Stat::make('Open tours', (string) $openToursCount)
+                ->description('Active departures')
+                ->descriptionIcon('heroicon-m-map')
+                ->color('info'),
+
+            Stat::make('Urgent cash gaps', (string) $urgentGaps)
+                ->description('Negative gap within 30 days')
+                ->descriptionIcon('heroicon-m-exclamation-triangle')
+                ->color($urgentGaps > 0 ? 'danger' : 'success'),
         ];
     }
 
     public static function canView(): bool
     {
-        return Auth::user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        return $user && ($user->isAdmin() || $user->isAccount());
     }
 }

@@ -9,6 +9,7 @@ use App\Filament\Resources\VendorBillResource\Pages;
 use App\Filament\Resources\VendorBillResource\RelationManagers;
 use App\Models\Invoice;
 use App\Models\Supplier;
+use App\Models\Tour;
 use App\Models\VendorBill;
 use App\Traits\HasResourcePermissions;
 use Filament\Forms;
@@ -270,6 +271,18 @@ class VendorBillResource extends Resource
                     ->sortable()
                     ->weight('medium')
                     ->limit(25),
+                Tables\Columns\TextColumn::make('tour_code')
+                    ->label('Tour code')
+                    ->getStateUsing(fn (VendorBill $record): ?string => $record->invoice?->tour?->tour_code
+                        ?? $record->invoice?->lead?->tourMaster?->tour_code)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('invoice', function (Builder $iq) use ($search) {
+                            $iq->whereHas('tour', fn (Builder $tq) => $tq->where('tour_code', 'like', "%{$search}%"))
+                                ->orWhereHas('lead.tourMaster', fn (Builder $tq) => $tq->where('tour_code', 'like', "%{$search}%"));
+                        });
+                    })
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('vendor_name')
                     ->label('Vendor')
                     ->searchable()
@@ -337,6 +350,19 @@ class VendorBillResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                Tables\Filters\SelectFilter::make('tour_id')
+                    ->label('Tour')
+                    ->options(fn () => Tour::query()->orderByDesc('departure_date')->pluck('tour_code', 'id'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('invoice', function (Builder $iq) use ($data) {
+                            $iq->where('tour_id', $data['value'])
+                                ->orWhereHas('lead', fn (Builder $lq) => $lq->where('tour_id', $data['value']));
+                        });
+                    }),
                 Tables\Filters\SelectFilter::make('service_type')
                     ->label('Service Type')
                     ->options([

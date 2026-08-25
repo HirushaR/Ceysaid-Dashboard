@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LeadResource\Pages;
 
 use App\Enums\QuoteStatus;
+use App\Filament\Resources\Concerns\HasPilotWorkflowActions;
 use App\Filament\Resources\LeadResource;
 use App\Filament\Resources\QuoteResource;
 use App\Models\LeadNote;
@@ -17,6 +18,8 @@ use Filament\Resources\Pages\ViewRecord;
 
 class ViewLead extends ViewRecord
 {
+    use HasPilotWorkflowActions;
+
     protected static string $resource = LeadResource::class;
 
     public static function canAccess(array $parameters = []): bool
@@ -371,6 +374,7 @@ class ViewLead extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->pilotWorkflowActions(),
             \Filament\Actions\EditAction::make()
                 ->label('Edit')
                 ->icon('heroicon-o-pencil')
@@ -419,7 +423,7 @@ class ViewLead extends ViewRecord
                 ->label('Assign to Me')
                 ->icon('heroicon-o-user-plus')
                 ->color('success')
-                ->visible(fn () => auth()->user()?->isSales() && ! $this->record->assigned_to)
+                ->visible(fn () => ! $this->pilotWorkflowEnabled() && auth()->user()?->isSales() && ! $this->record->assigned_to)
                 ->action(function () {
                     $user = auth()->user();
                     $oldAssignedTo = $this->record->assigned_to;

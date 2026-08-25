@@ -12,6 +12,8 @@ use App\Observers\InvoiceObserver;
 use App\Observers\LeadObserver;
 use App\Observers\QuoteObserver;
 use App\Observers\VendorBillObserver;
+use App\Support\MigrationExecutionContext;
+use App\Support\WorkflowMutationContext;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,7 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(MigrationExecutionContext::class);
+        $this->app->singleton(WorkflowMutationContext::class);
     }
 
     /**

@@ -20,5 +20,6 @@ class WorkflowFoundationMigrationTest extends TestCase
         $this->assertTrue(Schema::hasTable('workflow_events'));
         $this->assertTrue(Schema::hasTable('workflow_requests'));
         $this->assertTrue(Schema::hasTable('workflow_outbox'));
+        $this->assertTrue(Schema::hasTable('workflow_tasks'));
     }
 }

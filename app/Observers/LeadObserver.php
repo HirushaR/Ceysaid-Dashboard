@@ -2,6 +2,8 @@
 
 namespace App\Observers;
 
+use App\Domain\LeadWorkflow\Services\DirectWorkflowWriteDetector;
+use App\Domain\LeadWorkflow\Services\LegacyWorkflowSynchronizer;
 use App\Enums\LeadStatus;
 use App\Filament\Resources\AllLeadDashboardResource;
 use App\Filament\Resources\LeadResource;
@@ -11,6 +13,8 @@ use App\Models\Lead;
 use App\Models\LeadActionLog;
 use App\Models\User;
 use App\Support\FilamentNotificationDispatcher;
+use App\Support\MigrationExecutionContext;
+use App\Support\WorkflowMutationContext;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +26,9 @@ class LeadObserver
      */
     public function saving(Lead $lead): void
     {
+        app(DirectWorkflowWriteDetector::class)->inspect($lead);
+        app(LegacyWorkflowSynchronizer::class)->syncBeforeSave($lead);
+
         if (
             $lead->is_group_lead
             && $lead->status === LeadStatus::CONFIRMED->value
@@ -41,6 +48,8 @@ class LeadObserver
         if ($lead->wasChanged('tour_id')) {
             $lead->invoices()->update(['tour_id' => $lead->tour_id]);
         }
+
+        app(LegacyWorkflowSynchronizer::class)->syncCurrentTask($lead);
     }
 
     /**
@@ -48,6 +57,10 @@ class LeadObserver
      */
     public function created(Lead $lead): void
     {
+        if (app(MigrationExecutionContext::class)->active()) {
+            return;
+        }
+
         Log::info('LeadObserver::created called', [
             'lead_id' => $lead->id,
             'assigned_to' => $lead->assigned_to,
@@ -80,6 +93,10 @@ class LeadObserver
      */
     public function updated(Lead $lead): void
     {
+        if (app(MigrationExecutionContext::class)->active() || app(WorkflowMutationContext::class)->active()) {
+            return;
+        }
+
         Log::info('LeadObserver::updated called', [
             'lead_id' => $lead->id,
             'dirty' => $lead->getDirty(),

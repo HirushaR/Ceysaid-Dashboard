@@ -1,0 +1,5 @@
+<x-filament-panels::page>
+    <x-workspace-styles />
+    <div class="ts-toolbar"><a class="ts-link" href="{{ \App\Filament\Pages\SalesWorkspace::getUrl() }}">← Table view</a><span class="ts-muted">Cards are read-only during the pilot; use workflow actions to change stage.</span></div>
+    <div class="ts-board">@foreach($this->getColumns() as $stage=>$column)<section class="ts-column"><div style="display:flex;justify-content:space-between;align-items:center"><strong>{{ $column['label'] }}</strong><span class="ts-badge">{{ $column['count'] }}</span></div>@foreach($column['leads'] as $lead)<a class="ts-lead" href="{{ \App\Filament\Pages\LeadWorkspace::getUrl(['lead'=>$lead->id]) }}"><strong>{{ $lead->customer_name }}</strong><div class="ts-muted" style="margin-top:.2rem">{{ $lead->reference_id }}</div><div style="display:flex;justify-content:space-between;margin-top:.7rem;font-size:.78rem"><span>{{ $lead->destination ?: 'No destination' }}</span><span>{{ $lead->next_action_at?->diffForHumans() ?? 'No next action' }}</span></div></a>@endforeach</section>@endforeach</div>
+</x-filament-panels::page>

@@ -25,4 +25,14 @@ class FeatureFlagTest extends TestCase
         $this->assertTrue($flags->enabled('workflow.schema_ready', (new User)->forceFill(['id' => 8, 'role' => 'admin'])));
         $this->assertFalse($flags->enabled('workflow.schema_ready', (new User)->forceFill(['id' => 8, 'role' => 'sales'])));
     }
+
+    #[Test]
+    public function pilot_ui_is_hidden_from_non_targeted_users(): void
+    {
+        config()->set('workflow.ui.lead_workspace', ['enabled' => true, 'users' => [12], 'roles' => []]);
+
+        $flags = app(FeatureFlag::class);
+        $this->assertTrue($flags->enabled('ui.lead_workspace', (new User)->forceFill(['id' => 12, 'role' => 'sales'])));
+        $this->assertFalse($flags->enabled('ui.lead_workspace', (new User)->forceFill(['id' => 13, 'role' => 'sales'])));
+    }
 }

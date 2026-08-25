@@ -89,6 +89,85 @@ html {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
+/* TravelSync workspace shell */
+.fi-sidebar {
+    border-right: 1px solid rgb(226 232 240) !important;
+    box-shadow: 8px 0 24px rgb(15 23 42 / 0.035) !important;
+}
+
+.fi-sidebar-header {
+    min-height: 4.5rem !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+}
+
+.fi-sidebar-group-label {
+    font-size: .68rem !important;
+    font-weight: 750 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+}
+
+.fi-sidebar-item-button {
+    border-radius: .65rem !important;
+    margin-inline: .45rem !important;
+}
+
+.fi-sidebar-item-active > .fi-sidebar-item-button {
+    background: rgb(239 246 255) !important;
+    color: rgb(29 78 216) !important;
+}
+
+.fi-topbar nav {
+    min-height: 4.5rem !important;
+    border-bottom: 1px solid rgb(226 232 240) !important;
+    box-shadow: none !important;
+}
+
+.fi-main {
+    max-width: 100% !important;
+    padding-inline: clamp(1rem, 2.4vw, 2.5rem) !important;
+}
+
+.fi-header-heading {
+    letter-spacing: -.025em !important;
+}
+
+.fi-section,
+.fi-ta-ctn {
+    border-radius: .875rem !important;
+    border: 1px solid rgb(226 232 240) !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / .035) !important;
+}
+
+.dark .fi-sidebar,
+.dark .fi-sidebar-header,
+.dark .fi-topbar nav,
+.dark .fi-section,
+.dark .fi-ta-ctn {
+    border-color: rgb(51 65 85) !important;
+}
+
+@media (min-width: 1024px) {
+    .fi-sidebar {
+        inset-inline-start: 0 !important;
+    }
+
+    .fi-sidebar-header {
+        padding-inline: 1.5rem !important;
+        overflow: visible !important;
+    }
+
+    .fi-sidebar-nav {
+        padding-inline: .75rem !important;
+        overflow-x: hidden !important;
+    }
+
+    .fi-sidebar-item-button {
+        margin-inline: 0 !important;
+        padding-inline: .85rem !important;
+    }
+}
+
 /* Login page specific styling */
 .fi-simple-layout {
     background-color: rgb(248 250 252) !important;
@@ -870,4 +949,4 @@ small {
 
 .font-normal {
     font-weight: 400 !important;
-} 
+}

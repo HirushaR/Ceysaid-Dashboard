@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MySalesDashboardResource\Pages;
 
+use App\Filament\Resources\Concerns\HasPilotWorkflowActions;
 use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\LeadNote;
 use App\Models\User;
@@ -15,6 +16,8 @@ use Filament\Resources\Pages\ViewRecord;
 
 class ViewMySalesDashboard extends ViewRecord
 {
+    use HasPilotWorkflowActions;
+
     protected static string $resource = MySalesDashboardResource::class;
 
     protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
@@ -315,6 +318,7 @@ class ViewMySalesDashboard extends ViewRecord
         }
 
         return [
+            ...$this->pilotWorkflowActions(),
             $editAction,
             \Filament\Actions\Action::make('add_note')
                 ->label('Add Internal Note')
@@ -358,7 +362,7 @@ class ViewMySalesDashboard extends ViewRecord
                         ->title('Lead marked as Info Gather Complete.')
                         ->send();
                 })
-                ->visible(fn ($record) => ! $record->is_other_lead && $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
+                ->visible(fn ($record) => ! $this->pilotWorkflowEnabled() && ! $record->is_other_lead && $record->status === \App\Enums\LeadStatus::ASSIGNED_TO_SALES->value),
             \Filament\Actions\Action::make('sent_to_customer')
                 ->label('Sent to Customer')
                 ->color('success')

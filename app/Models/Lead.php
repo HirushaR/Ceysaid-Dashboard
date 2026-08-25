@@ -86,6 +86,11 @@ class Lead extends Model
         return $this->hasMany(WorkflowEvent::class)->orderBy('occurred_at')->orderBy('id');
     }
 
+    public function workflowTasks()
+    {
+        return $this->hasMany(WorkflowTask::class);
+    }
+
     public function salesOwner()
     {
         return $this->belongsTo(User::class, 'sales_owner_id');

@@ -76,7 +76,7 @@ class SupplierBulkPaymentTest extends TestCase
             ->assertSee('Partial');
     }
 
-    public function test_bulk_payment_rejects_over_allocation_and_mismatched_totals(): void
+    public function test_bulk_payment_rejects_bill_or_total_over_allocation(): void
     {
         $supplier = Supplier::create(['name' => 'Airline']);
         $lead = Lead::factory()->create();
@@ -99,17 +99,71 @@ class SupplierBulkPaymentTest extends TestCase
             $this->assertArrayHasKey('allocations.0.amount', $exception->errors());
         }
 
-        $this->expectException(ValidationException::class);
-        app(RecordSupplierPaymentService::class)->record([
+        $secondBill = $this->createBill($invoice, $supplier, 'VB-AIR-2', 300);
+
+        try {
+            app(RecordSupplierPaymentService::class)->record([
+                'supplier_id' => $supplier->id,
+                'payment_date' => '2026-07-30',
+                'amount' => 250,
+                'payment_mode' => 'bank_transfer',
+                'paid_through' => 'ntb_current',
+                'allocations' => [
+                    ['vendor_bill_id' => $bill->id, 'amount' => 150],
+                    ['vendor_bill_id' => $secondBill->id, 'amount' => 150],
+                ],
+            ]);
+            $this->fail('Expected total over-allocation validation to fail.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('amount', $exception->errors());
+        }
+    }
+
+    public function test_bulk_payment_can_be_recorded_without_linking_vendor_bills(): void
+    {
+        $account = User::factory()->create(['role' => 'account']);
+        $this->actingAs($account);
+        $supplier = Supplier::create(['name' => 'Unallocated Supplier']);
+
+        $payment = app(RecordSupplierPaymentService::class)->record([
             'supplier_id' => $supplier->id,
             'payment_date' => '2026-07-30',
-            'amount' => 250,
+            'amount' => 500,
+            'payment_mode' => 'bank_transfer',
+            'paid_through' => 'ntb_current',
+            'allocations' => [],
+        ]);
+
+        $this->assertSame('500.00', $payment->amount);
+        $this->assertCount(0, $payment->allocations);
+        $this->assertDatabaseHas('supplier_payments', [
+            'id' => $payment->id,
+            'supplier_id' => $supplier->id,
+            'amount' => 500,
+        ]);
+    }
+
+    public function test_bulk_payment_can_be_partially_linked_to_vendor_bills(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'account']));
+        $supplier = Supplier::create(['name' => 'Partially Allocated Supplier']);
+        $invoice = Invoice::factory()->create(['lead_id' => Lead::factory()->create()->id]);
+        $bill = $this->createBill($invoice, $supplier, 'VB-PARTIAL', 300);
+
+        $payment = app(RecordSupplierPaymentService::class)->record([
+            'supplier_id' => $supplier->id,
+            'payment_date' => '2026-07-30',
+            'amount' => 500,
             'payment_mode' => 'bank_transfer',
             'paid_through' => 'ntb_current',
             'allocations' => [
                 ['vendor_bill_id' => $bill->id, 'amount' => 200],
             ],
         ]);
+
+        $this->assertEquals(200.0, (float) $payment->allocations->sum('amount'));
+        $this->assertSame('partial', $bill->fresh()->payment_status);
+        $this->assertEquals(100.0, $bill->fresh()->outstanding_amount);
     }
 
     public function test_only_admin_and_account_can_manage_supplier_payments(): void
@@ -153,7 +207,7 @@ class SupplierBulkPaymentTest extends TestCase
             ->set('data.allocations', [['vendor_bill_id' => null, 'amount' => null]])
             ->set('data.allocations.0.vendor_bill_id', $bill->id)
             ->assertSet('data.allocations.0.amount', 300.0)
-            ->assertSee('LKR 200.00 left');
+            ->assertSee('LKR 200.00 unallocated');
     }
 
     public function test_bulk_payment_form_accepts_todays_payment_date(): void

@@ -24,7 +24,7 @@ class RecordSupplierPaymentService
      *     paid_through: string,
      *     reference_number?: string|null,
      *     notes?: string|null,
-     *     allocations: array<int, array{vendor_bill_id: int, amount: numeric-string|int|float}>
+     *     allocations?: array<int, array{vendor_bill_id: int, amount: numeric-string|int|float}>
      * }  $data
      */
     public function record(array $data): SupplierPayment
@@ -52,12 +52,6 @@ class RecordSupplierPaymentService
             }
 
             $allocations = array_values($data['allocations'] ?? []);
-            if ($allocations === []) {
-                throw ValidationException::withMessages([
-                    'allocations' => 'Allocate the payment to at least one vendor bill.',
-                ]);
-            }
-
             $prepared = [];
             $allocatedTotal = 0.0;
             $seenBillIds = [];
@@ -102,9 +96,9 @@ class RecordSupplierPaymentService
                 $prepared[] = ['bill' => $bill, 'amount' => $amount];
             }
 
-            if (abs($allocatedTotal - $paymentAmount) > 0.009) {
+            if ($allocatedTotal > $paymentAmount + 0.009) {
                 throw ValidationException::withMessages([
-                    'amount' => 'Payment amount must equal the allocated total of LKR '.number_format($allocatedTotal, 2).'.',
+                    'amount' => 'Bill allocations cannot exceed the payment amount of LKR '.number_format($paymentAmount, 2).'.',
                 ]);
             }
 

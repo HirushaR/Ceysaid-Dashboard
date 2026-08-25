@@ -19,7 +19,7 @@ class CreateSupplierPayment extends CreateRecord
             $this->form->fill([
                 'supplier_id' => (int) request()->query('supplier_id'),
                 'payment_date' => now()->toDateString(),
-                'allocations' => [[]],
+                'allocations' => [],
             ]);
         }
     }

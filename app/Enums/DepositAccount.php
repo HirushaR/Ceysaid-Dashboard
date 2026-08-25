@@ -9,6 +9,8 @@ enum DepositAccount: string
     case NtbSaving = 'ntb_saving';
     case SeylanSaving = 'seylan_saving';
     case SeylanCurrent = 'seylan_current';
+    case HnbCurrent = 'hnb_current';
+    case HnbSaving = 'hnb_saving';
 
     public function label(): string
     {
@@ -16,8 +18,10 @@ enum DepositAccount: string
             self::Cash => 'Cash',
             self::NtbCurrent => 'NTB Current',
             self::NtbSaving => 'NTB Saving',
-            self::SeylanSaving => 'Seylan Saving',
-            self::SeylanCurrent => 'Seylan Current',
+            self::SeylanSaving => 'Seylan Bank Saving',
+            self::SeylanCurrent => 'Seylan Bank Current',
+            self::HnbCurrent => 'HNB Current',
+            self::HnbSaving => 'HNB Saving',
         };
     }
 

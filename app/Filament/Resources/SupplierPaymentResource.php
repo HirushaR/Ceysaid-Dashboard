@@ -116,7 +116,7 @@ class SupplierPaymentResource extends Resource
                     ->columns(3),
 
                 Forms\Components\Section::make('Bill allocations')
-                    ->description('Allocate the complete payment across unpaid or partially paid bills from the selected supplier.')
+                    ->description('Optional: link all or part of this bulk payment to unpaid or partially paid vendor bills.')
                     ->schema([
                         Forms\Components\Repeater::make('allocations')
                             ->schema([
@@ -167,7 +167,7 @@ class SupplierPaymentResource extends Resource
                                     ->required(),
                             ])
                             ->columns(2)
-                            ->defaultItems(1)
+                            ->defaultItems(0)
                             ->addActionLabel('Add another bill')
                             ->reorderable(false)
                             ->columnSpanFull(),
@@ -194,7 +194,7 @@ class SupplierPaymentResource extends Resource
                                         $color = $remaining < 0 ? '#dc2626' : ($remaining === 0.0 ? '#16a34a' : 'inherit');
                                         $text = $remaining < 0
                                             ? 'Over-allocated by LKR '.number_format(abs($remaining), 2)
-                                            : 'LKR '.number_format($remaining, 2).' left';
+                                            : 'LKR '.number_format($remaining, 2).' unallocated';
 
                                         return new \Illuminate\Support\HtmlString(
                                             '<span style="color:'.$color.';font-weight:600;">'.
@@ -244,6 +244,7 @@ class SupplierPaymentResource extends Resource
                     ->schema([
                         Infolists\Components\RepeatableEntry::make('allocations')
                             ->hiddenLabel()
+                            ->placeholder('No vendor bills linked to this payment.')
                             ->schema([
                                 Infolists\Components\TextEntry::make('vendorBill.vendor_bill_number')
                                     ->label('Vendor bill'),

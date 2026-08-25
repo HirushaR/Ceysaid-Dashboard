@@ -5,7 +5,7 @@
 **Date:** 14 August 2026  
 **Scope:** Redesigned TravelSync workflow and role-based user experience
 
-**Detailed lifecycle:** [Full Lead Workflow Specification](FULL_LEAD_WORKFLOW_SPECIFICATION.md)
+**Related specifications:** [Full Lead Workflow](FULL_LEAD_WORKFLOW_SPECIFICATION.md) · [Information Architecture](INFORMATION_ARCHITECTURE_SPECIFICATION.md) · [Target Data Model](TARGET_DATA_MODEL_SPECIFICATION.md)
 
 ## 1. Purpose
 

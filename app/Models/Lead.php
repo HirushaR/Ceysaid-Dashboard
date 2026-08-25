@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\LeadLifecycleStage;
 use App\Enums\LeadStatus;
+use App\Enums\LeadType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -68,7 +70,31 @@ class Lead extends Model
         'other_lead_status' => \App\Enums\OtherLeadStatus::class,
         'other_lead_start_date' => 'date',
         'other_lead_end_date' => 'date',
+        'lead_type' => LeadType::class,
+        'lifecycle_stage' => LeadLifecycleStage::class,
+        'source_payload' => 'array',
+        'waiting_until' => 'datetime',
+        'next_action_at' => 'datetime',
+        'confirmed_at' => 'datetime',
+        'stage_entered_at' => 'datetime',
+        'last_customer_activity_at' => 'datetime',
+        'last_internal_activity_at' => 'datetime',
     ];
+
+    public function workflowEvents()
+    {
+        return $this->hasMany(WorkflowEvent::class)->orderBy('occurred_at')->orderBy('id');
+    }
+
+    public function salesOwner()
+    {
+        return $this->belongsTo(User::class, 'sales_owner_id');
+    }
+
+    public function operationsOwner()
+    {
+        return $this->belongsTo(User::class, 'operations_owner_id');
+    }
 
     public function tourMaster()
     {

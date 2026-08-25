@@ -3,7 +3,7 @@
 **Status:** Product design baseline  
 **Version:** 1.0  
 **Date:** 14 August 2026  
-**Related:** [Role-by-Role Workflow Specification](ROLE_WORKFLOW_SPECIFICATION.md)
+**Related:** [Role-by-Role Workflow Specification](ROLE_WORKFLOW_SPECIFICATION.md) · [Information Architecture Specification](INFORMATION_ARCHITECTURE_SPECIFICATION.md) · [Target Data Model](TARGET_DATA_MODEL_SPECIFICATION.md) · [Workflow Engine](WORKFLOW_ENGINE_SPECIFICATION.md)
 
 ## 1. Purpose
 

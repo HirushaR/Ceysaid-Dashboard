@@ -15,14 +15,14 @@ class Show extends Component
 
     public function mount(): void
     {
-        $this->lead->load(['assignedUser', 'assignedOperator', 'creator', 'actionLogs.user', 'notes.user', 'quote', 'invoices']);
+        $this->loadLead();
     }
 
     public function transition(string $status, LeadWorkflowService $workflow): void
     {
         $to = LeadStatus::from($status);
         $this->lead = $workflow->transition($this->lead, $to, auth()->user());
-        $this->lead->load(['assignedUser', 'assignedOperator', 'creator', 'actionLogs.user', 'notes.user', 'quote', 'invoices']);
+        $this->loadLead();
         session()->flash('success', 'Lead moved to '.$to->label().'.');
     }
 
@@ -34,10 +34,29 @@ class Show extends Component
         $this->lead->load('notes.user');
     }
 
+    private function loadLead(): void
+    {
+        $this->lead->load([
+            'assignedUser', 'assignedOperator', 'creator', 'actionLogs.user',
+            'notes.user', 'quote.lineItems', 'invoices.customerPayments', 'attachments',
+        ]);
+    }
+
     public function render()
     {
         $current = LeadStatus::tryFrom($this->lead->status);
         $next = collect(LeadStatus::cases())->filter(fn ($status) => $current && app(LeadWorkflowService::class)->canTransition($current, $status, auth()->user()));
-        return view('livewire.admin.leads.show', compact('next'))->layout('components.layouts.admin', ['title' => $this->lead->reference_id ?: 'Lead']);
+        $pipeline = collect([
+            LeadStatus::NEW, LeadStatus::ASSIGNED_TO_SALES, LeadStatus::INFO_GATHER_COMPLETE,
+            LeadStatus::ASSIGNED_TO_OPERATIONS, LeadStatus::OPERATION_COMPLETE,
+            LeadStatus::SENT_TO_CUSTOMER, LeadStatus::CONFIRMED, LeadStatus::DOCUMENT_UPLOAD_COMPLETE,
+        ]);
+        $progressStatus = in_array($current, [LeadStatus::RATE_REQUESTED, LeadStatus::AMENDMENT], true)
+            ? LeadStatus::ASSIGNED_TO_OPERATIONS : $current;
+        $position = $pipeline->search($progressStatus);
+        $progress = $position === false ? 0 : (int) $position;
+
+        return view('livewire.admin.leads.show', compact('next', 'pipeline', 'progress'))
+            ->layout('components.layouts.admin', ['title' => $this->lead->reference_id ?: 'Lead']);
     }
 }

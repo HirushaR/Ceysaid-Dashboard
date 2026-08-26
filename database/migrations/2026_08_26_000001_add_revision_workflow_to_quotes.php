@@ -10,6 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // MySQL may reuse the unique lead index for the foreign key. Give the FK a
+        // normal index before removing the old one-quote-per-lead constraint.
+        Schema::table('quotes', function (Blueprint $table): void {
+            $table->index('lead_id', 'quotes_lead_id_index');
+        });
+
         Schema::table('quotes', function (Blueprint $table): void {
             $table->dropUnique(['lead_id']);
             $table->uuid('family_id')->nullable()->after('lead_id');
@@ -57,5 +63,6 @@ return new class extends Migration
             $table->dropColumn(['family_id', 'revision', 'sent_at', 'accepted_at', 'rejected_at', 'expired_at']);
             $table->unique('lead_id');
         });
+        Schema::table('quotes', fn (Blueprint $table) => $table->dropIndex('quotes_lead_id_index'));
     }
 };

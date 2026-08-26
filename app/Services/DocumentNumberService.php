@@ -15,7 +15,7 @@ class DocumentNumberService
     public const TYPE_CUSTOMER_RECEIPT = 'cr';
 
     /**
-     * Quote numbers: QT/{year}/{lead_id} (one quote per lead).
+     * Quote family base number. Revisions append /R{n}.
      */
     public function nextQuoteNumberForLead(int $leadId): string
     {

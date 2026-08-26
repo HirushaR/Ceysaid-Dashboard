@@ -23,7 +23,8 @@ class AdminPanelProvider extends PanelProvider
         $panel = $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            // Temporary safety net during the parity window. The custom application owns /admin.
+            ->path('legacy-admin')
             ->login()
             ->colors([
                 // Minimal Theme Color Palette

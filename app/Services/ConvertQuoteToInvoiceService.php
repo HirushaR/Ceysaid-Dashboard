@@ -19,6 +19,9 @@ class ConvertQuoteToInvoiceService
         if ($quote->isConverted()) {
             throw new \InvalidArgumentException('Quote is already converted to an invoice.');
         }
+        if ($quote->status !== QuoteStatus::Accepted) {
+            throw new \InvalidArgumentException('Only an accepted quote can be converted to an invoice.');
+        }
 
         return DB::transaction(function () use ($quote) {
             $quote->load('lineItems', 'lead');
@@ -52,6 +55,11 @@ class ConvertQuoteToInvoiceService
             }
 
             $quote->update(['status' => QuoteStatus::Converted]);
+            $quote->actionLogs()->create([
+                'user_id' => auth()->id(),
+                'action' => 'converted',
+                'after' => ['invoice_id' => $invoice->id],
+            ]);
 
             return $invoice->fresh(['lineItems']);
         });

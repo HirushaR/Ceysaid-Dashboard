@@ -132,12 +132,14 @@ class Lead extends Model
         return $this->hasMany(Invoice::class);
     }
 
-    /**
-     * Each lead may have at most one quote (enforced in DB).
-     */
     public function quote()
     {
-        return $this->hasOne(Quote::class);
+        return $this->hasOne(Quote::class)->latestOfMany('revision');
+    }
+
+    public function quotes()
+    {
+        return $this->hasMany(Quote::class)->orderByDesc('revision');
     }
 
     public function customerPayments()

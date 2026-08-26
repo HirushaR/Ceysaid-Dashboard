@@ -1,0 +1,7 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in · TravelSync</title>@vite(['resources/css/app.css','resources/js/app.js'])</head>
+<body class="grid min-h-screen place-items-center bg-slate-950 p-5"><main class="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl"><div class="mb-8 flex items-center gap-3"><span class="grid size-11 place-items-center rounded-xl bg-blue-600 text-lg font-bold text-white">T</span><div><h1 class="text-xl font-bold">Welcome back</h1><p class="text-sm text-slate-500">Sign in to TravelSync</p></div></div>
+<form method="POST" action="{{ route('admin.login.store') }}" class="space-y-5">@csrf
+<div><label class="form-label" for="email">Email</label><input class="form-input" id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="email">@error('email')<p class="form-error">{{ $message }}</p>@enderror</div>
+<div><label class="form-label" for="password">Password</label><input class="form-input" id="password" name="password" type="password" required autocomplete="current-password"></div>
+<label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="remember" class="rounded border-slate-300"> Remember me</label>
+<button class="btn-primary w-full justify-center">Sign in</button></form></main></body></html>

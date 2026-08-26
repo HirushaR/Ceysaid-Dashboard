@@ -65,7 +65,7 @@ class FinanceFlowsTest extends TestCase
         $quote = Quote::create([
             'lead_id' => $lead->id,
             'quote_number' => 'QUOTE/2099/00001',
-            'status' => QuoteStatus::Draft,
+            'status' => QuoteStatus::Accepted,
             'quote_date' => now(),
         ]);
         QuoteLineItem::create([
@@ -92,7 +92,7 @@ class FinanceFlowsTest extends TestCase
         $quote = Quote::create([
             'lead_id' => $lead->id,
             'quote_number' => 'QUOTE/2099/00002',
-            'status' => QuoteStatus::Draft,
+            'status' => QuoteStatus::Accepted,
         ]);
         QuoteLineItem::create([
             'quote_id' => $quote->id,

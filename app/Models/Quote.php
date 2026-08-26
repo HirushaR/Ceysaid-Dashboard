@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Quote extends Model
 {
     protected $fillable = [
         'lead_id',
+        'family_id',
+        'revision',
         'quote_number',
         'status',
         'quote_date',
@@ -19,12 +22,21 @@ class Quote extends Model
         'terms',
         'subject',
         'notes',
+        'sent_at',
+        'accepted_at',
+        'rejected_at',
+        'expired_at',
+        'created_by',
     ];
 
     protected $casts = [
         'quote_date' => 'date',
         'valid_until' => 'date',
         'status' => QuoteStatus::class,
+        'sent_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'expired_at' => 'datetime',
     ];
 
     public function lead(): BelongsTo
@@ -40,6 +52,27 @@ class Quote extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function actionLogs(): MorphMany
+    {
+        return $this->morphMany(FinanceActionLog::class, 'subject')->latest();
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(self::class, 'family_id', 'family_id')->orderByDesc('revision');
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->status === QuoteStatus::Draft
+            && ! static::query()->where('family_id', $this->family_id)->where('revision', '>', $this->revision)->exists();
     }
 
     public function isConverted(): bool

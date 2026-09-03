@@ -8,13 +8,13 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100">
+<body class="admin-canvas min-h-screen text-slate-800 antialiased dark:text-slate-100">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:z-[100] focus:m-3 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
     <div class="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
         <div x-show="sidebar" x-transition.opacity class="fixed inset-0 z-40 bg-slate-950/45 lg:hidden" @click="sidebar = false"></div>
-        <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
+        <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-indigo-100 bg-white/95 shadow-[8px_0_30px_rgba(30,64,175,.04)] backdrop-blur transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900/95 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
             <div class="flex h-16 items-center gap-3 border-b border-slate-100 px-5 dark:border-slate-800">
-                <span class="grid size-9 place-items-center rounded-xl bg-blue-600 font-bold text-white">T</span>
+                <span class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-violet-600 font-bold text-white shadow-lg shadow-indigo-500/25">T</span>
                 <div><p class="font-bold tracking-tight">TravelSync</p><p class="text-xs text-slate-500">Operations workspace</p></div>
                 <button class="ml-auto rounded-lg p-2 lg:hidden" @click="sidebar = false" aria-label="Close navigation">×</button>
             </div>
@@ -40,7 +40,7 @@
             </div>
         </aside>
         <div class="min-w-0">
-            <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:px-7 dark:border-slate-800 dark:bg-slate-900/90">
+            <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-indigo-100 bg-white/80 px-4 shadow-sm shadow-blue-900/[.03] backdrop-blur-xl lg:px-7 dark:border-slate-800 dark:bg-slate-900/85">
                 <button @click="sidebar = true" class="btn-icon lg:hidden" aria-label="Open navigation">☰</button>
                 <form action="{{ route('admin.leads.index') }}" class="relative hidden w-full max-w-md sm:block">
                     <label for="global-search" class="sr-only">Search leads</label>

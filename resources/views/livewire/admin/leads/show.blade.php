@@ -10,7 +10,7 @@
 
     <section class="panel overflow-visible">
         <div class="flex flex-col justify-between gap-5 p-5 lg:flex-row lg:items-center">
-            <div class="min-w-0"><p class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ $lead->reference_id ?: '#'.$lead->id }}</p><h2 class="mt-1 truncate text-2xl font-bold">{{ $lead->customer_name }}</h2><p class="mt-1 text-sm text-slate-500">{{ $lead->destination ?: 'Destination not set' }} · {{ $lead->is_group_lead ? 'Group' : ($lead->is_cruise_lead ? 'Cruise' : 'Standard') }} · {{ $lead->assignedUser?->name ?? 'Unassigned sales' }}</p></div>
+            <div class="min-w-0"><p class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ $lead->reference_id ?: '#'.$lead->id }}</p><div class="mt-1 flex flex-wrap items-center gap-3"><h2 class="truncate text-2xl font-bold">{{ $lead->customer_name }}</h2><x-status-badge :status="\App\Enums\LeadStatus::tryFrom($lead->status) ?? $lead->status" /></div><p class="mt-1 text-sm text-slate-500">{{ $lead->destination ?: 'Destination not set' }} · {{ $lead->is_group_lead ? 'Group' : ($lead->is_cruise_lead ? 'Cruise' : 'Standard') }} · {{ $lead->assignedUser?->name ?? 'Unassigned sales' }}</p></div>
             <div class="relative shrink-0">
                 <button @click="actions = !actions" class="btn-primary">Open workflow actions →</button>
                 <div x-cloak x-show="actions" @click.outside="actions=false" x-transition class="absolute right-0 top-12 z-20 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">

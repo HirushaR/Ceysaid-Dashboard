@@ -32,7 +32,7 @@
                             </td>
                             <td>{{ $bill->invoice?->lead?->customer_name }}</td>
                             <td>{{ $bill->due_date?->format('d M Y') }}</td>
-                            <td><span class="status-badge">{{ ucfirst($bill->payment_status) }}</span></td>
+                            <td><x-status-badge :status="$bill->payment_status" /></td>
                             <td>LKR {{ number_format($bill->outstanding_amount, 2) }}</td>
                             <td><a target="_blank" href="{{ route('finance.vendor-bills.pdf', $bill) }}" class="text-sm font-semibold text-blue-600">PDF</a></td>
                         </tr>

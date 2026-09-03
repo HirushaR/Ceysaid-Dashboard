@@ -1,5 +1,53 @@
 import './bootstrap';
 
+const statusToneClasses = [
+    'status-neutral', 'status-info', 'status-violet', 'status-warning',
+    'status-success', 'status-danger', 'status-cyan',
+];
+
+function statusTone(label) {
+    const value = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+    if (/(rejected|expired|closed|cancelled|canceled|failed|overdue|declined)/.test(value)) return 'status-danger';
+    if (/(confirmed|accepted|approved|paid|received|completed|complete|successful|done)/.test(value)) return 'status-success';
+    if (/(pending|partial|waiting|rate_requested|amendment|on_hold)/.test(value)) return 'status-warning';
+    if (/(operation|pricing|in_progress|processing)/.test(value)) return 'status-violet';
+    if (/(sent|converted|issued)/.test(value)) return 'status-cyan';
+    if (/(assigned|info_gather|open|active|scheduled)/.test(value)) return 'status-info';
+
+    return 'status-neutral';
+}
+
+function applyStatusColors(root = document) {
+    const badges = root.matches?.('.status-badge') ? [root] : root.querySelectorAll?.('.status-badge') ?? [];
+
+    badges.forEach((badge) => {
+        const label = badge.textContent.trim();
+        badge.classList.remove(...statusToneClasses);
+        badge.classList.add(statusTone(label));
+
+        if (/[a-z]/i.test(label) && !badge.querySelector('.status-dot')) {
+            const dot = document.createElement('span');
+            dot.className = 'status-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            badge.prepend(dot);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyStatusColors();
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) applyStatusColors(node);
+        }));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
+document.addEventListener('livewire:navigated', () => applyStatusColors());
+
 // Enhanced tooltip functionality for info icons
 document.addEventListener('DOMContentLoaded', function() {
     // Add smooth fade-in effect for tooltips

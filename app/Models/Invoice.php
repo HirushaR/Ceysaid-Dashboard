@@ -237,7 +237,7 @@ class Invoice extends Model
     }
 
     /**
-     * Replace all line items from a Filament repeater state (non-relationship repeater).
+     * Replace all line items from submitted form state.
      *
      * @param  array<int, array<string, mixed>>  $lines
      */

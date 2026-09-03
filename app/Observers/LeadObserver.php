@@ -3,16 +3,12 @@
 namespace App\Observers;
 
 use App\Enums\LeadStatus;
-use App\Filament\Resources\AllLeadDashboardResource;
-use App\Filament\Resources\LeadResource;
-use App\Filament\Resources\MyOperationLeadDashboardResource;
-use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\Lead;
 use App\Models\LeadActionLog;
 use App\Models\User;
-use App\Support\FilamentNotificationDispatcher;
-use Filament\Notifications\Actions\Action;
-use Filament\Notifications\Notification;
+use App\Support\AdminNotificationAction as Action;
+use App\Support\AdminNotificationDispatcher;
+use App\Support\AdminNotificationMessage as Notification;
 use Illuminate\Support\Facades\Log;
 
 class LeadObserver
@@ -265,7 +261,7 @@ class LeadObserver
         // Special handling: When status changes to "info_gather_complete", notify ALL operation users
         if ($newStatus === LeadStatus::INFO_GATHER_COMPLETE->value) {
             $operationUsers = User::where('role', 'operation')->get();
-            $leadUrl = AllLeadDashboardResource::getUrl('view', ['record' => $lead]);
+            $leadUrl = route('admin.leads.show', $lead);
 
             foreach ($operationUsers as $operationUser) {
                 $notification = Notification::make()
@@ -280,7 +276,7 @@ class LeadObserver
                             ->url($leadUrl),
                     ]);
 
-                FilamentNotificationDispatcher::send($operationUser, $notification, $lead->id);
+                AdminNotificationDispatcher::send($operationUser, $notification, $lead->id);
             }
         }
 
@@ -422,7 +418,7 @@ class LeadObserver
         string $icon = 'heroicon-o-information-circle',
         ?Lead $lead = null
     ): void {
-        if (! FilamentNotificationDispatcher::enabled()) {
+        if (! AdminNotificationDispatcher::enabled()) {
             return;
         }
 
@@ -434,7 +430,7 @@ class LeadObserver
                 'lead_id' => $lead?->id,
             ]);
 
-            $filamentNotification = Notification::make()
+            $notification = Notification::make()
                 ->title($title)
                 ->body($body)
                 ->color($color)
@@ -445,7 +441,7 @@ class LeadObserver
                 // Determine the correct URL based on user role
                 $leadUrl = $this->getLeadUrlForUser($user, $lead, $title);
 
-                $filamentNotification->actions([
+                $notification->actions([
                     Action::make('view')
                         ->label('View Lead')
                         ->button()
@@ -453,7 +449,7 @@ class LeadObserver
                 ]);
             }
 
-            FilamentNotificationDispatcher::send($user, $filamentNotification, $lead?->id);
+            AdminNotificationDispatcher::send($user, $notification, $lead?->id);
 
             Log::info('LeadObserver::sendNotification - Notification sent successfully', [
                 'user_id' => $user->id,
@@ -473,30 +469,7 @@ class LeadObserver
      */
     private function getLeadUrlForUser(User $user, Lead $lead, ?string $notificationTitle = null): string
     {
-        // Special handling for specific notification types
-        if ($notificationTitle === 'New Lead Ready for Operations') {
-            return AllLeadDashboardResource::getUrl('view', ['record' => $lead]);
-        }
-
-        // Role-based URL routing
-        if ($user->isSales()) {
-            if ($lead->is_other_lead && \App\Filament\Resources\OtherLeadResource::canView($lead)) {
-                return \App\Filament\Resources\OtherLeadResource::getUrl('view', ['record' => $lead]);
-            }
-            if ($lead->is_cruise_lead) {
-                return \App\Filament\Resources\CruiseLeadResource::getUrl('view', ['record' => $lead]);
-            }
-            if ($lead->is_group_lead) {
-                return \App\Filament\Resources\GroupLeadResource::getUrl('view', ['record' => $lead]);
-            }
-
-            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
-        } elseif ($user->isOperation()) {
-            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
-        }
-
-        // Default to main LeadResource for admin and other roles
-        return LeadResource::getUrl('view', ['record' => $lead]);
+        return route('admin.leads.show', $lead);
     }
 
     /**

@@ -1,0 +1,3 @@
+<?php
+namespace App\Livewire\Admin\Customers; use App\Models\Customer; use Livewire\Component;
+class Show extends Component{public Customer $customer;public function mount():void{abort_unless(auth()->user()->isAdmin()||auth()->user()->hasPermission('customers.view'),403);$this->customer->load(['leads'=>fn($q)=>$q->with(['invoices.customerPayments','quotes'])->latest()]);}public function render(){$invoices=$this->customer->leads->flatMap->invoices->unique('id');$summary=['invoiced'=>$invoices->sum('total_amount'),'received'=>$invoices->sum(fn($i)=>(float)$i->payment_amount),'outstanding'=>$invoices->sum('balance_amount')];return view('livewire.admin.customers.show',compact('summary'))->layout('components.layouts.admin',['title'=>$this->customer->name]);}}

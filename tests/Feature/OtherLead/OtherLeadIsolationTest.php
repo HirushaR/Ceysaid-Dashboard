@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\OtherLead;
 
-use App\Filament\Resources\OtherLeadResource;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,16 +22,14 @@ class OtherLeadIsolationTest extends TestCase
             'customer_name' => 'Test Customer',
         ]);
 
-        $this->actingAs($salesA);
-        $this->assertTrue(OtherLeadResource::canView($lead));
-        $this->assertSame(1, OtherLeadResource::getEloquentQuery()->whereKey($lead->id)->count());
+        $this->actingAs($salesA)->get(route('admin.dashboard.other'))
+            ->assertOk()->assertSee('Test Customer');
 
-        $this->actingAs($salesB);
-        $this->assertFalse(OtherLeadResource::canView($lead));
-        $this->assertSame(0, OtherLeadResource::getEloquentQuery()->whereKey($lead->id)->count());
+        $this->actingAs($salesB)->get(route('admin.dashboard.other'))
+            ->assertOk()->assertDontSee('Test Customer');
     }
 
-    public function test_my_sales_dashboard_includes_assigned_other_leads(): void
+    public function test_my_sales_and_other_lead_workspaces_remain_isolated(): void
     {
         $sales = User::factory()->create(['role' => 'sales']);
         $other = Lead::factory()->otherLead()->create([
@@ -45,9 +42,9 @@ class OtherLeadIsolationTest extends TestCase
             'is_other_lead' => false,
         ]);
 
-        $this->actingAs($sales);
-        $ids = \App\Filament\Resources\MySalesDashboardResource::getEloquentQuery()->pluck('id')->all();
-        $this->assertContains($standard->id, $ids);
-        $this->assertContains($other->id, $ids);
+        $this->actingAs($sales)->get(route('admin.dashboard.my-sales'))
+            ->assertOk()->assertSee($standard->customer_name)->assertDontSee($other->customer_name);
+        $this->get(route('admin.dashboard.other'))
+            ->assertOk()->assertSee($other->customer_name)->assertDontSee($standard->customer_name);
     }
 }

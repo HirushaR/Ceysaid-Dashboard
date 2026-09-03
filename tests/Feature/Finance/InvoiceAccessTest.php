@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Finance;
 
-use App\Filament\Resources\InvoiceResource;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Permission;
@@ -50,19 +49,19 @@ class InvoiceAccessTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
         $this->assertTrue($admin->canEditInvoices());
-        $this->assertTrue(InvoiceResource::canEdit($invoice));
+        $this->get(route('admin.invoices.edit', $invoice))->assertOk();
 
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);
         $this->assertTrue($account->canEditInvoices());
-        $this->assertTrue(InvoiceResource::canEdit($invoice));
+        $this->get(route('admin.invoices.edit', $invoice))->assertOk();
 
         $sales = User::factory()->create(['role' => 'sales']);
         $this->grantInvoiceView($sales);
         $this->grantInvoiceEdit($sales);
         $this->actingAs($sales);
         $this->assertFalse($sales->canEditInvoices());
-        $this->assertFalse(InvoiceResource::canEdit($invoice));
+        $this->get(route('admin.invoices.edit', $invoice))->assertForbidden();
     }
 
     public function test_accounting_user_sees_all_invoices(): void
@@ -143,14 +142,14 @@ class InvoiceAccessTest extends TestCase
         $sales = User::factory()->create(['role' => 'sales']);
         $this->grantInvoiceView($sales);
         $this->actingAs($sales);
-        $this->assertFalse(InvoiceResource::canRecordCustomerPayments());
+        $this->assertFalse($sales->canManageAccountingRecords());
 
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);
-        $this->assertTrue(InvoiceResource::canRecordCustomerPayments());
+        $this->assertTrue($account->canManageAccountingRecords());
 
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
-        $this->assertTrue(InvoiceResource::canRecordCustomerPayments());
+        $this->assertTrue($admin->canManageAccountingRecords());
     }
 }

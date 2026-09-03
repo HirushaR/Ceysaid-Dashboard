@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Finance;
 
-use App\Filament\Resources\SupplierPayablesResource;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,21 +15,21 @@ class SupplierPayablesAccessTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
-        $this->assertTrue(SupplierPayablesResource::canViewAny());
+        $this->get(route('admin.suppliers.index'))->assertOk();
     }
 
     public function test_account_user_can_view_supplier_payables(): void
     {
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);
-        $this->assertTrue(SupplierPayablesResource::canViewAny());
+        $this->get(route('admin.suppliers.index'))->assertOk();
     }
 
     public function test_sales_cannot_view_supplier_payables(): void
     {
         $sales = User::factory()->create(['role' => 'sales']);
         $this->actingAs($sales);
-        $this->assertFalse(SupplierPayablesResource::canViewAny());
+        $this->get(route('admin.suppliers.index'))->assertForbidden();
     }
 
     public function test_admin_can_download_supplier_payables_summary_pdf(): void

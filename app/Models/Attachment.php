@@ -12,6 +12,7 @@ class Attachment extends Model
         'file_path',
         'original_name',
         'type',
+        'uploaded_by',
     ];
 
     protected $appends = ['file_url'];
@@ -19,6 +20,11 @@ class Attachment extends Model
     public function lead()
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 
     public function getFileUrlAttribute(): string
@@ -38,4 +44,4 @@ class Attachment extends Model
     {
         return Storage::disk('lead-attachments')->exists($this->file_path);
     }
-} 
+}

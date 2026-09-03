@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Filament\Resources\SupplierPayablesResource;
+use App\Models\Supplier;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class SupplierPayablesSummaryPdfController
@@ -15,8 +16,18 @@ class SupplierPayablesSummaryPdfController
             abort(403);
         }
 
-        $suppliers = SupplierPayablesResource::getEloquentQuery()
+        $suppliers = Supplier::query()
+            ->with(['vendorBills.vendorBillPayments'])
             ->withCount('vendorBills')
+            ->select('suppliers.*')
+            ->selectSub(
+                DB::table('vendor_bills as vb')
+                    ->selectRaw('COALESCE(SUM(CASE WHEN (vb.bill_amount - COALESCE((SELECT SUM(vbp.amount) FROM vendor_bill_payments vbp WHERE vbp.vendor_bill_id = vb.id), 0)) < 0 THEN 0 ELSE (vb.bill_amount - COALESCE((SELECT SUM(vbp.amount) FROM vendor_bill_payments vbp WHERE vbp.vendor_bill_id = vb.id), 0)) END), 0)')
+                    ->whereColumn('vb.supplier_id', 'suppliers.id'),
+                'payable_amount',
+            )
+            ->orderByDesc('payable_amount')
+            ->orderBy('suppliers.name')
             ->get();
 
         $filename = 'Supplier-payables-summary-'.now()->format('Y-m-d').'.pdf';

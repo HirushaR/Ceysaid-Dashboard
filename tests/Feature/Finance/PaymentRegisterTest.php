@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Finance;
 
-use App\Filament\Pages\PaymentRegister;
+use App\Livewire\Admin\Payments\Index as PaymentRegister;
 use App\Models\CustomerPayment;
 use App\Models\Invoice;
 use App\Models\Lead;
@@ -22,11 +22,11 @@ class PaymentRegisterTest extends TestCase
     {
         foreach (['admin', 'account'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]));
-            $this->assertTrue(PaymentRegister::canAccess());
+            $this->get(route('admin.payments.index'))->assertOk();
         }
 
         $this->actingAs(User::factory()->create(['role' => 'sales']));
-        $this->assertFalse(PaymentRegister::canAccess());
+        $this->get(route('admin.payments.index'))->assertForbidden();
     }
 
     public function test_account_user_can_render_register(): void
@@ -36,8 +36,8 @@ class PaymentRegisterTest extends TestCase
 
         Livewire::test(PaymentRegister::class)
             ->assertOk()
-            ->assertSee('Customer receipts')
-            ->assertSee('Vendor payments');
+            ->assertSee('Incoming customer receipts')
+            ->assertSee('outgoing supplier payments');
     }
 
     public function test_register_combines_and_summarizes_payments_by_payment_date(): void

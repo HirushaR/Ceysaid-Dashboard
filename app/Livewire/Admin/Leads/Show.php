@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Leads;
 
 use App\Enums\LeadStatus;
+use App\Enums\OtherLeadStatus;
 use App\Models\Lead;
 use App\Models\LeadNote;
 use App\Services\LeadWorkflowService;
@@ -32,6 +33,19 @@ class Show extends Component
         LeadNote::create(['lead_id' => $this->lead->id, 'user_id' => auth()->id(), 'note' => $this->note]);
         $this->reset('note');
         $this->lead->load('notes.user');
+    }
+
+    public function transitionOther(string $status): void
+    {
+        abort_unless($this->lead->is_other_lead && auth()->user()->isSales() && $this->lead->created_by === auth()->id(), 403);
+        $to = OtherLeadStatus::from($status);
+        $from = $this->lead->other_lead_status;
+        $allowed = ($from === OtherLeadStatus::Draft && $to === OtherLeadStatus::Confirmed)
+            || ($from === OtherLeadStatus::Confirmed && $to === OtherLeadStatus::Completed);
+        abort_unless($allowed, 422);
+        $this->lead->update(['other_lead_status' => $to]);
+        $this->loadLead();
+        session()->flash('success', 'Other lead moved to '.$to->label().'.');
     }
 
     private function loadLead(): void

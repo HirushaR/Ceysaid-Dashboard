@@ -1,0 +1,4 @@
+<?php
+namespace App\Notifications;
+use App\Models\Invoice; use Illuminate\Bus\Queueable; use Illuminate\Notifications\Notification;
+class OverdueInvoiceNotification extends Notification{use Queueable;public function __construct(public Invoice $invoice,public string $notificationKey){}public function via(object $notifiable):array{return ['database'];}public function toDatabase(object $notifiable):array{return ['title'=>'Invoice overdue','body'=>$this->invoice->invoice_number.' for '.($this->invoice->lead?->customer_name??'customer').' has LKR '.number_format((float)$this->invoice->balance_amount,2).' outstanding.','icon'=>'heroicon-o-exclamation-triangle','color'=>'danger','actions'=>[['name'=>'view','label'=>'View invoice','url'=>route('admin.invoices.show',$this->invoice),'color'=>'primary']],'invoice_id'=>$this->invoice->id,'notification_key'=>$this->notificationKey];}}

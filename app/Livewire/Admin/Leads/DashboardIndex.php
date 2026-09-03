@@ -29,7 +29,10 @@ class DashboardIndex extends Component
         $user = auth()->user();
         $allowed = match ($this->mode) {
             'other', 'my-sales', 'cruise', 'group' => $user->isSales(),
-            'confirmed', 'visa' => $user->isSales() || $user->isOperation() || $user->isAdmin(),
+            'confirmed', 'visa', 'documents' => $user->isSales() || $user->isOperation() || $user->isAdmin(),
+            'operations' => $user->isOperation(),
+            'call-centre' => $user->isCallCenter(),
+            'archived' => $user->isAdmin() || $user->isManager(),
             'notes' => $user->isSales() || $user->isOperation(),
             default => true,
         };
@@ -39,7 +42,8 @@ class DashboardIndex extends Component
     private function query(): Builder
     {
         $user = auth()->user();
-        $query = Lead::query()->notArchived()->with(['assignedUser', 'assignedOperator', 'notes' => fn ($q) => $q->latest()]);
+        $query = Lead::query()->with(['assignedUser', 'assignedOperator', 'notes' => fn ($q) => $q->latest()]);
+        $this->mode === 'archived' ? $query->archived() : $query->notArchived();
 
         match ($this->mode) {
             'other' => $query->where('is_other_lead', true)->where('created_by', $user->id),
@@ -47,6 +51,10 @@ class DashboardIndex extends Component
             'cruise' => $query->excludingOtherLeads()->where('assigned_to', $user->id)->where('is_cruise_lead', true),
             'group' => $query->excludingOtherLeads()->where('assigned_to', $user->id)->where('is_group_lead', true),
             'confirmed', 'visa' => $this->confirmedQuery($query, $user),
+            'documents' => $query->excludingOtherLeads()->where('status', LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value),
+            'operations' => $query->excludingOtherLeads()->where('assigned_operator', $user->id),
+            'call-centre' => $query->excludingOtherLeads()->where('created_by', $user->id),
+            'archived' => $query->excludingOtherLeads(),
             'notes' => $query->excludingOtherLeads()->where(fn (Builder $q) => $q->where('assigned_to', $user->id)->orWhere('assigned_operator', $user->id))->whereHas('notes'),
             default => $query->excludingOtherLeads(),
         };
@@ -69,7 +77,7 @@ class DashboardIndex extends Component
 
     public function render()
     {
-        $titles = ['other'=>'Other Leads','my-sales'=>'My Sales','cruise'=>'Cruise Leads','group'=>'Group Leads','confirmed'=>'Confirmed Leads','visa'=>'Visa Leads','notes'=>'Internal Notes'];
+        $titles = ['other'=>'Other Leads','my-sales'=>'My Sales','cruise'=>'Cruise Leads','group'=>'Group Leads','confirmed'=>'Confirmed Leads','visa'=>'Visa Leads','notes'=>'Internal Notes','documents'=>'Document Complete Leads','operations'=>'My Operation Leads','call-centre'=>'My Call Centre Leads','archived'=>'Archived Leads'];
         $title = $titles[$this->mode] ?? 'Leads';
         $leads = $this->query()->latest('updated_at')->paginate(20);
 

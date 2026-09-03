@@ -1,7 +1,11 @@
+<div>
+@if($lead->is_other_lead)
+    @include('livewire.admin.leads.partials.other-workspace')
+@else
 <div class="space-y-5" x-data="{ tab: 'overview', actions: false }">
     <div class="flex items-center justify-between gap-4">
         <div><p class="eyebrow">Lead workspace</p><h1 class="mt-1 text-xl font-bold tracking-tight sm:text-2xl">{{ $lead->reference_id ?: '#'.$lead->id }} · {{ $lead->customer_name }}</h1></div>
-        <a href="{{ route('admin.leads.index') }}" class="btn-secondary">← Back to leads</a>
+        <div class="flex gap-2">@if(auth()->user()->isAdmin() || (auth()->user()->isSales() && ($lead->assigned_to===auth()->id() || $lead->created_by===auth()->id()) && auth()->user()->canEditResource('leads')) || (auth()->user()->isOperation() && $lead->assigned_operator===auth()->id()))<a href="{{ route('admin.leads.edit',$lead) }}" class="btn-primary">Edit lead</a>@endif<a href="{{ route('admin.leads.index') }}" class="btn-secondary">← Back to leads</a></div>
     </div>
 
     <section class="panel overflow-visible">
@@ -44,4 +48,6 @@
     <div x-cloak x-show="tab==='operations'" class="panel p-5"><p class="section-label">Service fulfilment</p><dl class="detail-grid mt-5">@foreach(['Air ticket'=>$lead->air_ticket_status,'Hotel'=>$lead->hotel_status,'Visa'=>$lead->visa_status,'Land package'=>$lead->land_package_status] as $label=>$value)<div><dt>{{ $label }}</dt><dd><span class="status-badge">{{ str_replace('_',' ',ucfirst($value ?? 'pending')) }}</span></dd></div>@endforeach</dl></div>
     <div x-cloak x-show="tab==='finance'" class="panel p-5"><div><p class="section-label">Finance</p><h2 class="mt-1 text-lg font-bold">Invoices and receipts</h2></div><div class="mt-5 space-y-2">@forelse($lead->invoices as $invoice)<a href="{{ route('admin.invoices.show',$invoice) }}" class="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700"><span><strong>{{ $invoice->invoice_number }}</strong><small class="ml-2 status-badge">{{ ucfirst($invoice->customer_payment_status) }}</small></span><span>LKR {{ number_format((float)$invoice->balance_amount,2) }} outstanding →</span></a>@empty<p class="empty-state">No invoices created.</p>@endforelse</div></div>
     <div x-cloak x-show="tab==='timeline'" class="panel"><div class="panel-header"><div><h2>Complete timeline</h2><p>Every recorded assignment and status change</p></div></div><div class="divide-y divide-slate-100 dark:divide-slate-800">@forelse($lead->actionLogs as $log)<div class="flex gap-4 p-5"><span class="mt-1.5 size-2 rounded-full bg-blue-600"></span><div><p class="text-sm font-semibold">{{ $log->description }}</p><p class="mt-1 text-xs text-slate-500">{{ $log->user?->name ?? 'System' }} · {{ $log->created_at->format('d M Y, g:i A') }}</p></div></div>@empty<p class="empty-state">No timeline entries.</p>@endforelse</div></div>
+</div>
+@endif
 </div>

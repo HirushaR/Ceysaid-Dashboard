@@ -142,7 +142,7 @@ class Quote extends Model
     }
 
     /**
-     * Map quote data into Filament invoice create form state (line items + common fields).
+     * Map quote data into invoice create form state (line items + common fields).
      *
      * @return array<string, mixed>
      */

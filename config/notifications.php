@@ -4,14 +4,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Filament database notifications
+    | Database notifications
     |--------------------------------------------------------------------------
     |
     | When false, the admin bell is hidden and lead notification broadcasts
-    | are not sent (stops DatabaseNotificationsSent jobs on the queue).
+    | are not created.
     |
     */
 
-    'filament_database_enabled' => env('FILAMENT_DATABASE_NOTIFICATIONS_ENABLED', false),
+    'database_enabled' => env('DATABASE_NOTIFICATIONS_ENABLED', true),
 
 ];

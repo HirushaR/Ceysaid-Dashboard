@@ -4,7 +4,6 @@ namespace Tests\Feature\Finance;
 
 use App\Enums\LeadStatus;
 use App\Enums\QuoteStatus;
-use App\Filament\Resources\InvoiceResource;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\LeadCost;
@@ -111,11 +110,11 @@ class FinanceFlowsTest extends TestCase
     {
         $sales = User::factory()->create(['role' => 'sales']);
         $this->actingAs($sales);
-        $this->assertTrue(InvoiceResource::canCreate());
+        $this->get(route('admin.invoices.create'))->assertOk();
 
         $account = User::factory()->create(['role' => 'account']);
         $this->actingAs($account);
-        $this->assertTrue(InvoiceResource::canCreate());
+        $this->get(route('admin.invoices.create'))->assertOk();
     }
 
     public function test_lead_tour_change_syncs_invoice_tour_id(): void

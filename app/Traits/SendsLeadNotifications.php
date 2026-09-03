@@ -3,15 +3,11 @@
 namespace App\Traits;
 
 use App\Enums\LeadStatus;
-use App\Filament\Resources\AllLeadDashboardResource;
-use App\Filament\Resources\LeadResource;
-use App\Filament\Resources\MyOperationLeadDashboardResource;
-use App\Filament\Resources\MySalesDashboardResource;
 use App\Models\Lead;
 use App\Models\User;
-use App\Support\FilamentNotificationDispatcher;
-use Filament\Notifications\Actions\Action;
-use Filament\Notifications\Notification;
+use App\Support\AdminNotificationAction as Action;
+use App\Support\AdminNotificationDispatcher;
+use App\Support\AdminNotificationMessage as Notification;
 
 trait SendsLeadNotifications
 {
@@ -23,10 +19,9 @@ trait SendsLeadNotifications
         if ($lead->assigned_to && $lead->assignedUser) {
             try {
                 $refId = $lead->reference_id ?: "ID: {$lead->id}";
-                // Use MySalesDashboardResource URL for "New Lead Assigned" notifications
-                $leadUrl = MySalesDashboardResource::getUrl('view', ['record' => $lead]);
+                $leadUrl = route('admin.leads.show', $lead);
 
-                $filamentNotification = Notification::make()
+                $notification = Notification::make()
                     ->title('New Lead Assigned')
                     ->body("You have been assigned a new lead: {$lead->customer_name} (Ref: {$refId})")
                     ->success()
@@ -38,7 +33,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                FilamentNotificationDispatcher::send($lead->assignedUser, $filamentNotification, $lead->id);
+                AdminNotificationDispatcher::send($lead->assignedUser, $notification, $lead->id);
             } catch (\Exception $e) {
                 \Log::error('Failed to send notification', ['error' => $e->getMessage()]);
             }
@@ -92,7 +87,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            FilamentNotificationDispatcher::send($lead->assignedUser, $notification, $lead->id);
+            AdminNotificationDispatcher::send($lead->assignedUser, $notification, $lead->id);
         }
 
         if ($oldAssignedTo && $oldAssignedTo != $newAssignedTo) {
@@ -111,7 +106,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                FilamentNotificationDispatcher::send($oldUser, $notification, $lead->id);
+                AdminNotificationDispatcher::send($oldUser, $notification, $lead->id);
             }
         }
     }
@@ -134,7 +129,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            FilamentNotificationDispatcher::send($lead->assignedOperator, $notification, $lead->id);
+            AdminNotificationDispatcher::send($lead->assignedOperator, $notification, $lead->id);
         }
     }
 
@@ -148,7 +143,7 @@ trait SendsLeadNotifications
         // Notify ALL operation users when lead status changes to info_gather_complete
         if ($newStatus === LeadStatus::INFO_GATHER_COMPLETE->value) {
             $operationUsers = User::where('role', 'operation')->get();
-            $leadUrl = AllLeadDashboardResource::getUrl('view', ['record' => $lead]);
+            $leadUrl = route('admin.leads.show', $lead);
 
             foreach ($operationUsers as $operationUser) {
                 $notification = Notification::make()
@@ -163,7 +158,7 @@ trait SendsLeadNotifications
                             ->url($leadUrl),
                     ]);
 
-                FilamentNotificationDispatcher::send($operationUser, $notification, $lead->id);
+                AdminNotificationDispatcher::send($operationUser, $notification, $lead->id);
             }
         }
 
@@ -195,7 +190,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            FilamentNotificationDispatcher::send($recipient, $notification, $lead->id);
+            AdminNotificationDispatcher::send($recipient, $notification, $lead->id);
         }
     }
 
@@ -237,7 +232,7 @@ trait SendsLeadNotifications
                         ->url($leadUrl),
                 ]);
 
-            FilamentNotificationDispatcher::send($recipient, $notification, $lead->id);
+            AdminNotificationDispatcher::send($recipient, $notification, $lead->id);
         }
     }
 
@@ -246,13 +241,6 @@ trait SendsLeadNotifications
      */
     private function getLeadUrlForUser(User $user, Lead $lead): string
     {
-        if ($user->isSales()) {
-            return MySalesDashboardResource::getUrl('view', ['record' => $lead]);
-        } elseif ($user->isOperation()) {
-            return MyOperationLeadDashboardResource::getUrl('view', ['record' => $lead]);
-        }
-
-        // Default to main LeadResource for admin and other roles
-        return LeadResource::getUrl('view', ['record' => $lead]);
+        return route('admin.leads.show', $lead);
     }
 }

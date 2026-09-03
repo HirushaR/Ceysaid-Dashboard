@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Finance;
 
-use App\Filament\Resources\SupplierPaymentResource;
-use App\Filament\Resources\SupplierPaymentResource\Pages\CreateSupplierPayment;
-use App\Filament\Resources\SupplierPaymentResource\Pages\ViewSupplierPayment;
+use App\Livewire\Admin\SupplierPayments\Create as CreateSupplierPayment;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Supplier;
@@ -70,10 +68,11 @@ class SupplierBulkPaymentTest extends TestCase
         $this->assertCount(1, $rows);
         $this->assertSame($payment->id, (int) $rows->first()->supplier_payment_id);
 
-        Livewire::test(ViewSupplierPayment::class, ['record' => $payment->getRouteKey()])
-            ->assertSee('Bill status')
-            ->assertSee('Paid')
-            ->assertSee('Partial');
+        $this->get(route('admin.payments.supplier.show', $payment))
+            ->assertOk()
+            ->assertSee('Bill allocations')
+            ->assertSee('VB-ONE')
+            ->assertSee('VB-TWO');
     }
 
     public function test_bulk_payment_rejects_over_allocation_and_mismatched_totals(): void
@@ -114,19 +113,13 @@ class SupplierBulkPaymentTest extends TestCase
 
     public function test_only_admin_and_account_can_manage_supplier_payments(): void
     {
-        $payment = new \App\Models\SupplierPayment;
-
         foreach (['admin', 'account'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]));
-            $this->assertTrue(SupplierPaymentResource::canViewAny());
-            $this->assertTrue(SupplierPaymentResource::canCreate());
-            $this->assertFalse(SupplierPaymentResource::canEdit($payment));
-            $this->assertFalse(SupplierPaymentResource::canDelete($payment));
+            $this->get(route('admin.supplier-payments.create'))->assertOk();
         }
 
         $this->actingAs(User::factory()->create(['role' => 'sales']));
-        $this->assertFalse(SupplierPaymentResource::canViewAny());
-        $this->assertFalse(SupplierPaymentResource::canCreate());
+        $this->get(route('admin.supplier-payments.create'))->assertForbidden();
     }
 
     public function test_account_user_can_render_bulk_payment_form(): void
@@ -136,7 +129,7 @@ class SupplierBulkPaymentTest extends TestCase
         Livewire::test(CreateSupplierPayment::class)
             ->assertOk()
             ->assertSee('Bill allocations')
-            ->assertSee('Cheque / transfer reference');
+            ->assertSee('Reference');
     }
 
     public function test_selecting_bill_defaults_allocation_to_outstanding_balance_and_updates_summary(): void
@@ -148,12 +141,10 @@ class SupplierBulkPaymentTest extends TestCase
         $bill = $this->createBill($invoice, $supplier, 'VB-DMC', 300);
 
         Livewire::test(CreateSupplierPayment::class)
-            ->set('data.supplier_id', $supplier->id)
-            ->set('data.amount', 500)
-            ->set('data.allocations', [['vendor_bill_id' => null, 'amount' => null]])
-            ->set('data.allocations.0.vendor_bill_id', $bill->id)
-            ->assertSet('data.allocations.0.amount', 300.0)
-            ->assertSee('LKR 200.00 left');
+            ->set('supplier_id', $supplier->id)
+            ->call('useOutstanding', 0)
+            ->assertSet('allocations.0.amount', 300.0)
+            ->assertSet('amount', 300.0);
     }
 
     public function test_bulk_payment_form_accepts_todays_payment_date(): void
@@ -165,19 +156,15 @@ class SupplierBulkPaymentTest extends TestCase
         $bill = $this->createBill($invoice, $supplier, 'VB-TODAY', 300);
 
         Livewire::test(CreateSupplierPayment::class)
-            ->fillForm([
-                'supplier_id' => $supplier->id,
-                'amount' => 300,
-                'payment_date' => now()->toDateString(),
-                'payment_mode' => 'cheque',
-                'paid_through' => 'ntb_current',
-                'reference_number' => 'CHQ-TODAY',
-                'allocations' => [
-                    ['vendor_bill_id' => $bill->id, 'amount' => 300],
-                ],
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->set('supplier_id', $supplier->id)
+            ->set('amount', 300)
+            ->set('payment_date', now()->toDateString())
+            ->set('payment_mode', 'cheque')
+            ->set('paid_through', 'ntb_current')
+            ->set('reference_number', 'CHQ-TODAY')
+            ->set('allocations.0.amount', 300)
+            ->call('save')
+            ->assertHasNoErrors();
 
         $this->assertDatabaseHas('supplier_payments', [
             'supplier_id' => $supplier->id,

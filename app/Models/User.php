@@ -81,7 +81,7 @@ class User extends Authenticatable
         return $this->isAccount() || $this->isAdmin();
     }
 
-    /** Invoice record edit (Filament edit page / table) — admin and accounting only, not `invoices.edit` alone. */
+    /** Invoice record editing is restricted to admin and accounting users. */
     public function canEditInvoices(): bool
     {
         return $this->isAdmin() || $this->isAccount();
@@ -211,24 +211,20 @@ class User extends Authenticatable
     // Permission checking methods
     public function hasPermission(string $permission): bool
     {
-        return $this->permissions()
-            ->where('name', $permission)
-            ->exists();
+        return $this->permissions()->where('name', $permission)->exists()
+            || Permission::query()->where('name', $permission)->whereHas('permissionGroups.users', fn ($q) => $q->whereKey($this->id))->exists();
     }
 
     public function hasAnyPermission(array $permissions): bool
     {
-        return $this->permissions()
-            ->whereIn('name', $permissions)
-            ->exists();
+        return $this->permissions()->whereIn('name', $permissions)->exists()
+            || Permission::query()->whereIn('name', $permissions)->whereHas('permissionGroups.users', fn ($q) => $q->whereKey($this->id))->exists();
     }
 
     public function hasAllPermissions(array $permissions): bool
     {
-        $userPermissions = $this->permissions()
-            ->whereIn('name', $permissions)
-            ->pluck('name')
-            ->toArray();
+        $userPermissions = $this->permissions()->whereIn('name', $permissions)->pluck('name')
+            ->merge(Permission::query()->whereIn('name', $permissions)->whereHas('permissionGroups.users', fn ($q) => $q->whereKey($this->id))->pluck('name'))->unique()->all();
 
         return count(array_intersect($permissions, $userPermissions)) === count($permissions);
     }
@@ -257,7 +253,7 @@ class User extends Authenticatable
     // Get all active permissions for user
     public function getActivePermissions()
     {
-        return $this->permissions()->get();
+        return Permission::query()->where(fn ($q) => $q->whereHas('users', fn ($q) => $q->whereKey($this->id))->orWhereHas('permissionGroups.users', fn ($q) => $q->whereKey($this->id)))->distinct()->get();
     }
 
     // Grant permission to user

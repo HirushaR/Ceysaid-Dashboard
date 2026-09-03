@@ -4,23 +4,22 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Filament\Notifications\Notification as FilamentNotification;
+use App\Support\AdminNotificationMessage;
 
 class LeadDatabaseNotification extends Notification
 {
     use Queueable;
 
-    protected FilamentNotification $filamentNotification;
+    protected AdminNotificationMessage $notification;
     protected ?int $leadId;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(FilamentNotification $filamentNotification, ?int $leadId = null)
+    public function __construct(AdminNotificationMessage $notification, ?int $leadId = null)
     {
-        $this->filamentNotification = $filamentNotification;
+        $this->notification = $notification;
         $this->leadId = $leadId;
     }
 
@@ -41,6 +40,6 @@ class LeadDatabaseNotification extends Notification
      */
     public function toDatabase(object $notifiable): array
     {
-        return $this->filamentNotification->getDatabaseMessage();
+        return [...$this->notification->toArray(), 'lead_id' => $this->leadId];
     }
 }

@@ -1,0 +1,3 @@
+<?php
+namespace App\Livewire\Admin\Customers; use App\Models\Customer; use Livewire\Attributes\Url; use Livewire\Component; use Livewire\WithPagination;
+class Index extends Component{use WithPagination;#[Url]public string $search='';public function render(){abort_unless(auth()->user()->isAdmin()||auth()->user()->hasPermission('customers.view'),403);$q=Customer::query()->withCount('leads')->when($this->search,fn($q)=>$q->where('name','like','%'.$this->search.'%'));return view('livewire.admin.customers.index',['customers'=>$q->latest()->paginate(25)])->layout('components.layouts.admin',['title'=>'Customers']);}}

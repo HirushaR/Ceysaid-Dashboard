@@ -45,15 +45,27 @@ class AdminNavigation
             $dashboard['items'][] = ['label' => 'Internal Notes', 'route' => 'admin.dashboard.notes', 'active' => 'admin.dashboard.notes'];
         }
         $groups[] = $dashboard;
-        if ($user->isAdmin() || $user->isAccount() || $user->hasAnyPermission(['quotes.view', 'invoices.view'])) {
-            $groups[] = ['label' => 'Finance', 'items' => [
-                ['label' => 'Quotes', 'route' => 'admin.quotes.index', 'active' => 'admin.quotes.*'],
-                ['label' => 'Invoices', 'route' => 'admin.invoices.index', 'active' => 'admin.invoices.*'],
-                ['label' => 'Receivables', 'route' => 'admin.receivables.index', 'active' => 'admin.receivables.*'],
-                ['label' => 'Vendor Bills', 'route' => 'admin.vendor-bills.index', 'active' => 'admin.vendor-bills.*'],
-                ['label' => 'Suppliers', 'route' => 'admin.suppliers.index', 'active' => 'admin.suppliers.*'],
-                ['label' => 'Payments', 'route' => 'admin.payments.index', 'active' => 'admin.payments.*'],
-            ]];
+        $finance = [];
+        if ($user->isAdmin() || $user->isAccount() || $user->hasPermission('quotes.view')) {
+            $finance[] = ['label' => 'Quotes', 'route' => 'admin.quotes.index', 'active' => 'admin.quotes.*'];
+        }
+        if ($user->canViewAllInvoices() || $user->hasPermission('invoices.view')) {
+            $finance[] = ['label' => 'Invoices', 'route' => 'admin.invoices.index', 'active' => 'admin.invoices.*'];
+        }
+        if ($user->canViewReceivables()) {
+            $finance[] = ['label' => 'Receivables', 'route' => 'admin.receivables.index', 'active' => 'admin.receivables.*'];
+        }
+        if ($user->canViewVendorBills()) {
+            $finance[] = ['label' => 'Vendor Bills', 'route' => 'admin.vendor-bills.index', 'active' => 'admin.vendor-bills.*'];
+        }
+        if ($user->canViewSuppliers()) {
+            $finance[] = ['label' => 'Suppliers', 'route' => 'admin.suppliers.index', 'active' => 'admin.suppliers.*'];
+        }
+        if ($user->canViewPayments()) {
+            $finance[] = ['label' => 'Payments', 'route' => 'admin.payments.index', 'active' => 'admin.payments.*'];
+        }
+        if ($finance !== []) {
+            $groups[] = ['label' => 'Finance', 'items' => $finance];
         }
         $operations = [];
         if ($user->isAdmin() || $user->hasPermission('customers.view')) {

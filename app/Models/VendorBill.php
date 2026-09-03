@@ -188,11 +188,11 @@ class VendorBill extends Model
         parent::boot();
 
         static::saved(function (VendorBill $vendorBill): void {
-            $vendorBill->invoice->updateVendorPaymentStatus();
+            $vendorBill->invoice?->updateVendorPaymentStatus();
         });
 
         static::deleted(function (VendorBill $vendorBill): void {
-            $vendorBill->invoice->updateVendorPaymentStatus();
+            $vendorBill->invoice?->updateVendorPaymentStatus();
         });
     }
 }

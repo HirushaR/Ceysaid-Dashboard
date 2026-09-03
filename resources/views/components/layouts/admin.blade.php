@@ -20,12 +20,12 @@
             </div>
             <nav class="admin-scroll flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Main navigation">
                 @foreach(\App\Support\AdminNavigation::for(auth()->user()) as $group)
-                    <section>
-                        <h2 class="px-3 text-[11px] font-bold uppercase tracking-[.14em] text-slate-400">{{ $group['label'] }}</h2>
-                        <div class="mt-2 space-y-1">
+                    <section x-data="{ open: true }">
+                        <button type="button" @click="open = !open" class="flex w-full items-center justify-between px-3 text-[11px] font-bold uppercase tracking-[.14em] text-slate-400" :aria-expanded="open"><span>{{ $group['label'] }}</span><span aria-hidden="true" x-text="open ? '−' : '+'"></span></button>
+                        <div x-show="open" class="mt-2 space-y-1">
                             @foreach($group['items'] as $item)
-                                <a href="{{ route($item['route'], $item['route'] === 'admin.module' ? ['module' => Str::slug($item['label'])] : []) }}" @class(['nav-link', 'nav-link-active' => request()->routeIs($item['active'])])>
-                                    <span class="size-2 rounded-full bg-current opacity-50"></span>{{ $item['label'] }}
+                                <a href="{{ route($item['route']) }}" @class(['nav-link', 'nav-link-active' => request()->routeIs($item['active'])]) @if(request()->routeIs($item['active'])) aria-current="page" @endif>
+                                    <svg class="size-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v13H4zM8 9h8M8 13h5" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ $item['label'] }}
                                 </a>
                             @endforeach
                         </div>
@@ -54,6 +54,8 @@
                 </div>
             </header>
             <main id="main-content" class="p-4 lg:p-7">
+                <div wire:loading.delay class="fixed inset-x-0 top-0 z-[100] h-1 animate-pulse bg-blue-600" role="status" aria-label="Loading"></div>
+                <nav class="mb-4 flex items-center gap-2 text-xs text-slate-500" aria-label="Breadcrumb"><a href="{{ route('admin.dashboard') }}" class="hover:text-blue-600">Home</a>@unless(request()->routeIs('admin.dashboard'))<span>/</span><span class="font-medium text-slate-700 dark:text-slate-300">{{ $title ?? Str::headline(request()->route()?->getName()) }}</span>@endunless</nav>
                 @if(session('success'))<div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
                 {{ $slot }}
             </main>

@@ -66,17 +66,25 @@ class AdminAnalyticsService
 
     public function staff(string $from, string $to): Collection
     {
-        return User::query()->where('role', 'sales')->orderBy('name')->get()->map(
-            function (User $user) use ($from, $to): array {
-                $leads = $user->leads()->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59']);
-                $assigned = (clone $leads)->count();
-                $converted = (clone $leads)->whereIn('status', $this->convertedStatuses())->count();
-                $revenue = (float) Invoice::query()
-                    ->whereHas('lead', fn (Builder $query) => $query->where('assigned_to', $user->id))
-                    ->whereDate('invoice_date', '>=', $from)
-                    ->whereDate('invoice_date', '<=', $to)
-                    ->sum('total_amount');
+        $users = User::query()->where('role', 'sales')
+            ->withCount([
+                'leads as assigned_count' => fn (Builder $q) => $q->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59']),
+                'leads as converted_count' => fn (Builder $q) => $q->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->whereIn('status', $this->convertedStatuses()),
+                'leads as active_count' => fn (Builder $q) => $q->whereNotIn('status', [LeadStatus::MARK_CLOSED->value, LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value]),
+            ])
+            ->selectSub(
+                Invoice::query()->selectRaw('COALESCE(SUM(total_amount), 0)')
+                    ->join('leads', 'leads.id', '=', 'invoices.lead_id')
+                    ->whereColumn('leads.assigned_to', 'users.id')
+                    ->whereDate('invoice_date', '>=', $from)->whereDate('invoice_date', '<=', $to),
+                'revenue_total',
+            )->orderBy('name')->get();
 
+        return $users->map(
+            function (User $user): array {
+                $assigned = (int) $user->assigned_count;
+                $converted = (int) $user->converted_count;
+                $revenue = (float) $user->revenue_total;
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -85,10 +93,7 @@ class AdminAnalyticsService
                     'rate' => $assigned ? round($converted / $assigned * 100, 1) : 0,
                     'revenue' => $revenue,
                     'average' => $converted ? round($revenue / $converted, 2) : 0,
-                    'active' => $user->leads()->whereNotIn('status', [
-                        LeadStatus::MARK_CLOSED->value,
-                        LeadStatus::DOCUMENT_UPLOAD_COMPLETE->value,
-                    ])->count(),
+                    'active' => (int) $user->active_count,
                 ];
             },
         );

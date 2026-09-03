@@ -6,18 +6,25 @@ use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\User;
 use App\Services\AdminAnalyticsService;
+use App\Services\AuditService;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminExportController
 {
-    public function __invoke(Request $request, string $type, AdminAnalyticsService $analytics): StreamedResponse
+    public function __invoke(Request $request, string $type, AdminAnalyticsService $analytics, AuditService $audit): StreamedResponse
     {
         $user = $request->user();
         abort_unless($user && ($user->isAdmin() || $user->isAccount() || $user->isManager()), 403);
 
-        $from = $request->string('from', now()->subDays(30)->toDateString())->toString();
-        $to = $request->string('to', today()->toDateString())->toString();
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+        $from = $validated['from'] ?? now()->subDays(30)->toDateString();
+        $to = $validated['to'] ?? today()->toDateString();
+        $audit->record('export.downloaded', null, [], ['type' => $type, 'from' => $from, 'to' => $to]);
 
         return response()->streamDownload(
             fn () => $this->writeCsv($type, $from, $to, $user, $analytics),
@@ -54,7 +61,7 @@ class AdminExportController
         }
 
         foreach ($rows as $row) {
-            fputcsv($output, [$row['name'], $row['assigned'], $row['converted'], $row['rate'], $row['revenue'], $row['average'], $row['active']]);
+            $this->csv($output, [$row['name'], $row['assigned'], $row['converted'], $row['rate'], $row['revenue'], $row['average'], $row['active']]);
         }
     }
 
@@ -67,7 +74,7 @@ class AdminExportController
             ->visibleToUser($user)
             ->chunk(200, function ($rows) use ($output): void {
                 foreach ($rows as $invoice) {
-                    fputcsv($output, [$invoice->invoice_number, $invoice->lead?->customer_name, $invoice->invoice_date?->toDateString(), $invoice->due_date?->toDateString(), $invoice->total_amount, $invoice->payment_amount, $invoice->balance_amount, $invoice->customer_payment_status]);
+                    $this->csv($output, [$invoice->invoice_number, $invoice->lead?->customer_name, $invoice->invoice_date?->toDateString(), $invoice->due_date?->toDateString(), $invoice->total_amount, $invoice->payment_amount, $invoice->balance_amount, $invoice->customer_payment_status]);
                 }
             });
     }
@@ -83,8 +90,18 @@ class AdminExportController
 
         $query->chunk(200, function ($rows) use ($output): void {
             foreach ($rows as $lead) {
-                fputcsv($output, [$lead->reference_id, $lead->customer_name, $lead->created_at?->toDateString(), $lead->destination, $lead->platform, $lead->status, $lead->assignedUser?->name]);
+                $this->csv($output, [$lead->reference_id, $lead->customer_name, $lead->created_at?->toDateString(), $lead->destination, $lead->platform, $lead->status, $lead->assignedUser?->name]);
             }
         });
+    }
+
+    private function csv($output, array $row): void
+    {
+        fputcsv($output, array_map(function ($value) {
+            if (is_string($value) && preg_match('/^[=+\-@]/', $value)) {
+                return "'".$value;
+            }
+            return $value;
+        }, $row));
     }
 }

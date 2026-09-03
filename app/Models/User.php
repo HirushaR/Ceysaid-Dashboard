@@ -81,6 +81,26 @@ class User extends Authenticatable
         return $this->isAccount() || $this->isAdmin();
     }
 
+    public function canViewReceivables(): bool
+    {
+        return $this->canManageAccountingRecords() || $this->hasAnyPermission(['receivables.view', 'invoices.view']);
+    }
+
+    public function canViewVendorBills(): bool
+    {
+        return $this->canManageAccountingRecords() || $this->hasPermission('vendor_bills.view');
+    }
+
+    public function canViewSuppliers(): bool
+    {
+        return $this->canManageAccountingRecords() || $this->hasPermission('suppliers.view');
+    }
+
+    public function canViewPayments(): bool
+    {
+        return $this->canManageAccountingRecords() || $this->hasPermission('payments.view');
+    }
+
     /** Invoice record editing is restricted to admin and accounting users. */
     public function canEditInvoices(): bool
     {

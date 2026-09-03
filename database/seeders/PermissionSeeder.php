@@ -49,6 +49,8 @@ class PermissionSeeder extends Seeder
             ['name' => 'suppliers.create', 'display_name' => 'Create Suppliers', 'resource' => 'suppliers', 'action' => 'create', 'description' => 'Can create suppliers'],
             ['name' => 'suppliers.edit', 'display_name' => 'Edit Suppliers', 'resource' => 'suppliers', 'action' => 'edit', 'description' => 'Can edit suppliers'],
             ['name' => 'suppliers.delete', 'display_name' => 'Delete Suppliers', 'resource' => 'suppliers', 'action' => 'delete', 'description' => 'Can delete suppliers'],
+            ['name' => 'receivables.view', 'display_name' => 'View Receivables', 'resource' => 'receivables', 'action' => 'view', 'description' => 'Can view outstanding customer balances'],
+            ['name' => 'payments.view', 'display_name' => 'View Payment Register', 'resource' => 'payments', 'action' => 'view', 'description' => 'Can view incoming and outgoing payment records'],
 
             // User Management
             ['name' => 'users.view', 'display_name' => 'View Users', 'resource' => 'users', 'action' => 'view', 'description' => 'Can view user information'],
@@ -113,6 +115,7 @@ class PermissionSeeder extends Seeder
                     'vendor_bills.view', 'vendor_bills.create', 'vendor_bills.edit', 'vendor_bills.delete',
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                     'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
+                    'receivables.view', 'payments.view',
                 ],
             ],
             [
@@ -156,6 +159,7 @@ class PermissionSeeder extends Seeder
                     'vendor_bills.view', 'vendor_bills.create', 'vendor_bills.edit', 'vendor_bills.delete',
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                     'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
+                    'receivables.view', 'payments.view',
                     'dashboard.all_leads',
                 ],
             ],

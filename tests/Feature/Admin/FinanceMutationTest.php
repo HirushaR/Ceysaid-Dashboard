@@ -55,6 +55,33 @@ class FinanceMutationTest extends TestCase
         $this->assertEquals(600,(float)$bill->fresh()->bill_amount);
     }
 
+    public function test_vendor_bill_can_be_created_without_invoice_and_attached_later(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $supplier = Supplier::create(['name' => 'Standalone Supplier']);
+        $invoice = Invoice::factory()->create();
+        $this->actingAs($admin);
+
+        Livewire::test(CreateVendorBill::class)
+            ->set('supplier_id', $supplier->id)
+            ->set('service_type', 'Ground handling')
+            ->set('lines', [['description' => 'Transfer service', 'quantity' => 1, 'rate' => 750]])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $bill = VendorBill::firstOrFail();
+        $this->assertNull($bill->invoice_id);
+        $this->get(route('admin.vendor-bills.show', $bill))->assertOk();
+        $this->get(route('finance.vendor-bills.pdf', $bill))->assertOk();
+
+        Livewire::test(EditVendorBill::class, ['vendorBill' => $bill])
+            ->set('invoice_id', $invoice->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame($invoice->id, $bill->fresh()->invoice_id);
+    }
+
     public function test_supplier_payment_allocates_across_bills_and_updates_statuses(): void
     {
         $admin=User::factory()->create(['role'=>'admin']); $invoice=Invoice::factory()->create(); $supplier=Supplier::create(['name'=>'Tour Operator']); $this->actingAs($admin);

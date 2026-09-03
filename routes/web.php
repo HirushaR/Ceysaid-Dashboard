@@ -9,6 +9,8 @@ use App\Http\Controllers\VendorBillPdfController;
 use App\Http\Controllers\WhatsAppMediaController;
 use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Invoices\Index as InvoiceIndex;
 use App\Livewire\Admin\Invoices\Show as InvoiceShow;
@@ -64,6 +66,7 @@ use App\Livewire\Admin\Users\Edit as UserEdit;
 use App\Livewire\Admin\Access\Groups as PermissionGroups;
 use App\Livewire\Admin\Analytics\Index as AnalyticsIndex;
 use App\Livewire\Admin\Analytics\Staff as AnalyticsStaff;
+use App\Livewire\Admin\Notifications\Index as NotificationIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -73,6 +76,10 @@ Route::get('/', function () {
 Route::middleware('guest')->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
 });
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
@@ -144,8 +151,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/analytics/staff', AnalyticsStaff::class)->name('analytics.staff');
     Route::get('/exports/{type}', AdminExportController::class)->whereIn('type',['leads','invoices','staff'])->name('exports.download');
     Route::get('/payments', PaymentIndex::class)->name('payments.index');
-    Route::get('/notifications', fn () => view('admin.notifications'))->name('notifications');
-    Route::get('/module/{module?}', fn (string $module = 'module') => view('admin.module-placeholder', compact('module')))->name('module');
+    Route::get('/notifications', NotificationIndex::class)->name('notifications');
 });
 
 Route::middleware(['web', 'auth'])->group(function () {

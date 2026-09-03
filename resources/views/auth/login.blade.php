@@ -3,5 +3,5 @@
 <form method="POST" action="{{ route('admin.login.store') }}" class="space-y-5">@csrf
 <div><label class="form-label" for="email">Email</label><input class="form-input" id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="email">@error('email')<p class="form-error">{{ $message }}</p>@enderror</div>
 <div><label class="form-label" for="password">Password</label><input class="form-input" id="password" name="password" type="password" required autocomplete="current-password"></div>
-<label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="remember" class="rounded border-slate-300"> Remember me</label>
+<div class="flex items-center justify-between"><label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="remember" class="rounded border-slate-300"> Remember me</label><a href="{{ route('admin.password.request') }}" class="text-sm font-semibold text-blue-600">Forgot password?</a></div>
 <button class="btn-primary w-full justify-center">Sign in</button></form></main></body></html>

@@ -11,7 +11,7 @@ class VendorBillPdfController
     public function __invoke(VendorBill $vendorBill): Response
     {
         $user = auth()->user();
-        if (! $user || (! $user->hasPermission('vendor_bills.view') && ! $user->isAccount() && ! $user->isAdmin())) {
+        if (! $user || ! $user->can('view', $vendorBill)) {
             abort(403);
         }
 
@@ -21,10 +21,6 @@ class VendorBillPdfController
             'lineItems' => fn ($q) => $q->orderBy('sort_order'),
             'vendorBillPayments' => fn ($q) => $q->orderByDesc('payment_date')->orderByDesc('id'),
         ]);
-
-        if (! $vendorBill->invoice || ! $user->canViewInvoice($vendorBill->invoice)) {
-            abort(403);
-        }
 
         $filename = str_replace(['/', '\\'], '-', $vendorBill->vendor_bill_number).'.pdf';
         $company = config('ceysaid.company');

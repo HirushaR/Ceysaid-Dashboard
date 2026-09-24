@@ -94,6 +94,10 @@ class LeadObserver
             $this->handleOperatorAssignmentChange($lead, $original['assigned_operator'], $lead->assigned_operator);
         }
 
+        if (array_key_exists('visa_assigned_to', $original) && $original['visa_assigned_to'] != $lead->visa_assigned_to) {
+            $this->handleVisaAssignmentChange($lead, $original['visa_assigned_to'], $lead->visa_assigned_to);
+        }
+
         // Check for status changes
         if (isset($original['status']) && $original['status'] != $lead->status) {
             $this->handleStatusChange($lead, $original['status'], $lead->status);
@@ -242,6 +246,44 @@ class LeadObserver
         }
     }
 
+    private function handleVisaAssignmentChange(Lead $lead, $oldAssigneeId, $newAssigneeId): void
+    {
+        $oldAssignee = $oldAssigneeId ? User::find($oldAssigneeId) : null;
+        $newAssignee = $newAssigneeId ? User::find($newAssigneeId) : null;
+        $description = 'Visa processing assigned to '.($newAssignee?->name ?? 'Unassigned').'.';
+        if ($oldAssignee) {
+            $description = 'Visa processing reassigned from '.$oldAssignee->name.' to '.($newAssignee?->name ?? 'Unassigned').'.';
+        }
+
+        $this->logAction($lead, 'visa_assigned', $description, [
+            'visa_assigned_to' => $oldAssigneeId,
+        ], [
+            'visa_assigned_to' => $newAssigneeId,
+        ]);
+
+        $refId = $lead->reference_id ?: "ID: {$lead->id}";
+        if ($newAssignee) {
+            $this->sendNotification(
+                $newAssignee,
+                'Visa Lead Assigned to You',
+                "Lead {$refId} ({$lead->customer_name}) has been assigned to you for visa processing",
+                'info',
+                'heroicon-o-document-check',
+                $lead,
+            );
+        }
+        if ($oldAssignee && $oldAssignee->id !== $newAssigneeId) {
+            $this->sendNotification(
+                $oldAssignee,
+                'Visa Lead Reassigned',
+                "Lead {$refId} ({$lead->customer_name}) is no longer assigned to you for visa processing",
+                'warning',
+                'heroicon-o-arrow-right',
+                $lead,
+            );
+        }
+    }
+
     /**
      * Handle status change
      */
@@ -342,6 +384,10 @@ class LeadObserver
             $recipients->push($lead->assignedOperator);
         }
 
+        if ($lead->visa_assigned_to && $lead->visaAssignee) {
+            $recipients->push($lead->visaAssignee);
+        }
+
         // Notify creator if different from assignees
         if ($lead->created_by && $lead->creator) {
             $isCreatorAlreadyIncluded = $recipients->contains('id', $lead->created_by);
@@ -360,6 +406,13 @@ class LeadObserver
 
         if ($lead->assignedOperator) {
             $manager = $this->getManager($lead->assignedOperator);
+            if ($manager && ! $recipients->contains('id', $manager->id)) {
+                $recipients->push($manager);
+            }
+        }
+
+        if ($lead->visaAssignee) {
+            $manager = $this->getManager($lead->visaAssignee);
             if ($manager && ! $recipients->contains('id', $manager->id)) {
                 $recipients->push($manager);
             }

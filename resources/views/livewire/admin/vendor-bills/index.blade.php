@@ -20,7 +20,7 @@
                 <tbody>
                     @forelse($bills as $bill)
                         <tr>
-                            <td><a href="{{ auth()->user()->can('update', $bill) ? route('admin.vendor-bills.edit', $bill) : route('admin.vendor-bills.show', $bill) }}" class="font-semibold text-blue-600">{{ $bill->vendor_bill_number }}</a></td>
+                            <td><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="font-semibold text-blue-600">{{ $bill->vendor_bill_number }}</a></td>
                             <td>
                                 @if($bill->supplier && auth()->user()->canViewSuppliers())
                                     <a href="{{ route('admin.suppliers.show', $bill->supplier) }}" class="hover:text-blue-600">{{ $bill->supplier->name }}</a>
@@ -34,7 +34,7 @@
                             <td>{{ $bill->due_date?->format('d M Y') }}</td>
                             <td><x-status-badge :status="$bill->payment_status" /></td>
                             <td>LKR {{ number_format($bill->outstanding_amount, 2) }}</td>
-                            <td><a target="_blank" href="{{ route('finance.vendor-bills.pdf', $bill) }}" class="text-sm font-semibold text-blue-600">PDF</a></td>
+                            <td><div class="flex gap-3"><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="text-sm font-semibold text-blue-600">View</a>@can('update',$bill)<a href="{{ route('admin.vendor-bills.edit', $bill) }}" class="text-sm font-semibold text-slate-600 dark:text-slate-300">Edit</a>@endcan<a target="_blank" href="{{ route('finance.vendor-bills.pdf', $bill) }}" class="text-sm font-semibold text-blue-600">PDF</a></div></td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="empty-state">No vendor bills yet.</td></tr>

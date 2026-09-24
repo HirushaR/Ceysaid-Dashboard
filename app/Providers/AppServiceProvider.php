@@ -30,6 +30,7 @@ use App\Models\Permission;
 use App\Models\PermissionGroup;
 use App\Models\SupplierPayment;
 use App\Models\OfficeClosure;
+use App\Models\AirTicketRequest;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -66,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
         Quote::observe(QuoteObserver::class);
         VendorBill::observe(VendorBillObserver::class);
         CustomerPayment::observe(CustomerPaymentObserver::class);
-        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class] as $model) {
+        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class, AirTicketRequest::class] as $model) {
             $model::observe(AuditObserver::class);
         }
     }

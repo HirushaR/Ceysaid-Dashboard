@@ -37,7 +37,7 @@ class Create extends Component
             throw ValidationException::withMessages(['invoice_id' => 'You cannot create a vendor bill for this invoice.']);
         }
         $bill=DB::transaction(function()use($data,$numbers){ $supplier=Supplier::findOrFail($data['supplier_id']); $total=VendorBillLineItem::sumAmountsFromFormArray($data['lines']); $bill=VendorBill::create(['invoice_id'=>$data['invoice_id'],'supplier_id'=>$supplier->id,'vendor_name'=>$supplier->name,'vendor_bill_number'=>$numbers->nextVendorBillNumber(),'bill_amount'=>$total,'due_date'=>$data['due_date'],'service_type'=>$data['service_type'],'service_details'=>$data['service_details'],'notes'=>$data['notes'],'payment_status'=>'pending']); foreach($data['lines'] as $i=>$line)$bill->lineItems()->create($line+['sort_order'=>$i]); return $bill; });
-        session()->flash('success','Vendor bill created.'); return $this->redirectRoute('admin.vendor-bills.index',navigate:true);
+        session()->flash('success','Vendor bill created. You can now queue it for ticket issuing.'); return $this->redirectRoute('admin.vendor-bills.show',$bill,navigate:true);
     }
     public function render(){return view('livewire.admin.vendor-bills.form',['invoices'=>Invoice::with('lead')->visibleToUser(auth()->user())->latest()->limit(200)->get(),'suppliers'=>Supplier::orderBy('name')->get(),'heading'=>'New vendor bill','submitLabel'=>'Create bill'])->layout('components.layouts.admin',['title'=>'New vendor bill']);}
 }

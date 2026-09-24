@@ -30,7 +30,9 @@ class AdminNavigation
         if ($user->isSales() || $user->isOperation() || $user->isAdmin()) {
             $dashboard['items'][] = ['label' => 'Confirm Lead', 'route' => 'admin.dashboard.confirmed', 'active' => 'admin.dashboard.confirmed'];
             $dashboard['items'][] = ['label' => 'Document Complete', 'route' => 'admin.dashboard.documents', 'active' => 'admin.dashboard.documents'];
-            $dashboard['items'][] = ['label' => 'Visa Leads', 'route' => 'admin.dashboard.visa', 'active' => 'admin.dashboard.visa'];
+        }
+        if ($user->canViewVisaQueue()) {
+            $dashboard['items'][] = ['label' => 'Visa Processing', 'route' => 'admin.dashboard.visa', 'active' => 'admin.dashboard.visa'];
         }
         if ($user->isOperation()) {
             $dashboard['items'][] = ['label' => 'My Operation Leads', 'route' => 'admin.dashboard.operations', 'active' => 'admin.dashboard.operations'];
@@ -57,6 +59,9 @@ class AdminNavigation
         }
         if ($user->canViewVendorBills()) {
             $finance[] = ['label' => 'Vendor Bills', 'route' => 'admin.vendor-bills.index', 'active' => 'admin.vendor-bills.*'];
+        }
+        if ($user->canViewAirTickets()) {
+            $finance[] = ['label' => 'Air Tickets', 'route' => 'admin.air-tickets.index', 'active' => 'admin.air-tickets.*'];
         }
         if ($user->canViewSuppliers()) {
             $finance[] = ['label' => 'Suppliers', 'route' => 'admin.suppliers.index', 'active' => 'admin.suppliers.*'];

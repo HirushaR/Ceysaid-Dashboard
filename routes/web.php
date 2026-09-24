@@ -67,6 +67,9 @@ use App\Livewire\Admin\Access\Groups as PermissionGroups;
 use App\Livewire\Admin\Analytics\Index as AnalyticsIndex;
 use App\Livewire\Admin\Analytics\Staff as AnalyticsStaff;
 use App\Livewire\Admin\Notifications\Index as NotificationIndex;
+use App\Livewire\Admin\Visa\Index as VisaIndex;
+use App\Livewire\Admin\AirTickets\Index as AirTicketIndex;
+use App\Livewire\Admin\AirTickets\Queue as QueueAirTicket;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -98,7 +101,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/my-operation-leads', LeadDashboardIndex::class)->defaults('mode', 'operations')->name('dashboard.operations');
     Route::get('/my-call-centre-leads', LeadDashboardIndex::class)->defaults('mode', 'call-centre')->name('dashboard.call-centre');
     Route::get('/archived-leads', LeadDashboardIndex::class)->defaults('mode', 'archived')->name('dashboard.archived');
-    Route::get('/visa-leads', LeadDashboardIndex::class)->defaults('mode', 'visa')->name('dashboard.visa');
+    Route::get('/visa-leads', VisaIndex::class)->name('dashboard.visa');
     Route::get('/internal-notes', LeadDashboardIndex::class)->defaults('mode', 'notes')->name('dashboard.notes');
     Route::get('/leads/create', LeadCreate::class)->name('leads.create');
     Route::get('/leads/{lead}', LeadShow::class)->name('leads.show');
@@ -120,6 +123,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/vendor-bills/create', VendorBillCreate::class)->name('vendor-bills.create');
     Route::get('/vendor-bills/{vendorBill}/edit', VendorBillEdit::class)->name('vendor-bills.edit');
     Route::get('/vendor-bills/{vendorBill}', VendorBillShow::class)->name('vendor-bills.show');
+    Route::get('/vendor-bills/{vendorBill}/queue-to-issue', QueueAirTicket::class)->name('vendor-bills.queue-to-issue');
+    Route::get('/air-tickets', AirTicketIndex::class)->name('air-tickets.index');
     Route::get('/supplier-payments/create', SupplierPaymentCreate::class)->name('supplier-payments.create');
     Route::get('/receivables', ReceivableIndex::class)->name('receivables.index');
     Route::get('/payments/customer/{customerPayment}', CustomerPaymentShow::class)->name('payments.customer.show');

@@ -101,6 +101,60 @@ class User extends Authenticatable
         return $this->canManageAccountingRecords() || $this->hasPermission('payments.view');
     }
 
+    public function canViewVisaQueue(): bool
+    {
+        return $this->isAdmin()
+            || ($this->isOperation() && $this->isManager())
+            || $this->hasAnyPermission(['visa.view', 'visa.process', 'visa.assign']);
+    }
+
+    public function canViewAirTickets(): bool
+    {
+        return $this->isAdmin()
+            || $this->isAccount()
+            || $this->isSales()
+            || $this->isOperation()
+            || $this->hasAnyPermission(['air_tickets.view', 'air_tickets.queue']);
+    }
+
+    public function canQueueAirTickets(): bool
+    {
+        return $this->isAdmin()
+            || $this->isAccount()
+            || $this->isSales()
+            || $this->isOperation()
+            || $this->hasPermission('air_tickets.queue');
+    }
+
+    public function canApproveAirTickets(): bool
+    {
+        return $this->isAdmin() || $this->isAccount();
+    }
+
+    public function canIssueAirTickets(): bool
+    {
+        return $this->isAdmin() || ($this->isSales() && $this->isManager());
+    }
+
+    public function canViewAllVisaLeads(): bool
+    {
+        return $this->isAdmin()
+            || ($this->isOperation() && $this->isManager())
+            || $this->hasPermission('visa.assign');
+    }
+
+    public function canAssignVisaLeads(): bool
+    {
+        return $this->canViewAllVisaLeads();
+    }
+
+    public function canProcessVisaLead(Lead $lead): bool
+    {
+        return $this->isAdmin()
+            || ($this->isOperation() && $this->isManager())
+            || ($this->hasPermission('visa.process') && $lead->visa_assigned_to === $this->id);
+    }
+
     /** Invoice record editing is restricted to admin and accounting users. */
     public function canEditInvoices(): bool
     {
@@ -320,6 +374,11 @@ class User extends Authenticatable
     public function operatorLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Lead::class, 'assigned_operator')->whereNull('archived_at');
+    }
+
+    public function visaLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'visa_assigned_to')->whereNull('archived_at');
     }
 
     public function callCenterCalls(): \Illuminate\Database\Eloquent\Relations\HasMany

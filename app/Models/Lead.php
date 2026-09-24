@@ -25,6 +25,7 @@ class Lead extends Model
         'created_by',
         'assigned_to',
         'assigned_operator',
+        'visa_assigned_to',
         'status',
         'contact_method',
         'contact_value',
@@ -95,6 +96,11 @@ class Lead extends Model
     public function assignedOperator()
     {
         return $this->belongsTo(User::class, 'assigned_operator');
+    }
+
+    public function visaAssignee()
+    {
+        return $this->belongsTo(User::class, 'visa_assigned_to');
     }
 
     public function callCenterCalls()

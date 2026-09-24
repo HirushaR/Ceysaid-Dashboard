@@ -24,10 +24,22 @@ class AdminApplicationTest extends TestCase
         $this->actingAs($user)->get('/admin/leads')->assertOk()->assertSee('Manage sales and operations');
     }
 
+    public function test_high_priority_lead_highlights_the_full_table_row(): void
+    {
+        $user=User::factory()->create(['role'=>'admin']);
+        Lead::factory()->create(['priority'=>'high','customer_name'=>'Urgent Traveller']);
+
+        $this->actingAs($user)->get(route('admin.leads.index'))
+            ->assertOk()
+            ->assertSee('Urgent Traveller')
+            ->assertSee('lead-row-high-priority', false)
+            ->assertSee('High priority lead');
+    }
+
     public function test_lead_details_render_in_new_application(): void
     {
         $user=User::factory()->create(['role'=>'admin']); $lead=Lead::factory()->create(['customer_name'=>'Test Traveller']);
-        $this->actingAs($user)->get(route('admin.leads.show',$lead))->assertOk()->assertSee('Test Traveller')->assertSee('Recent timeline');
+        $this->actingAs($user)->get(route('admin.leads.show',$lead))->assertOk()->assertSee('Test Traveller')->assertSee('Lead information')->assertSee('Lead activity');
     }
 
     public function test_sales_pipeline_groups_visible_leads_into_columns(): void

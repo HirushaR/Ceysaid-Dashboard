@@ -52,6 +52,10 @@ class PermissionSeeder extends Seeder
             ['name' => 'receivables.view', 'display_name' => 'View Receivables', 'resource' => 'receivables', 'action' => 'view', 'description' => 'Can view outstanding customer balances'],
             ['name' => 'payments.view', 'display_name' => 'View Payment Register', 'resource' => 'payments', 'action' => 'view', 'description' => 'Can view incoming and outgoing payment records'],
 
+            // Air Ticket Workflow
+            ['name' => 'air_tickets.view', 'display_name' => 'View Air Tickets', 'resource' => 'air_tickets', 'action' => 'view', 'description' => 'Can view air ticket queues'],
+            ['name' => 'air_tickets.queue', 'display_name' => 'Queue Air Tickets', 'resource' => 'air_tickets', 'action' => 'queue', 'description' => 'Can queue visible vendor bills for ticket issuing'],
+
             // User Management
             ['name' => 'users.view', 'display_name' => 'View Users', 'resource' => 'users', 'action' => 'view', 'description' => 'Can view user information'],
             ['name' => 'users.create', 'display_name' => 'Create Users', 'resource' => 'users', 'action' => 'create', 'description' => 'Can create new users'],
@@ -72,6 +76,11 @@ class PermissionSeeder extends Seeder
             ['name' => 'dashboard.my_operation', 'display_name' => 'My Operation Dashboard', 'resource' => 'dashboard', 'action' => 'my_operation', 'description' => 'Can access personal operation dashboard'],
             ['name' => 'dashboard.visa_leads', 'display_name' => 'Visa Leads Dashboard', 'resource' => 'dashboard', 'action' => 'visa_leads', 'description' => 'Can access visa leads dashboard'],
             ['name' => 'dashboard.confirm_leads', 'display_name' => 'Confirm Leads Dashboard', 'resource' => 'dashboard', 'action' => 'confirm_leads', 'description' => 'Can access confirm leads dashboard'],
+
+            // Visa Processing
+            ['name' => 'visa.view', 'display_name' => 'View Assigned Visa Leads', 'resource' => 'visa', 'action' => 'view', 'description' => 'Can access visa leads assigned to the user'],
+            ['name' => 'visa.process', 'display_name' => 'Process Assigned Visa Leads', 'resource' => 'visa', 'action' => 'process', 'description' => 'Can update the status of visa leads assigned to the user'],
+            ['name' => 'visa.assign', 'display_name' => 'Assign Visa Leads', 'resource' => 'visa', 'action' => 'assign', 'description' => 'Can see the full visa queue and assign visa leads to team members'],
 
             // Permission Management
             ['name' => 'permissions.view', 'display_name' => 'View Permissions', 'resource' => 'permissions', 'action' => 'view', 'description' => 'Can view permission information'],
@@ -116,6 +125,7 @@ class PermissionSeeder extends Seeder
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                     'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
                     'receivables.view', 'payments.view',
+                    'air_tickets.view', 'air_tickets.queue',
                 ],
             ],
             [
@@ -136,7 +146,8 @@ class PermissionSeeder extends Seeder
                     'invoices.view',
                     'vendor_bills.view',
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
-                    'dashboard.my_sales', 'dashboard.visa_leads', 'dashboard.confirm_leads',
+                    'dashboard.my_sales', 'dashboard.confirm_leads',
+                    'air_tickets.view', 'air_tickets.queue',
                 ],
             ],
             [
@@ -147,8 +158,15 @@ class PermissionSeeder extends Seeder
                     'leads.view', 'leads.edit',
                     'invoices.view',
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
-                    'dashboard.all_leads', 'dashboard.my_sales', 'dashboard.my_operation', 'dashboard.visa_leads', 'dashboard.confirm_leads',
+                    'dashboard.all_leads', 'dashboard.my_sales', 'dashboard.my_operation', 'dashboard.confirm_leads',
+                    'air_tickets.view', 'air_tickets.queue',
                 ],
+            ],
+            [
+                'name' => 'visa_processing',
+                'display_name' => 'Visa Processing',
+                'description' => 'Access for dedicated operation team members processing assigned visa leads',
+                'permissions' => ['visa.view', 'visa.process'],
             ],
             [
                 'name' => 'account_access',
@@ -160,6 +178,7 @@ class PermissionSeeder extends Seeder
                     'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                     'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
                     'receivables.view', 'payments.view',
+                    'air_tickets.view', 'air_tickets.queue',
                     'dashboard.all_leads',
                 ],
             ],

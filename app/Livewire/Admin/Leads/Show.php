@@ -51,8 +51,9 @@ class Show extends Component
     private function loadLead(): void
     {
         $this->lead->load([
-            'assignedUser', 'assignedOperator', 'creator', 'actionLogs.user',
-            'notes.user', 'quote.lineItems', 'invoices.customerPayments', 'attachments',
+            'assignedUser', 'assignedOperator', 'visaAssignee', 'creator', 'actionLogs.user',
+            'notes.user', 'quote.lineItems', 'invoices.customerPayments',
+            'invoices.vendorBills.airTicketRequest.issuedBy', 'attachments',
         ]);
     }
 

@@ -7,6 +7,7 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class VendorBill extends Model
 {
@@ -57,6 +58,11 @@ class VendorBill extends Model
     public function lineItems(): HasMany
     {
         return $this->hasMany(VendorBillLineItem::class)->orderBy('sort_order');
+    }
+
+    public function airTicketRequest(): HasOne
+    {
+        return $this->hasOne(AirTicketRequest::class);
     }
 
     /** Set bill_amount from line item rows and refresh payment status (when lines exist). */

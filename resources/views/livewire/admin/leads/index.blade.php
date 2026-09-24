@@ -13,7 +13,7 @@
                 <thead><tr><th>Lead</th><th>Contact</th><th>Status</th><th>Sales</th><th>Operations</th><th>Arrival</th></tr></thead>
                 <tbody>
                     @forelse($leads as $lead)
-                        <tr>
+                        <tr @class(['lead-row-high-priority' => $lead->priority === 'high']) @if($lead->priority === 'high') title="High priority lead" @endif>
                             <td><a class="table-link" href="{{ route('admin.leads.show', $lead) }}">{{ $lead->reference_id ?: '#'.$lead->id }}</a><p class="mt-1 font-medium">{{ $lead->customer_name }}</p></td>
                             <td>{{ $lead->contact_value ?: '—' }}<p class="text-xs capitalize text-slate-500">{{ $lead->platform }}</p></td>
                             <td><x-status-badge :status="\App\Enums\LeadStatus::tryFrom($lead->status) ?? $lead->status" /></td>

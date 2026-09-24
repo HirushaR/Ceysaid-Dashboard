@@ -48,6 +48,9 @@ class AdminNavigation
         }
         $groups[] = $dashboard;
         $finance = [];
+        if ($user->canManageAccountingRecords()) {
+            $finance[] = ['label' => 'Finance Overview', 'route' => 'admin.finance.overview', 'active' => 'admin.finance.overview'];
+        }
         if ($user->isAdmin() || $user->isAccount() || $user->hasPermission('quotes.view')) {
             $finance[] = ['label' => 'Quotes', 'route' => 'admin.quotes.index', 'active' => 'admin.quotes.*'];
         }

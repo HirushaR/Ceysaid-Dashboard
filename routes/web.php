@@ -70,6 +70,7 @@ use App\Livewire\Admin\Notifications\Index as NotificationIndex;
 use App\Livewire\Admin\Visa\Index as VisaIndex;
 use App\Livewire\Admin\AirTickets\Index as AirTicketIndex;
 use App\Livewire\Admin\AirTickets\Queue as QueueAirTicket;
+use App\Livewire\Admin\Finance\Overview as FinanceOverview;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -156,6 +157,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/analytics/staff', AnalyticsStaff::class)->name('analytics.staff');
     Route::get('/exports/{type}', AdminExportController::class)->whereIn('type',['leads','invoices','staff'])->name('exports.download');
     Route::get('/payments', PaymentIndex::class)->name('payments.index');
+    Route::get('/finance-overview', FinanceOverview::class)->name('finance.overview');
     Route::get('/notifications', NotificationIndex::class)->name('notifications');
 });
 

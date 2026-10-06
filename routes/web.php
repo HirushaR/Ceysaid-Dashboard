@@ -75,7 +75,9 @@ use App\Livewire\Admin\WhatsApp\Show as WhatsAppShow;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route(auth()->check() ? 'admin.dashboard' : 'admin.login');
+    return auth()->check()
+        ? redirect()->route('admin.dashboard')
+        : view('welcome');
 });
 
 Route::middleware('guest')->prefix('admin')->name('admin.')->group(function (): void {

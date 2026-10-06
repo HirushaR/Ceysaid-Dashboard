@@ -1,494 +1,130 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>TravelSync - Business Management System</title>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="TravelSync is Ceysaid Holidays' connected workspace for sales, operations, ticketing, visas and finance.">
+    <title>TravelSync · Ceysaid Holidays</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .hero-grid { background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px); background-size: 52px 52px; }
+        .orbit { animation: float 7s ease-in-out infinite; }
+        .orbit-delayed { animation: float 7s ease-in-out 1.8s infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+        @media (prefers-reduced-motion: reduce) { .orbit,.orbit-delayed { animation: none } }
+    </style>
+</head>
+<body class="bg-[#f7f9fc] text-slate-900 selection:bg-cyan-200 selection:text-slate-950">
+    <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07142f]/90 text-white backdrop-blur-xl">
+        <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
+            <a href="#top" class="flex items-center gap-3" aria-label="TravelSync home">
+                <span class="grid size-11 place-items-center rounded-2xl bg-white shadow-lg shadow-cyan-500/10"><img src="{{ asset('images/ceysaid-logo.png') }}" alt="Ceysaid" class="w-9"></span>
+                <span><strong class="block text-lg tracking-tight">TravelSync</strong><small class="block text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-300">by Ceysaid Holidays</small></span>
+            </a>
+            <nav class="hidden items-center gap-8 text-sm font-medium text-slate-300 md:flex" aria-label="Primary navigation">
+                <a href="#workflow" class="transition hover:text-white">How it works</a>
+                <a href="#capabilities" class="transition hover:text-white">Capabilities</a>
+                <a href="#teams" class="transition hover:text-white">For teams</a>
+            </nav>
+            <a href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}" class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[#102454] shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-cyan-50">
+                {{ auth()->check() ? 'Open workspace' : 'Staff login' }}
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        </div>
+    </header>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-
-        <!-- Styles -->
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
-            body {
-                font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-                line-height: 1.6;
-                color: #1f2937;
-                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-                min-height: 100vh;
-            }
-
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 0 1rem;
-            }
-
-            /* Header */
-            .header {
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(10px);
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-                position: sticky;
-                top: 0;
-                z-index: 50;
-            }
-
-            .header-content {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 1rem 0;
-            }
-
-            .logo {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                text-decoration: none;
-            }
-            
-            .logo img {
-                height: 4rem;
-                width: auto;
-            }
-            
-            .logo-text {
-                font-size: 1.5rem;
-                font-weight: 700;
-                color: #1e3a8a;
-            }
-            
-            .btn-primary {
-                background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-                color: white;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                text-decoration: none;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                display: inline-block;
-            }
-            
-            .btn-primary:hover {
-                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 10px 25px rgba(30, 58, 138, 0.3);
-            }
-
-            .nav-links {
-                display: flex;
-                gap: 2rem;
-                align-items: center;
-            }
-
-            .nav-link {
-                color: #6b7280;
-                text-decoration: none;
-                font-weight: 500;
-                transition: color 0.2s;
-            }
-
-            .nav-link:hover {
-                color: #2563eb;
-            }
-
-            .btn-primary {
-                background: #2563eb;
-                color: white;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                text-decoration: none;
-                font-weight: 600;
-                transition: all 0.2s;
-                border: none;
-                cursor: pointer;
-            }
-
-            .btn-primary:hover {
-                background: #1d4ed8;
-                transform: translateY(-1px);
-            }
-
-            .btn-secondary {
-                background: transparent;
-                color: #2563eb;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                text-decoration: none;
-                font-weight: 600;
-                border: 2px solid #2563eb;
-                transition: all 0.2s;
-            }
-
-            .btn-secondary:hover {
-                background: #2563eb;
-                color: white;
-            }
-
-            /* Hero Section */
-            .hero {
-                padding: 4rem 0;
-                text-align: center;
-            }
-
-            .hero h1 {
-                font-size: 3.5rem;
-                font-weight: 700;
-                color: #1f2937;
-                margin-bottom: 1.5rem;
-                line-height: 1.2;
-            }
-
-            .hero p {
-                font-size: 1.25rem;
-                color: #6b7280;
-                margin-bottom: 2rem;
-                max-width: 600px;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            .hero-buttons {
-                display: flex;
-                gap: 1rem;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            /* Features Section */
-            .features {
-                padding: 4rem 0;
-                background: white;
-            }
-
-            .section-title {
-                text-align: center;
-                font-size: 2.5rem;
-                font-weight: 700;
-                color: #1f2937;
-                margin-bottom: 3rem;
-            }
-
-            .features-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 2rem;
-                margin-top: 3rem;
-            }
-
-            .feature-card {
-                background: white;
-                padding: 2rem;
-                border-radius: 1rem;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                border: 1px solid rgba(0, 0, 0, 0.05);
-                transition: all 0.3s;
-            }
-
-            .feature-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            }
-
-            .feature-icon {
-                width: 3rem;
-                height: 3rem;
-                background: #dbeafe;
-                border-radius: 0.75rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 1rem;
-                color: #2563eb;
-                font-size: 1.5rem;
-            }
-
-            .feature-card h3 {
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: #1f2937;
-                margin-bottom: 0.75rem;
-            }
-
-            .feature-card p {
-                color: #6b7280;
-                line-height: 1.6;
-            }
-
-            /* Stats Section */
-            .stats {
-                padding: 4rem 0;
-                background: #f8fafc;
-            }
-
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 2rem;
-                text-align: center;
-            }
-
-            .stat-item h3 {
-                font-size: 2.5rem;
-                font-weight: 700;
-                color: #2563eb;
-                margin-bottom: 0.5rem;
-            }
-
-            .stat-item p {
-                color: #6b7280;
-                font-weight: 500;
-            }
-
-            /* CTA Section */
-            .cta {
-                padding: 4rem 0;
-                background: #2563eb;
-                color: white;
-                text-align: center;
-            }
-
-            .cta h2 {
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin-bottom: 1rem;
-            }
-
-            .cta p {
-                font-size: 1.25rem;
-                margin-bottom: 2rem;
-                opacity: 0.9;
-            }
-
-            .cta-buttons {
-                display: flex;
-                gap: 1rem;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .btn-white {
-                background: white;
-                color: #2563eb;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                text-decoration: none;
-                font-weight: 600;
-                transition: all 0.2s;
-            }
-
-            .btn-white:hover {
-                background: #f8fafc;
-                transform: translateY(-1px);
-            }
-
-            /* Footer */
-            .footer {
-                background: #1f2937;
-                color: white;
-                padding: 2rem 0;
-                text-align: center;
-            }
-
-            .footer p {
-                opacity: 0.8;
-            }
-
-            /* Responsive */
-            @media (max-width: 768px) {
-                .hero h1 {
-                    font-size: 2.5rem;
-                }
-
-                .hero p {
-                    font-size: 1.1rem;
-                }
-
-                .section-title {
-                    font-size: 2rem;
-                }
-
-                .nav-links {
-                    gap: 1rem;
-                }
-
-                .hero-buttons {
-                    flex-direction: column;
-                    align-items: center;
-                }
-
-                .cta-buttons {
-                    flex-direction: column;
-                    align-items: center;
-                }
-            }
-
-            /* Icons */
-            .icon {
-                width: auto;
-                height: 4rem;
-                fill: currentColor;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Header -->
-        <header class="header">
-            <div class="container">
-                <div class="header-content">
-                    <a href="#" class="logo">
-                        <img src="/logo.jpg" alt="TravelSync Logo" />                        
-                    </a>
-                    <nav class="nav-links">
-                        <a href="#features" class="nav-link">Features</a>
-                        <a href="#about" class="nav-link">About</a>
-                        @auth
-                            <a href="{{ url('/admin') }}" class="btn-primary">Dashboard</a>
-                        @else
-                            <a href="{{ url('/admin/login') }}" class="btn-primary">Staff Login</a>
-                        @endauth
-                    </nav>
+    <main id="top">
+        <section class="hero-grid relative overflow-hidden bg-[#07142f] pb-24 pt-36 text-white lg:pb-32 lg:pt-44">
+            <div class="absolute -left-40 top-16 size-[34rem] rounded-full bg-blue-600/20 blur-3xl"></div>
+            <div class="absolute -right-24 bottom-0 size-[30rem] rounded-full bg-cyan-400/15 blur-3xl"></div>
+            <div class="relative mx-auto grid max-w-7xl items-center gap-16 px-5 lg:grid-cols-[1.02fr_.98fr] lg:px-8">
+                <div>
+                    <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[.16em] text-cyan-200"><span class="size-2 rounded-full bg-cyan-300 shadow-[0_0_14px_#67e8f9]"></span>Built for modern travel operations</div>
+                    <h1 class="max-w-3xl text-5xl font-black leading-[1.03] tracking-[-.045em] sm:text-6xl lg:text-7xl">Every journey.<br><span class="bg-gradient-to-r from-cyan-300 via-sky-300 to-blue-400 bg-clip-text text-transparent">One connected workspace.</span></h1>
+                    <p class="mt-7 max-w-2xl text-lg leading-8 text-slate-300">TravelSync brings leads, sales, visas, air tickets, tours and finance into one clear operational flow—so every team knows what happens next.</p>
+                    <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <a href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3.5 font-bold text-slate-950 shadow-xl shadow-cyan-500/20 transition hover:-translate-y-1 hover:shadow-cyan-500/30">Enter TravelSync <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-5-5 5 5-5 5" stroke-linecap="round"/></svg></a>
+                        <a href="#workflow" class="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10">Explore the workflow</a>
+                    </div>
+                    <div class="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-400"><span class="flex items-center gap-2"><b class="text-emerald-400">✓</b> Role-based access</span><span class="flex items-center gap-2"><b class="text-emerald-400">✓</b> Live operational status</span><span class="flex items-center gap-2"><b class="text-emerald-400">✓</b> One financial view</span></div>
                 </div>
-            </div>
-        </header>
 
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="container">
-                <h1>Streamline Your Business Operations</h1>
-                <p>TravelSync is a comprehensive business management system that helps you manage leads, customers, invoices, and operations efficiently. Take control of your business with our powerful tools.</p>
-                <div class="hero-buttons">
-                    <a href="#features" class="btn-secondary">Learn More</a>
-                    @auth
-                        <a href="{{ url('/admin') }}" class="btn-primary">Go to Dashboard</a>
-                    @else
-                        <a href="{{ url('/admin/login') }}" class="btn-primary">Get Started</a>
-                    @endauth
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section class="features" id="features">
-            <div class="container">
-                <h2 class="section-title">Powerful Features for Your Business</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
+                <div class="relative mx-auto w-full max-w-xl">
+                    <div class="orbit absolute -left-8 top-20 z-20 hidden rounded-2xl border border-white/15 bg-[#102454]/90 p-4 shadow-2xl backdrop-blur md:block"><div class="flex items-center gap-3"><span class="grid size-10 place-items-center rounded-xl bg-emerald-400/15 text-emerald-300">✓</span><div><p class="text-xs text-slate-400">Visa processing</p><strong class="text-sm">Documents complete</strong></div></div></div>
+                    <div class="orbit-delayed absolute -right-8 bottom-20 z-20 hidden rounded-2xl border border-white/15 bg-[#102454]/90 p-4 shadow-2xl backdrop-blur md:block"><div class="flex items-center gap-3"><span class="grid size-10 place-items-center rounded-xl bg-amber-400/15 text-amber-300">✈</span><div><p class="text-xs text-slate-400">Air ticket</p><strong class="text-sm">Ready for issuing</strong></div></div></div>
+                    <div class="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/95 p-3 shadow-[0_40px_100px_rgba(0,0,0,.38)]">
+                        <div class="rounded-[1.5rem] bg-[#f5f7fb] p-5 text-slate-900">
+                            <div class="flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-[.15em] text-blue-600">Operations pulse</p><h2 class="mt-1 text-xl font-black">Today at a glance</h2></div><span class="grid size-10 place-items-center rounded-full bg-white text-sm font-bold shadow">GF</span></div>
+                            <div class="mt-5 grid grid-cols-3 gap-3"><div class="rounded-2xl bg-[#102454] p-4 text-white"><p class="text-[11px] text-blue-200">Active leads</p><strong class="mt-2 block text-2xl">48</strong></div><div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-[11px] text-slate-500">Confirmed</p><strong class="mt-2 block text-2xl text-emerald-600">12</strong></div><div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-[11px] text-slate-500">Due today</p><strong class="mt-2 block text-2xl text-amber-600">06</strong></div></div>
+                            <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm"><div class="flex items-center justify-between"><strong class="text-sm">Lead journey</strong><span class="text-xs font-semibold text-blue-600">Live</span></div><div class="mt-5 flex items-center"><div class="text-center"><span class="mx-auto grid size-9 place-items-center rounded-xl bg-blue-600 text-xs font-bold text-white">01</span><small class="mt-2 block text-[10px] text-slate-500">Lead</small></div><span class="mb-5 h-0.5 flex-1 bg-blue-200"></span><div class="text-center"><span class="mx-auto grid size-9 place-items-center rounded-xl bg-indigo-600 text-xs font-bold text-white">02</span><small class="mt-2 block text-[10px] text-slate-500">Confirm</small></div><span class="mb-5 h-0.5 flex-1 bg-indigo-200"></span><div class="text-center"><span class="mx-auto grid size-9 place-items-center rounded-xl bg-cyan-500 text-xs font-bold text-white">03</span><small class="mt-2 block text-[10px] text-slate-500">Process</small></div><span class="mb-5 h-0.5 flex-1 bg-cyan-200"></span><div class="text-center"><span class="mx-auto grid size-9 place-items-center rounded-xl bg-emerald-500 text-white">✓</span><small class="mt-2 block text-[10px] text-slate-500">Done</small></div></div></div>
+                            <div class="mt-4 grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 p-4"><p class="text-xs font-semibold text-slate-500">Next receipt</p><p class="mt-2 font-black">LKR 325,000</p><small class="text-xs text-slate-500">Due tomorrow</small></div><div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 p-4"><p class="text-xs font-semibold text-slate-500">Supplier payment</p><p class="mt-2 font-black">LKR 210,000</p><small class="text-xs text-slate-500">Due this week</small></div></div>
                         </div>
-                        <h3>Lead Management</h3>
-                        <p>Track and manage your sales leads from initial contact to conversion. Organize leads by status, priority, and service type.</p>
-                    </div>
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                        </div>
-                        <h3>Customer Management</h3>
-                        <p>Maintain comprehensive customer profiles, track interactions, and manage customer relationships effectively.</p>
-                    </div>
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                            </svg>
-                        </div>
-                        <h3>Invoice & Billing</h3>
-                        <p>Create professional invoices, track payments, and manage vendor bills. Streamline your financial operations.</p>
-                    </div>
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-                            </svg>
-                        </div>
-                        <h3>Leave Management</h3>
-                        <p>Manage employee leave requests, track time off, and maintain organized HR processes for your team.</p>
-                    </div>
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <h3>Permission System</h3>
-                        <p>Role-based access control with granular permissions. Secure your data while giving users appropriate access levels.</p>
-                    </div>
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                        </div>
-                        <h3>Analytics & Reports</h3>
-                        <p>Comprehensive dashboards and reports to track your business performance and make data-driven decisions.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Stats Section -->
-        <section class="stats">
-            <div class="container">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <h3>100%</h3>
-                        <p>Secure & Reliable</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3>24/7</h3>
-                        <p>System Availability</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3>Easy</h3>
-                        <p>User Interface</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3>Fast</h3>
-                        <p>Performance</p>
+        <section id="workflow" class="py-24 lg:py-32">
+            <div class="mx-auto max-w-7xl px-5 lg:px-8">
+                <div class="max-w-3xl"><p class="text-xs font-black uppercase tracking-[.2em] text-blue-600">From first message to final payment</p><h2 class="mt-4 text-4xl font-black tracking-[-.035em] text-slate-950 sm:text-5xl">A workflow your whole team can follow.</h2><p class="mt-5 text-lg leading-8 text-slate-600">No scattered spreadsheets or invisible hand-offs. Every lead moves through a shared, accountable journey.</p></div>
+                <div class="mt-14 grid gap-4 lg:grid-cols-5">
+                    @foreach([
+                        ['01','Capture','Leads arrive from every channel and are assigned with clear priority.','from-blue-600 to-blue-500'],
+                        ['02','Convert','Sales manages follow-ups, quotes, confirmations and customer invoices.','from-indigo-600 to-violet-500'],
+                        ['03','Fulfil','Operations coordinates visas, documents, tours and service delivery.','from-cyan-600 to-sky-500'],
+                        ['04','Issue','Approved air-ticket requests move into a focused issuing queue.','from-amber-500 to-orange-500'],
+                        ['05','Reconcile','Finance sees receipts, supplier bills, expenses and upcoming cash flow.','from-emerald-600 to-teal-500'],
+                    ] as [$number,$title,$copy,$colour])
+                        <article class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-950/5"><span class="inline-flex rounded-xl bg-gradient-to-br {{ $colour }} px-3 py-2 text-xs font-black text-white">{{ $number }}</span><h3 class="mt-8 text-xl font-black">{{ $title }}</h3><p class="mt-3 text-sm leading-6 text-slate-600">{{ $copy }}</p><div class="absolute -bottom-10 -right-10 size-28 rounded-full bg-blue-50 transition group-hover:scale-125"></div></article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <section id="capabilities" class="overflow-hidden bg-[#0b1936] py-24 text-white lg:py-32">
+            <div class="mx-auto max-w-7xl px-5 lg:px-8">
+                <div class="grid gap-14 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
+                    <div class="lg:sticky lg:top-32"><p class="text-xs font-black uppercase tracking-[.2em] text-cyan-300">Operational clarity</p><h2 class="mt-4 text-4xl font-black tracking-[-.035em] sm:text-5xl">The important work, visible at the right moment.</h2><p class="mt-6 text-lg leading-8 text-slate-300">Each team gets a focused workspace while managers keep the complete business picture.</p><a href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}" class="mt-8 inline-flex items-center gap-2 font-bold text-cyan-300 hover:text-white">Open the secure workspace <span>→</span></a></div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @foreach([
+                            ['Lead control','Priority highlighting, activity timelines, assignments and stage-based queues.','⌁'],
+                            ['Visa workspace','Dedicated access, ownership and progress tracking for confirmed visa leads.','◇'],
+                            ['Air ticket issuing','Accounts approval, pending queues, ticket details and lead completion.','✈'],
+                            ['Tour operations','Group tours, fixed departures, capacity and shared supplier costs.','◎'],
+                            ['Finance overview','Upcoming receivables, payables, cash movement and account-level expenses.','↗'],
+                            ['Permissions & audit','Role-based visibility with accountable changes across every team.','✓'],
+                        ] as [$title,$copy,$icon])
+                            <article class="rounded-3xl border border-white/10 bg-white/[.055] p-6 backdrop-blur transition hover:border-cyan-300/30 hover:bg-white/[.08]"><span class="grid size-11 place-items-center rounded-2xl bg-cyan-300/10 text-xl text-cyan-300">{{ $icon }}</span><h3 class="mt-6 text-lg font-black">{{ $title }}</h3><p class="mt-3 text-sm leading-6 text-slate-300">{{ $copy }}</p></article>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section class="cta">
-            <div class="container">
-                <h2>Ready to Transform Your Business?</h2>
-                <p>Join businesses that are already using TravelSync to streamline their operations and increase productivity.</p>
-                <div class="cta-buttons">
-                    @auth
-                        <a href="{{ url('/admin') }}" class="btn-white">Access Dashboard</a>
-                    @else
-                        <a href="{{ url('/admin/login') }}" class="btn-white">Start Now</a>
-                    @endauth
-                    <a href="#features" class="btn-secondary">Learn More</a>
+        <section id="teams" class="py-24 lg:py-32">
+            <div class="mx-auto max-w-7xl px-5 lg:px-8">
+                <div class="text-center"><p class="text-xs font-black uppercase tracking-[.2em] text-blue-600">One system, role-aware views</p><h2 class="mt-4 text-4xl font-black tracking-[-.035em] sm:text-5xl">Built around how Ceysaid works.</h2></div>
+                <div class="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    @foreach([
+                        ['Sales','Own the pipeline, follow up faster and move confirmed customers forward.','bg-blue-600'],
+                        ['Operations','Coordinate delivery, documents, visas and travel schedules without missed hand-offs.','bg-cyan-600'],
+                        ['Accounts','Control approvals, collections, supplier payments, expenses and cash visibility.','bg-emerald-600'],
+                        ['Management','See workload, performance, risk and financial position across the company.','bg-indigo-700'],
+                    ] as [$title,$copy,$colour])
+                        <article class="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200"><div class="h-2 {{ $colour }}"></div><div class="p-7"><h3 class="text-xl font-black">{{ $title }}</h3><p class="mt-3 text-sm leading-6 text-slate-600">{{ $copy }}</p></div></article>
+                    @endforeach
                 </div>
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="container">
-                <p>&copy; {{ date('Y') }} TravelSync. All rights reserved. | Professional Business Management System</p>
-            </div>
-        </footer>
-    </body>
+        <section class="px-5 pb-24 lg:px-8 lg:pb-32">
+            <div class="relative mx-auto max-w-7xl overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-blue-700 via-indigo-700 to-[#07142f] px-6 py-14 text-center text-white shadow-2xl shadow-blue-950/20 sm:px-12 lg:py-20"><div class="absolute -left-20 -top-20 size-64 rounded-full border-[40px] border-white/5"></div><div class="absolute -bottom-32 -right-20 size-80 rounded-full bg-cyan-400/10"></div><div class="relative"><p class="text-xs font-black uppercase tracking-[.2em] text-cyan-200">Ready when you are</p><h2 class="mx-auto mt-4 max-w-3xl text-4xl font-black tracking-[-.035em] sm:text-5xl">Keep every booking, payment and hand-off moving.</h2><p class="mx-auto mt-5 max-w-2xl text-slate-200">Sign in to the secure Ceysaid workspace and continue where your team left off.</p><a href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}" class="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-black text-blue-900 transition hover:-translate-y-1 hover:bg-cyan-50">{{ auth()->check() ? 'Go to dashboard' : 'Staff login' }} <span>→</span></a></div></div>
+        </section>
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white">
+        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-5 py-8 text-center sm:flex-row sm:text-left lg:px-8"><div class="flex items-center gap-3"><img src="{{ asset('images/ceysaid-logo.png') }}" alt="Ceysaid Holidays" class="w-24"><span class="h-6 w-px bg-slate-200"></span><span class="text-sm font-bold text-slate-600">TravelSync</span></div><p class="text-xs text-slate-500">© {{ date('Y') }} Ceysaid Holidays (Pvt) Ltd. Internal business management workspace.</p></div>
+    </footer>
+</body>
 </html>

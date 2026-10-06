@@ -11,6 +11,11 @@
                     <select wire:model="invoice_id" class="form-input"><option value="">Not attached</option>@foreach($invoices as $invoice)<option value="{{ $invoice->id }}">{{ $invoice->invoice_number }} · {{ $invoice->lead?->customer_name }}</option>@endforeach</select>
                     @error('invoice_id')<p class="form-error">{{ $message }}</p>@enderror
                 </div>
+                <div>
+                    <label class="form-label">Common group / fixed departure <span class="text-slate-400">(optional)</span></label>
+                    <select wire:model="tour_id" class="form-input"><option value="">Not a common tour bill</option>@foreach($tours as $tour)<option value="{{ $tour->id }}">{{ $tour->tour_code }} · {{ $tour->name }}</option>@endforeach</select>
+                    @error('tour_id')<p class="form-error">{{ $message }}</p>@enderror
+                </div>
                 <div><label class="form-label">Supplier *</label><select wire:model="supplier_id" class="form-input">@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->name }}</option>@endforeach</select>@error('supplier_id')<p class="form-error">{{ $message }}</p>@enderror</div>
                 <div><label class="form-label">Due date *</label><input wire:model="due_date" type="date" class="form-input">@error('due_date')<p class="form-error">{{ $message }}</p>@enderror</div>
                 <div><label class="form-label">Service type *</label><input wire:model="service_type" class="form-input">@error('service_type')<p class="form-error">{{ $message }}</p>@enderror</div>

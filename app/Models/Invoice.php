@@ -15,12 +15,14 @@ class Invoice extends Model
 
     protected $fillable = [
         'lead_id',
+        'sales_person_id',
         'tour_id',
         'quote_id',
         'invoice_number',
         'invoice_date',
         'due_date',
         'terms',
+        'bank_account',
         'subject',
         'total_amount',
         'payment_amount',
@@ -47,10 +49,13 @@ class Invoice extends Model
                 $invoice->balance_amount = $invoice->total_amount;
             }
 
-            if (! $invoice->tour_id && $invoice->lead_id) {
+            if ($invoice->lead_id) {
                 $lead = Lead::query()->find($invoice->lead_id);
-                if ($lead?->tour_id) {
+                if (! $invoice->tour_id && $lead?->tour_id) {
                     $invoice->tour_id = $lead->tour_id;
+                }
+                if (! $invoice->sales_person_id && $lead?->assigned_to) {
+                    $invoice->sales_person_id = $lead->assigned_to;
                 }
             }
         });
@@ -78,6 +83,11 @@ class Invoice extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function salesPerson(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_person_id');
     }
 
     public function tour(): BelongsTo

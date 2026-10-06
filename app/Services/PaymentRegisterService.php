@@ -62,14 +62,16 @@ class PaymentRegisterService
 
         if ($direction === 'out') {
             $outgoing = $this->supplierPaymentsQuery($filters)
-                ->unionAll($this->legacyVendorPaymentsQuery($filters));
+                ->unionAll($this->legacyVendorPaymentsQuery($filters))
+                ->unionAll($this->expensesQuery($filters));
 
             return DB::query()->fromSub($outgoing, 'payment_register');
         }
 
         $union = $this->customerPaymentsQuery($filters)
             ->unionAll($this->supplierPaymentsQuery($filters))
-            ->unionAll($this->legacyVendorPaymentsQuery($filters));
+            ->unionAll($this->legacyVendorPaymentsQuery($filters))
+            ->unionAll($this->expensesQuery($filters));
 
         return DB::query()->fromSub($union, 'payment_register');
     }
@@ -144,8 +146,8 @@ class PaymentRegisterService
     {
         return DB::table('vendor_bill_payments as payment')
             ->join('vendor_bills as bill', 'bill.id', '=', 'payment.vendor_bill_id')
-            ->join('invoices as invoice', 'invoice.id', '=', 'bill.invoice_id')
-            ->join('leads as lead', 'lead.id', '=', 'invoice.lead_id')
+            ->leftJoin('invoices as invoice', 'invoice.id', '=', 'bill.invoice_id')
+            ->leftJoin('leads as lead', 'lead.id', '=', 'invoice.lead_id')
             ->leftJoin('suppliers as supplier', 'supplier.id', '=', 'bill.supplier_id')
             ->select([
                 'payment.id',
@@ -167,6 +169,33 @@ class PaymentRegisterService
             ->whereNull('payment.supplier_payment_id')
             ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '>=', $date))
             ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '<=', $date))
+            ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_mode', $method))
+            ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.paid_through', $account));
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function expensesQuery(array $filters): Builder
+    {
+        return DB::table('expenses as payment')
+            ->select([
+                'payment.id',
+                DB::raw("'out' as direction"),
+                DB::raw('NULL as supplier_payment_id'),
+                'payment.expense_date as payment_date',
+                'payment.reference_number as reference',
+                DB::raw('NULL as invoice_id'),
+                DB::raw('NULL as invoice_number'),
+                DB::raw('NULL as lead_id'),
+                DB::raw('NULL as lead_reference'),
+                'payment.description as party',
+                DB::raw('NULL as supplier'),
+                'payment.payment_mode as payment_method',
+                'payment.paid_through as account',
+                'payment.amount',
+                'payment.created_at',
+            ])
+            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.expense_date', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.expense_date', '<=', $date))
             ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_mode', $method))
             ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.paid_through', $account));
     }

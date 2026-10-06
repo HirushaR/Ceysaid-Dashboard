@@ -16,7 +16,7 @@
         </div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Bill</th><th>Supplier</th><th>Customer</th><th>Due</th><th>Status</th><th>Outstanding</th><th></th></tr></thead>
+                <thead><tr><th>Bill</th><th>Supplier</th><th>Customer / Tour</th><th>Due</th><th>Status</th><th>Outstanding</th><th></th></tr></thead>
                 <tbody>
                     @forelse($bills as $bill)
                         <tr>
@@ -30,7 +30,7 @@
                                     {{ $bill->vendor_name }}
                                 @endif
                             </td>
-                            <td>{{ $bill->invoice?->lead?->customer_name }}</td>
+                            <td>{{ $bill->tour ? $bill->tour->tour_code.' · '.$bill->tour->name : ($bill->invoice?->lead?->customer_name ?: 'Standalone') }}</td>
                             <td>{{ $bill->due_date?->format('d M Y') }}</td>
                             <td><x-status-badge :status="$bill->payment_status" /></td>
                             <td>LKR {{ number_format($bill->outstanding_amount, 2) }}</td>

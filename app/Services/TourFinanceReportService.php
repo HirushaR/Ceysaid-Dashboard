@@ -298,9 +298,12 @@ class TourFinanceReportService
     private function applyVendorBillFilters($query, array $filters)
     {
         if (! empty($filters['tour_id'])) {
-            $query->whereHas('invoice', function ($iq) use ($filters) {
-                $iq->where('tour_id', $filters['tour_id'])
-                    ->orWhereHas('lead', fn ($lq) => $lq->where('tour_id', $filters['tour_id']));
+            $query->where(function ($query) use ($filters) {
+                $query->where('tour_id', $filters['tour_id'])
+                    ->orWhereHas('invoice', function ($invoice) use ($filters) {
+                        $invoice->where('tour_id', $filters['tour_id'])
+                            ->orWhereHas('lead', fn ($lead) => $lead->where('tour_id', $filters['tour_id']));
+                    });
             });
         }
 
@@ -309,12 +312,16 @@ class TourFinanceReportService
         }
 
         if (! empty($filters['departure_from']) || ! empty($filters['departure_to']) || ! empty($filters['tour_status'])) {
-            $query->whereHas('invoice', function ($iq) use ($filters) {
-                $iq->where(function ($q) use ($filters) {
-                    $q->whereHas('tour', function ($tq) use ($filters) {
-                        $this->applyTourDateStatusFilters($tq, $filters);
-                    })->orWhereHas('lead.tourMaster', function ($tq) use ($filters) {
-                        $this->applyTourDateStatusFilters($tq, $filters);
+            $query->where(function ($query) use ($filters) {
+                $query->whereHas('tour', function ($tour) use ($filters) {
+                    $this->applyTourDateStatusFilters($tour, $filters);
+                })->orWhereHas('invoice', function ($invoice) use ($filters) {
+                    $invoice->where(function ($q) use ($filters) {
+                        $q->whereHas('tour', function ($tq) use ($filters) {
+                            $this->applyTourDateStatusFilters($tq, $filters);
+                        })->orWhereHas('lead.tourMaster', function ($tq) use ($filters) {
+                            $this->applyTourDateStatusFilters($tq, $filters);
+                        });
                     });
                 });
             });

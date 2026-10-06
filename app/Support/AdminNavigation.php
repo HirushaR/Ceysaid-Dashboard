@@ -50,6 +50,7 @@ class AdminNavigation
         $finance = [];
         if ($user->canManageAccountingRecords()) {
             $finance[] = ['label' => 'Finance Overview', 'route' => 'admin.finance.overview', 'active' => 'admin.finance.overview'];
+            $finance[] = ['label' => 'Expenses', 'route' => 'admin.expenses.index', 'active' => 'admin.expenses.*'];
         }
         if ($user->isAdmin() || $user->isAccount() || $user->hasPermission('quotes.view')) {
             $finance[] = ['label' => 'Quotes', 'route' => 'admin.quotes.index', 'active' => 'admin.quotes.*'];

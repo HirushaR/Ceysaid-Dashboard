@@ -13,6 +13,7 @@ class VendorBill extends Model
 {
     protected $fillable = [
         'invoice_id',
+        'tour_id',
         'supplier_id',
         'vendor_name',
         'vendor_bill_number',
@@ -37,6 +38,11 @@ class VendorBill extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function tour(): BelongsTo
+    {
+        return $this->belongsTo(Tour::class);
     }
 
     public function supplier(): BelongsTo

@@ -159,6 +159,7 @@
                     <p><strong>Invoice Date:</strong> {{ optional($invoice->invoice_date)->format('d.m.Y') ?? '—' }}</p>
                     <p><strong>Due Date:</strong> {{ optional($invoice->due_date)->format('d.m.Y') ?? '—' }}</p>
                     <p><strong>Terms:</strong> {{ $terms }}</p>
+                    <p><strong>Sales Person:</strong> {{ $invoice->salesPerson?->name ?? $invoice->lead?->assignedUser?->name ?? '—' }}</p>
                 </div>
             </td>
         </tr>
@@ -292,7 +293,8 @@
         <p><strong>Account Number:</strong> {{ $company['bank']['account_number'] }}</p>
         <p><strong>Bank:</strong> {{ $company['bank']['bank'] }}</p>
         <p><strong>Branch:</strong> {{ $company['bank']['branch'] }}</p>
-        <p><strong>Code:</strong> {{ $company['bank']['branch_code'] ?? '—' }}</p>
+        <p><strong>Bank Code:</strong> {{ $company['bank']['bank_code'] ?? '—' }}</p>
+        <p><strong>Branch Code:</strong> {{ $company['bank']['branch_code'] ?? '—' }}</p>
         <p><strong>SWIFT/BIC Code:</strong> {{ $company['bank']['swift'] }}</p>
     </div>
 

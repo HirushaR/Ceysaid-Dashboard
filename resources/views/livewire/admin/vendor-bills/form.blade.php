@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-5xl space-y-6">
     <div class="page-heading">
-        <div><p class="eyebrow">Finance / Vendor bills</p><h1>{{ $heading }}</h1><p>Record a supplier invoice now and optionally attach it to a customer invoice.</p></div>
+        <div><p class="eyebrow">Finance / Vendor bills</p><h1>{{ $heading }}</h1><p>Attach the bill to one customer invoice, one common tour, or leave both blank.</p></div>
         <a href="{{ route('admin.vendor-bills.index') }}" class="btn-secondary">Cancel</a>
     </div>
     <form wire:submit="save" class="space-y-6">
@@ -15,6 +15,17 @@
                         @endforeach
                     </select>
                     @error('invoice_id')<p class="form-error">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="form-label">Common group / fixed departure <span class="text-slate-400">(optional)</span></label>
+                    <select wire:model="tour_id" class="form-input">
+                        <option value="">Not a common tour bill</option>
+                        @foreach($tours as $tour)
+                            <option value="{{ $tour->id }}">{{ $tour->tour_code }} · {{ $tour->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('tour_id')<p class="form-error">{{ $message }}</p>@enderror
+                    <p class="mt-1 text-xs text-slate-500">A bill cannot be attached to both an invoice and a common tour.</p>
                 </div>
                 <div>
                     <label class="form-label">Supplier *</label>

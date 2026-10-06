@@ -16,6 +16,7 @@ class Tour extends Model
     protected $fillable = [
         'tour_code',
         'name',
+        'tour_type',
         'departure_date',
         'return_date',
         'package_price',
@@ -43,6 +44,11 @@ class Tour extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function vendorBills(): HasMany
+    {
+        return $this->hasMany(VendorBill::class);
     }
 
     public function getBookedSeatsAttribute(): int

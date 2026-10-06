@@ -2,8 +2,9 @@
 
 namespace App\Livewire\Admin\VendorBills;
 
-use App\Models\Supplier;
 use App\Models\Invoice;
+use App\Models\Supplier;
+use App\Models\Tour;
 use App\Models\VendorBill;
 use App\Models\VendorBillLineItem;
 use Illuminate\Support\Facades\DB;
@@ -13,12 +14,21 @@ use Livewire\Component;
 class Edit extends Component
 {
     public VendorBill $vendorBill;
+
     public ?int $invoice_id = null;
+
+    public ?int $tour_id = null;
+
     public ?int $supplier_id = null;
+
     public ?string $due_date = null;
+
     public string $service_type = '';
+
     public string $service_details = '';
+
     public string $notes = '';
+
     public array $lines = [];
 
     public function mount(): void
@@ -26,6 +36,7 @@ class Edit extends Component
         abort_unless(auth()->user()->can('update', $this->vendorBill), 403);
         $this->vendorBill->load(['lineItems', 'vendorBillPayments']);
         $this->invoice_id = $this->vendorBill->invoice_id;
+        $this->tour_id = $this->vendorBill->tour_id;
         $this->supplier_id = $this->vendorBill->supplier_id;
         $this->due_date = $this->vendorBill->due_date?->toDateString();
         $this->service_type = $this->vendorBill->service_type ?? '';
@@ -60,6 +71,7 @@ class Edit extends Component
         abort_unless(auth()->user()->can('update', $this->vendorBill), 403);
         $data = $this->validate([
             'invoice_id' => ['nullable', 'exists:invoices,id'],
+            'tour_id' => ['nullable', 'exists:tours,id'],
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'due_date' => ['required', 'date'],
             'service_type' => ['required', 'string', 'max:255'],
@@ -70,6 +82,10 @@ class Edit extends Component
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.rate' => ['required', 'numeric', 'min:0'],
         ]);
+
+        if (! empty($data['invoice_id']) && ! empty($data['tour_id'])) {
+            throw ValidationException::withMessages(['tour_id' => 'Choose either a customer invoice or a common tour, not both.']);
+        }
 
         $invoice = ! empty($data['invoice_id']) ? Invoice::with('lead')->findOrFail($data['invoice_id']) : null;
         if ($invoice && ! auth()->user()->canViewInvoice($invoice)) {
@@ -89,6 +105,7 @@ class Edit extends Component
             $supplier = Supplier::findOrFail($data['supplier_id']);
             $bill->update([
                 'invoice_id' => $data['invoice_id'] ?: null,
+                'tour_id' => $data['tour_id'] ?: null,
                 'supplier_id' => $supplier->id,
                 'vendor_name' => $supplier->name,
                 'due_date' => $data['due_date'],
@@ -116,6 +133,7 @@ class Edit extends Component
     {
         return view('livewire.admin.vendor-bills.edit', [
             'invoices' => Invoice::with('lead')->visibleToUser(auth()->user())->latest()->limit(200)->get(),
+            'tours' => Tour::orderByDesc('departure_date')->get(),
             'suppliers' => Supplier::orderBy('name')->get(),
         ])
             ->layout('components.layouts.admin', ['title' => 'Edit '.$this->vendorBill->vendor_bill_number]);

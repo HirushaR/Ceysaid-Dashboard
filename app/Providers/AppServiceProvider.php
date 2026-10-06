@@ -2,16 +2,28 @@
 
 namespace App\Providers;
 
+use App\Models\AirTicketRequest;
+use App\Models\Customer;
 use App\Models\CustomerPayment;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Lead;
-use App\Models\Quote;
-use App\Models\VendorBill;
-use App\Models\Customer;
 use App\Models\Leave;
+use App\Models\OfficeClosure;
+use App\Models\Permission;
+use App\Models\PermissionGroup;
+use App\Models\Quote;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\Tour;
 use App\Models\User;
+use App\Models\VendorBill;
+use App\Observers\AuditObserver;
+use App\Observers\CustomerPaymentObserver;
+use App\Observers\InvoiceObserver;
+use App\Observers\LeadObserver;
+use App\Observers\QuoteObserver;
+use App\Observers\VendorBillObserver;
 use App\Policies\CustomerPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\LeadPolicy;
@@ -20,20 +32,9 @@ use App\Policies\QuotePolicy;
 use App\Policies\SupplierPolicy;
 use App\Policies\TourPolicy;
 use App\Policies\VendorBillPolicy;
-use App\Observers\CustomerPaymentObserver;
-use App\Observers\InvoiceObserver;
-use App\Observers\LeadObserver;
-use App\Observers\QuoteObserver;
-use App\Observers\VendorBillObserver;
-use App\Observers\AuditObserver;
-use App\Models\Permission;
-use App\Models\PermissionGroup;
-use App\Models\SupplierPayment;
-use App\Models\OfficeClosure;
-use App\Models\AirTicketRequest;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -67,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
         Quote::observe(QuoteObserver::class);
         VendorBill::observe(VendorBillObserver::class);
         CustomerPayment::observe(CustomerPaymentObserver::class);
-        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class, AirTicketRequest::class] as $model) {
+        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class, AirTicketRequest::class, Expense::class] as $model) {
             $model::observe(AuditObserver::class);
         }
     }

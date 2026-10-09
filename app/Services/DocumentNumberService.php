@@ -14,6 +14,8 @@ class DocumentNumberService
     /** Per-lead customer payment receipt: CR/{year}/{lead_id}/{seq} */
     public const TYPE_CUSTOMER_RECEIPT = 'cr';
 
+    public const TYPE_INTERNAL_TRANSFER = 'trf';
+
     /**
      * Quote family base number. Revisions append /R{n}.
      */
@@ -40,6 +42,11 @@ class DocumentNumberService
     public function nextSupplierPaymentNumber(): string
     {
         return $this->allocate(self::TYPE_SUPPLIER_PAYMENT, 'SP');
+    }
+
+    public function nextInternalTransferNumber(): string
+    {
+        return $this->allocate(self::TYPE_INTERNAL_TRANSFER, 'TRF');
     }
 
     /**

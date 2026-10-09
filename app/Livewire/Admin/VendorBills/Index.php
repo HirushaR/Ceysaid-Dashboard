@@ -29,7 +29,7 @@ class Index extends Component
             ->when(! $user->canManageAccountingRecords(), fn ($q) => $q->where(fn ($q) => $q
                 ->whereNull('invoice_id')
                 ->orWhereHas('invoice.lead', fn ($lead) => $user->isSales() ? $lead->where('assigned_to', $user->id) : $lead->where('assigned_operator', $user->id))))
-            ->when($this->search, fn ($q) => $q->where(fn ($q) => $q->where('vendor_bill_number', 'like', '%'.$this->search.'%')->orWhereHas('supplier', fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))))->latest()->paginate(20);
+            ->when($this->search, fn ($q) => $q->where(fn ($q) => $q->where('vendor_bill_number', 'like', '%'.$this->search.'%')->orWhereHas('supplier', fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))->orWhereHas('invoice', fn ($q) => $q->where('invoice_number', 'like', '%'.$this->search.'%')->orWhereHas('lead', fn ($q) => $q->where('customer_name', 'like', '%'.$this->search.'%')))))->latest()->paginate(20);
 
         return view('livewire.admin.vendor-bills.index', compact('bills'))->layout('components.layouts.admin', ['title' => 'Vendor bills']);
     }

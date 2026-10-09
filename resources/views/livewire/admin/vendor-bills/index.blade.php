@@ -16,11 +16,12 @@
         </div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Bill</th><th>Supplier</th><th>Customer / Tour</th><th>Due</th><th>Status</th><th>Outstanding</th><th></th></tr></thead>
+                <thead><tr><th>Bill</th><th>Invoice</th><th>Supplier</th><th>Customer / Tour</th><th>Due</th><th>Status</th><th>Outstanding</th><th></th></tr></thead>
                 <tbody>
                     @forelse($bills as $bill)
                         <tr>
                             <td><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="font-semibold text-blue-600">{{ $bill->vendor_bill_number }}</a></td>
+                            <td>@if($bill->invoice)<a href="{{ route('admin.invoices.show',$bill->invoice) }}" class="font-semibold text-blue-600">{{ $bill->invoice->invoice_number }}</a>@else—@endif</td>
                             <td>
                                 @if($bill->supplier && auth()->user()->canViewSuppliers())
                                     <a href="{{ route('admin.suppliers.show', $bill->supplier) }}" class="hover:text-blue-600">{{ $bill->supplier->name }}</a>
@@ -37,7 +38,7 @@
                             <td><div class="flex gap-3"><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="text-sm font-semibold text-blue-600">View</a>@can('update',$bill)<a href="{{ route('admin.vendor-bills.edit', $bill) }}" class="text-sm font-semibold text-slate-600 dark:text-slate-300">Edit</a>@endcan<a target="_blank" href="{{ route('finance.vendor-bills.pdf', $bill) }}" class="text-sm font-semibold text-blue-600">PDF</a></div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="empty-state">No vendor bills yet.</td></tr>
+                        <tr><td colspan="8" class="empty-state">No vendor bills yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -6,6 +6,9 @@ use App\Models\AirTicketRequest;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\FinancialAccount;
+use App\Models\InternalTransfer;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Leave;
@@ -68,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
         Quote::observe(QuoteObserver::class);
         VendorBill::observe(VendorBillObserver::class);
         CustomerPayment::observe(CustomerPaymentObserver::class);
-        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class, AirTicketRequest::class, Expense::class] as $model) {
+        foreach ([User::class, Supplier::class, SupplierPayment::class, Permission::class, PermissionGroup::class, Tour::class, Leave::class, OfficeClosure::class, AirTicketRequest::class, Expense::class, ExpenseCategory::class, FinancialAccount::class, InternalTransfer::class] as $model) {
             $model::observe(AuditObserver::class);
         }
     }

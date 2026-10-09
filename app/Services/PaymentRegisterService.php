@@ -4,199 +4,95 @@ namespace App\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PaymentRegisterService
 {
-    /**
-     * @param  array{
-     *     date_from?: string|null,
-     *     date_to?: string|null,
-     *     direction?: string|null,
-     *     payment_method?: string|null,
-     *     account?: string|null,
-     * }  $filters
-     */
     public function paginate(array $filters, int $perPage = 50): LengthAwarePaginator
     {
-        return $this->registerQuery($filters)
-            ->orderByDesc('payment_date')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->paginate($perPage);
+        return $this->registerQuery($filters)->orderByDesc('payment_date')->orderByDesc('created_at')->orderByDesc('id')->paginate($perPage);
     }
 
-    /**
-     * @param  array<string, mixed>  $filters
-     * @return array{received: float, paid: float, net: float, count: int}
-     */
+    public function all(array $filters): Collection
+    {
+        return $this->registerQuery($filters)->orderByDesc('payment_date')->orderByDesc('created_at')->get();
+    }
+
     public function summary(array $filters): array
     {
         $row = $this->registerQuery($filters)
             ->selectRaw("COALESCE(SUM(CASE WHEN direction = 'in' THEN amount ELSE 0 END), 0) as received")
             ->selectRaw("COALESCE(SUM(CASE WHEN direction = 'out' THEN amount ELSE 0 END), 0) as paid")
-            ->selectRaw('COUNT(*) as transaction_count')
-            ->first();
-
+            ->selectRaw("COALESCE(SUM(CASE WHEN direction = 'transfer' THEN amount ELSE 0 END), 0) as transfers")
+            ->selectRaw('COUNT(*) as transaction_count')->first();
         $received = round((float) ($row->received ?? 0), 2);
         $paid = round((float) ($row->paid ?? 0), 2);
 
-        return [
-            'received' => $received,
-            'paid' => $paid,
-            'net' => round($received - $paid, 2),
-            'count' => (int) ($row->transaction_count ?? 0),
-        ];
+        return ['received' => $received, 'paid' => $paid, 'transfers' => round((float) ($row->transfers ?? 0), 2), 'net' => round($received - $paid, 2), 'count' => (int) ($row->transaction_count ?? 0)];
     }
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
     private function registerQuery(array $filters): Builder
     {
-        $direction = $filters['direction'] ?? null;
+        $union = $this->customerPaymentsQuery()->unionAll($this->supplierPaymentsQuery())->unionAll($this->legacyVendorPaymentsQuery())->unionAll($this->expensesQuery())->unionAll($this->transfersQuery());
 
-        if ($direction === 'in') {
-            return DB::query()->fromSub($this->customerPaymentsQuery($filters), 'payment_register');
-        }
-
-        if ($direction === 'out') {
-            $outgoing = $this->supplierPaymentsQuery($filters)
-                ->unionAll($this->legacyVendorPaymentsQuery($filters))
-                ->unionAll($this->expensesQuery($filters));
-
-            return DB::query()->fromSub($outgoing, 'payment_register');
-        }
-
-        $union = $this->customerPaymentsQuery($filters)
-            ->unionAll($this->supplierPaymentsQuery($filters))
-            ->unionAll($this->legacyVendorPaymentsQuery($filters))
-            ->unionAll($this->expensesQuery($filters));
-
-        return DB::query()->fromSub($union, 'payment_register');
+        return DB::query()->fromSub($union, 'payment_register')
+            ->when($filters['date_from'] ?? null, fn (Builder $q, string $v) => $q->whereDate('payment_date', '>=', $v))
+            ->when($filters['date_to'] ?? null, fn (Builder $q, string $v) => $q->whereDate('payment_date', '<=', $v))
+            ->when($filters['direction'] ?? null, fn (Builder $q, string $v) => $q->where('direction', $v))
+            ->when($filters['transaction_type'] ?? null, fn (Builder $q, string $v) => $q->where('transaction_type', $v))
+            ->when($filters['payment_method'] ?? null, fn (Builder $q, string $v) => $q->where('payment_method', $v))
+            ->when($filters['account'] ?? null, fn (Builder $q, string $v) => $q->where(fn (Builder $q) => $q->where('account_from', $v)->orWhere('account_to', $v)))
+            ->when($filters['search'] ?? null, function (Builder $q, string $search): void {
+                $like = '%'.trim($search).'%';
+                $q->where(function (Builder $q) use ($like): void {
+                    foreach (['reference', 'invoice_number', 'vendor_bill_number', 'lead_reference', 'party', 'supplier', 'sales_person', 'category', 'created_by_name'] as $column) {
+                        $q->orWhere($column, 'like', $like);
+                    }
+                });
+            });
     }
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
-    private function customerPaymentsQuery(array $filters): Builder
+    private function customerPaymentsQuery(): Builder
     {
-        return DB::table('customer_payments as payment')
-            ->join('invoices as invoice', 'invoice.id', '=', 'payment.invoice_id')
-            ->join('leads as lead', 'lead.id', '=', 'invoice.lead_id')
-            ->select([
-                'payment.id',
-                DB::raw("'in' as direction"),
-                DB::raw('NULL as supplier_payment_id'),
-                'payment.payment_date',
-                'payment.receipt_number as reference',
-                'invoice.id as invoice_id',
-                'invoice.invoice_number',
-                'lead.id as lead_id',
-                'lead.reference_id as lead_reference',
-                'lead.customer_name as party',
-                DB::raw('NULL as supplier'),
-                'payment.payment_method as payment_method',
-                'payment.deposit_to as account',
-                'payment.amount',
-                'payment.created_at',
-            ])
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '<=', $date))
-            ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_method', $method))
-            ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.deposit_to', $account));
+        return DB::table('customer_payments as p')->join('invoices as i', 'i.id', '=', 'p.invoice_id')->join('leads as l', 'l.id', '=', 'i.lead_id')->leftJoin('users as sales', 'sales.id', '=', 'i.sales_person_id')->select([
+            'p.id', DB::raw("'customer_receipt' as transaction_type"), DB::raw("'in' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'p.receipt_number as reference', 'i.id as invoice_id', 'i.invoice_number', DB::raw('NULL as vendor_bill_number'), 'l.id as lead_id', 'l.reference_id as lead_reference', 'l.customer_name as party', DB::raw('NULL as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_method', 'p.deposit_to as account_from', 'p.deposit_to as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
+        ]);
     }
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
-    private function supplierPaymentsQuery(array $filters): Builder
+    private function supplierPaymentsQuery(): Builder
     {
-        return DB::table('supplier_payments as payment')
-            ->leftJoin('suppliers as supplier', 'supplier.id', '=', 'payment.supplier_id')
-            ->select([
-                'payment.id',
-                DB::raw("'out' as direction"),
-                'payment.id as supplier_payment_id',
-                'payment.payment_date',
-                'payment.payment_number as reference',
-                DB::raw('NULL as invoice_id'),
-                DB::raw('NULL as invoice_number'),
-                DB::raw('NULL as lead_id'),
-                DB::raw('NULL as lead_reference'),
-                DB::raw("COALESCE(supplier.name, 'Legacy supplier payment') as party"),
-                'supplier.name as supplier',
-                'payment.payment_mode as payment_method',
-                'payment.paid_through as account',
-                'payment.amount',
-                'payment.created_at',
-            ])
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '<=', $date))
-            ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_mode', $method))
-            ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.paid_through', $account));
+        return DB::table('supplier_payments as p')->leftJoin('suppliers as s', 's.id', '=', 'p.supplier_id')->leftJoin('users as u', 'u.id', '=', 'p.created_by')->select([
+            'p.id', DB::raw("'supplier_payment' as transaction_type"), DB::raw("'out' as direction"), 'p.id as supplier_payment_id', DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'p.payment_number as reference',
+            DB::raw('(SELECT MIN(i.id) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id WHERE vbp.supplier_payment_id = p.id) as invoice_id'),
+            DB::raw('(SELECT GROUP_CONCAT(DISTINCT i.invoice_number) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id WHERE vbp.supplier_payment_id = p.id) as invoice_number'),
+            DB::raw('(SELECT GROUP_CONCAT(DISTINCT vb.vendor_bill_number) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id WHERE vbp.supplier_payment_id = p.id) as vendor_bill_number'),
+            DB::raw('(SELECT MIN(l.id) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN leads l ON l.id = i.lead_id WHERE vbp.supplier_payment_id = p.id) as lead_id'),
+            DB::raw('(SELECT GROUP_CONCAT(DISTINCT l.reference_id) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN leads l ON l.id = i.lead_id WHERE vbp.supplier_payment_id = p.id) as lead_reference'),
+            DB::raw("COALESCE(s.name, 'Supplier payment') as party"), 's.name as supplier',
+            DB::raw('(SELECT GROUP_CONCAT(DISTINCT sales.name) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN users sales ON sales.id = i.sales_person_id WHERE vbp.supplier_payment_id = p.id) as sales_person'),
+            DB::raw('NULL as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
+        ]);
     }
 
-    /**
-     * Payments created outside the supplier-payment workflow remain visible until linked or backfilled.
-     *
-     * @param  array<string, mixed>  $filters
-     */
-    private function legacyVendorPaymentsQuery(array $filters): Builder
+    private function legacyVendorPaymentsQuery(): Builder
     {
-        return DB::table('vendor_bill_payments as payment')
-            ->join('vendor_bills as bill', 'bill.id', '=', 'payment.vendor_bill_id')
-            ->leftJoin('invoices as invoice', 'invoice.id', '=', 'bill.invoice_id')
-            ->leftJoin('leads as lead', 'lead.id', '=', 'invoice.lead_id')
-            ->leftJoin('suppliers as supplier', 'supplier.id', '=', 'bill.supplier_id')
-            ->select([
-                'payment.id',
-                DB::raw("'out' as direction"),
-                DB::raw('NULL as supplier_payment_id'),
-                'payment.payment_date',
-                'bill.vendor_bill_number as reference',
-                'invoice.id as invoice_id',
-                'invoice.invoice_number',
-                'lead.id as lead_id',
-                'lead.reference_id as lead_reference',
-                DB::raw('COALESCE(supplier.name, bill.vendor_name) as party'),
-                DB::raw('COALESCE(supplier.name, bill.vendor_name) as supplier'),
-                'payment.payment_mode as payment_method',
-                'payment.paid_through as account',
-                'payment.amount',
-                'payment.created_at',
-            ])
-            ->whereNull('payment.supplier_payment_id')
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.payment_date', '<=', $date))
-            ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_mode', $method))
-            ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.paid_through', $account));
+        return DB::table('vendor_bill_payments as p')->join('vendor_bills as b', 'b.id', '=', 'p.vendor_bill_id')->leftJoin('invoices as i', 'i.id', '=', 'b.invoice_id')->leftJoin('leads as l', 'l.id', '=', 'i.lead_id')->leftJoin('suppliers as s', 's.id', '=', 'b.supplier_id')->leftJoin('users as sales', 'sales.id', '=', 'i.sales_person_id')->whereNull('p.supplier_payment_id')->select([
+            'p.id', DB::raw("'vendor_payment' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'b.vendor_bill_number as reference', 'i.id as invoice_id', 'i.invoice_number', 'b.vendor_bill_number', 'l.id as lead_id', 'l.reference_id as lead_reference', DB::raw('COALESCE(s.name, b.vendor_name) as party'), DB::raw('COALESCE(s.name, b.vendor_name) as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
+        ]);
     }
 
-    /** @param array<string, mixed> $filters */
-    private function expensesQuery(array $filters): Builder
+    private function expensesQuery(): Builder
     {
-        return DB::table('expenses as payment')
-            ->select([
-                'payment.id',
-                DB::raw("'out' as direction"),
-                DB::raw('NULL as supplier_payment_id'),
-                'payment.expense_date as payment_date',
-                'payment.reference_number as reference',
-                DB::raw('NULL as invoice_id'),
-                DB::raw('NULL as invoice_number'),
-                DB::raw('NULL as lead_id'),
-                DB::raw('NULL as lead_reference'),
-                'payment.description as party',
-                DB::raw('NULL as supplier'),
-                'payment.payment_mode as payment_method',
-                'payment.paid_through as account',
-                'payment.amount',
-                'payment.created_at',
-            ])
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.expense_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date): Builder => $query->whereDate('payment.expense_date', '<=', $date))
-            ->when($filters['payment_method'] ?? null, fn (Builder $query, string $method): Builder => $query->where('payment.payment_mode', $method))
-            ->when($filters['account'] ?? null, fn (Builder $query, string $account): Builder => $query->where('payment.paid_through', $account));
+        return DB::table('expenses as p')->leftJoin('expense_categories as c', 'c.id', '=', 'p.category_id')->leftJoin('users as u', 'u.id', '=', 'p.created_by')->select([
+            'p.id', DB::raw("'expense' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.expense_date as payment_date', 'p.reference_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), 'p.description as party', DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('COALESCE(c.name, p.category) as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
+        ]);
+    }
+
+    private function transfersQuery(): Builder
+    {
+        return DB::table('internal_transfers as p')->leftJoin('users as u', 'u.id', '=', 'p.created_by')->select([
+            'p.id', DB::raw("'internal_transfer' as transaction_type"), DB::raw("'transfer' as direction"), DB::raw('NULL as supplier_payment_id'), 'p.id as internal_transfer_id', 'p.transfer_date as payment_date', 'p.transfer_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), DB::raw("'Internal transfer' as party"), DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('NULL as category'), DB::raw("'internal_transfer' as payment_method"), 'p.from_account as account_from', 'p.to_account as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
+        ]);
     }
 }

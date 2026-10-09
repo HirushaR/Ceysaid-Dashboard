@@ -9,6 +9,7 @@ class Expense extends Model
 {
     protected $fillable = [
         'expense_date',
+        'category_id',
         'category',
         'description',
         'amount',
@@ -27,5 +28,10 @@ class Expense extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function expenseCategory(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'category_id');
     }
 }

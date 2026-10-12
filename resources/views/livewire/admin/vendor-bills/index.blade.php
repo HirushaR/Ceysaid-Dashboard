@@ -20,7 +20,7 @@
                 <tbody>
                     @forelse($bills as $bill)
                         <tr>
-                            <td><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="font-semibold text-blue-600">{{ $bill->vendor_bill_number }}</a></td>
+                            <td><a href="{{ route('admin.vendor-bills.show', $bill) }}" class="font-semibold text-blue-600">{{ $bill->vendor_bill_number }}</a>@if($bill->is_opening_balance)<span class="status-badge ml-2">Opening balance</span>@endif</td>
                             <td>@if($bill->invoice)<a href="{{ route('admin.invoices.show',$bill->invoice) }}" class="font-semibold text-blue-600">{{ $bill->invoice->invoice_number }}</a>@else—@endif</td>
                             <td>
                                 @if($bill->supplier && auth()->user()->canViewSuppliers())
@@ -31,7 +31,7 @@
                                     {{ $bill->vendor_name }}
                                 @endif
                             </td>
-                            <td>{{ $bill->tour ? $bill->tour->tour_code.' · '.$bill->tour->name : ($bill->invoice?->lead?->customer_name ?: 'Standalone') }}</td>
+                            <td>{{ $bill->is_opening_balance ? 'Supplier opening payable' : ($bill->tour ? $bill->tour->tour_code.' · '.$bill->tour->name : ($bill->invoice?->lead?->customer_name ?: 'Standalone')) }}</td>
                             <td>{{ $bill->due_date?->format('d M Y') }}</td>
                             <td><x-status-badge :status="$bill->payment_status" /></td>
                             <td>LKR {{ number_format($bill->outstanding_amount, 2) }}</td>

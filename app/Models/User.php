@@ -136,6 +136,11 @@ class User extends Authenticatable
         return $this->isAdmin() || ($this->isSales() && $this->isManager());
     }
 
+    public function canEditPendingAirTickets(): bool
+    {
+        return $this->isAdmin() || $this->isOperation();
+    }
+
     public function canViewAllVisaLeads(): bool
     {
         return $this->isAdmin()

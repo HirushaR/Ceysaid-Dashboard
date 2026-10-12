@@ -16,14 +16,33 @@ class Index extends Component
 {
     use WithPagination;
 
-    #[Url] public string $tab = 'pending';
-    #[Url] public string $search = '';
+    #[Url]
+    public string $tab = 'pending';
+
+    #[Url]
+    public string $search = '';
+
     public ?int $reviewing_id = null;
+
     public string $review_notes = '';
+
     public ?int $issuing_id = null;
+
     public string $ticket_number = '';
+
     public string $issued_at = '';
+
     public string $issue_notes = '';
+
+    public ?int $editing_id = null;
+
+    public string $edit_provider = '';
+
+    public string $edit_booking_reference = '';
+
+    public string $edit_airline = '';
+
+    public string $edit_time_limit = '';
 
     public function mount(): void
     {
@@ -52,6 +71,43 @@ class Index extends Component
         $this->reviewing_id = $request->id;
         $this->review_notes = '';
         $this->issuing_id = null;
+    }
+
+    public function openEdit(int $requestId): void
+    {
+        abort_unless(auth()->user()->canEditPendingAirTickets(), 403);
+        $request = $this->visibleRequest($requestId);
+        abort_unless($request->status === AirTicketStatus::PENDING_APPROVAL, 422);
+        $this->editing_id = $request->id;
+        $this->edit_provider = $request->provider;
+        $this->edit_booking_reference = $request->booking_reference;
+        $this->edit_airline = $request->airline;
+        $this->edit_time_limit = $request->time_limit?->format('Y-m-d\TH:i') ?? '';
+        $this->reviewing_id = null;
+        $this->issuing_id = null;
+    }
+
+    public function updatePending(): void
+    {
+        abort_unless(auth()->user()->canEditPendingAirTickets(), 403);
+        $data = $this->validate([
+            'edit_provider' => ['required', 'in:'.implode(',', array_keys(Queue::PROVIDERS))],
+            'edit_booking_reference' => ['required', 'string', 'max:100'],
+            'edit_airline' => ['required', 'string', 'max:150'],
+            'edit_time_limit' => ['required', 'date', 'after:now'],
+        ]);
+        $request = $this->visibleRequest($this->editing_id);
+        abort_unless($request->status === AirTicketStatus::PENDING_APPROVAL, 422);
+        $request->update([
+            'provider' => $data['edit_provider'],
+            'booking_reference' => $data['edit_booking_reference'],
+            'airline' => $data['edit_airline'],
+            'time_limit' => $data['edit_time_limit'],
+            'decision_notes' => null,
+        ]);
+        $this->logLeadAction($request, 'air_ticket_pending_updated', 'Pending ticket request details updated by operations.');
+        $this->resetActionForms();
+        session()->flash('success', 'Pending air-ticket request updated.');
     }
 
     public function approve(): void
@@ -214,7 +270,7 @@ class Index extends Component
 
     private function resetActionForms(): void
     {
-        $this->reset(['reviewing_id', 'review_notes', 'issuing_id', 'ticket_number', 'issued_at', 'issue_notes']);
+        $this->reset(['reviewing_id', 'review_notes', 'issuing_id', 'ticket_number', 'issued_at', 'issue_notes', 'editing_id', 'edit_provider', 'edit_booking_reference', 'edit_airline', 'edit_time_limit']);
         $this->resetValidation();
     }
 
@@ -257,7 +313,7 @@ class Index extends Component
             ->orderByRaw('time_limit asc')
             ->paginate(20);
 
-        return view('livewire.admin.air-tickets.index', compact('requests', 'summary', 'accountsView'))
+        return view('livewire.admin.air-tickets.index', ['requests' => $requests, 'summary' => $summary, 'accountsView' => $accountsView, 'providers' => Queue::PROVIDERS])
             ->layout('components.layouts.admin', ['title' => 'Air Tickets']);
     }
 }

@@ -17,6 +17,7 @@ class VendorBill extends Model
         'supplier_id',
         'vendor_name',
         'vendor_bill_number',
+        'is_opening_balance',
         'bill_amount',
         'due_date',
         'service_type',
@@ -33,6 +34,7 @@ class VendorBill extends Model
         'due_date' => 'date',
         'payment_date' => 'date',
         'payment_status' => 'string',
+        'is_opening_balance' => 'boolean',
     ];
 
     public function invoice(): BelongsTo

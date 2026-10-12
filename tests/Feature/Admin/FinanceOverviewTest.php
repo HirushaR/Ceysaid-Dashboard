@@ -65,6 +65,20 @@ class FinanceOverviewTest extends TestCase
         $this->actingAs($sales)->get(route('admin.finance.overview'))->assertForbidden();
     }
 
+    public function test_account_can_download_finance_overview_as_excel_and_pdf(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'account']));
+        $this->invoiceDue(today()->addDay(), 1500, 'INV-REPORT');
+        $this->billDue(today()->addDays(2), 600, 'VB-REPORT');
+
+        $this->get(route('admin.finance-export', ['type' => 'finance-overview']))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $this->get(route('finance.overview.pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
     private function invoiceDue(Carbon $dueDate, float $balance, string $number): Invoice
     {
         return Invoice::factory()->create([

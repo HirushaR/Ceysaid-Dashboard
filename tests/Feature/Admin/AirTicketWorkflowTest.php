@@ -159,6 +159,27 @@ class AirTicketWorkflowTest extends TestCase
             ->assertDontSee($waiting->booking_reference);
     }
 
+    public function test_operation_user_can_edit_a_visible_pending_ticket_request(): void
+    {
+        $operation = User::factory()->create(['role' => 'operation']);
+        $request = $this->ticketRequest($operation, 'OLDPNR');
+
+        $this->actingAs($operation);
+        Livewire::test(Index::class)
+            ->call('openEdit', $request->id)
+            ->assertSet('edit_booking_reference', 'OLDPNR')
+            ->set('edit_provider', 'ndc')
+            ->set('edit_booking_reference', 'NEWPNR')
+            ->set('edit_airline', 'Emirates')
+            ->set('edit_time_limit', now()->addDays(2)->format('Y-m-d\TH:i'))
+            ->call('updatePending')
+            ->assertHasNoErrors();
+
+        $this->assertSame('NEWPNR', $request->fresh()->booking_reference);
+        $this->assertSame('Emirates', $request->fresh()->airline);
+        $this->assertSame(AirTicketStatus::PENDING_APPROVAL, $request->fresh()->status);
+    }
+
     private function vendorBill(): VendorBill
     {
         $invoice = Invoice::factory()->create();

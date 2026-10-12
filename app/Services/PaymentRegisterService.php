@@ -46,7 +46,7 @@ class PaymentRegisterService
             ->when($filters['search'] ?? null, function (Builder $q, string $search): void {
                 $like = '%'.trim($search).'%';
                 $q->where(function (Builder $q) use ($like): void {
-                    foreach (['reference', 'invoice_number', 'vendor_bill_number', 'lead_reference', 'party', 'supplier', 'sales_person', 'category', 'created_by_name'] as $column) {
+                    foreach (['reference', 'invoice_number', 'vendor_bill_number', 'lead_reference', 'customer_name', 'party', 'supplier', 'sales_person', 'category', 'created_by_name'] as $column) {
                         $q->orWhere($column, 'like', $like);
                     }
                 });
@@ -56,7 +56,7 @@ class PaymentRegisterService
     private function customerPaymentsQuery(): Builder
     {
         return DB::table('customer_payments as p')->join('invoices as i', 'i.id', '=', 'p.invoice_id')->join('leads as l', 'l.id', '=', 'i.lead_id')->leftJoin('users as sales', 'sales.id', '=', 'i.sales_person_id')->select([
-            'p.id', DB::raw("'customer_receipt' as transaction_type"), DB::raw("'in' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'p.receipt_number as reference', 'i.id as invoice_id', 'i.invoice_number', DB::raw('NULL as vendor_bill_number'), 'l.id as lead_id', 'l.reference_id as lead_reference', 'l.customer_name as party', DB::raw('NULL as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_method', 'p.deposit_to as account_from', 'p.deposit_to as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
+            'p.id', DB::raw("'customer_receipt' as transaction_type"), DB::raw("'in' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'p.receipt_number as reference', 'i.id as invoice_id', 'i.invoice_number', DB::raw('NULL as vendor_bill_number'), 'l.id as lead_id', 'l.reference_id as lead_reference', 'l.customer_name', 'l.customer_name as party', DB::raw('NULL as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_method', 'p.deposit_to as account_from', 'p.deposit_to as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
         ]);
     }
 
@@ -69,6 +69,7 @@ class PaymentRegisterService
             DB::raw('(SELECT GROUP_CONCAT(DISTINCT vb.vendor_bill_number) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id WHERE vbp.supplier_payment_id = p.id) as vendor_bill_number'),
             DB::raw('(SELECT MIN(l.id) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN leads l ON l.id = i.lead_id WHERE vbp.supplier_payment_id = p.id) as lead_id'),
             DB::raw('(SELECT GROUP_CONCAT(DISTINCT l.reference_id) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN leads l ON l.id = i.lead_id WHERE vbp.supplier_payment_id = p.id) as lead_reference'),
+            DB::raw('(SELECT GROUP_CONCAT(DISTINCT l.customer_name) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN leads l ON l.id = i.lead_id WHERE vbp.supplier_payment_id = p.id) as customer_name'),
             DB::raw("COALESCE(s.name, 'Supplier payment') as party"), 's.name as supplier',
             DB::raw('(SELECT GROUP_CONCAT(DISTINCT sales.name) FROM vendor_bill_payments vbp JOIN vendor_bills vb ON vb.id = vbp.vendor_bill_id LEFT JOIN invoices i ON i.id = vb.invoice_id LEFT JOIN users sales ON sales.id = i.sales_person_id WHERE vbp.supplier_payment_id = p.id) as sales_person'),
             DB::raw('NULL as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
@@ -78,21 +79,21 @@ class PaymentRegisterService
     private function legacyVendorPaymentsQuery(): Builder
     {
         return DB::table('vendor_bill_payments as p')->join('vendor_bills as b', 'b.id', '=', 'p.vendor_bill_id')->leftJoin('invoices as i', 'i.id', '=', 'b.invoice_id')->leftJoin('leads as l', 'l.id', '=', 'i.lead_id')->leftJoin('suppliers as s', 's.id', '=', 'b.supplier_id')->leftJoin('users as sales', 'sales.id', '=', 'i.sales_person_id')->whereNull('p.supplier_payment_id')->select([
-            'p.id', DB::raw("'vendor_payment' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'b.vendor_bill_number as reference', 'i.id as invoice_id', 'i.invoice_number', 'b.vendor_bill_number', 'l.id as lead_id', 'l.reference_id as lead_reference', DB::raw('COALESCE(s.name, b.vendor_name) as party'), DB::raw('COALESCE(s.name, b.vendor_name) as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
+            'p.id', DB::raw("'vendor_payment' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.payment_date', 'b.vendor_bill_number as reference', 'i.id as invoice_id', 'i.invoice_number', 'b.vendor_bill_number', 'l.id as lead_id', 'l.reference_id as lead_reference', 'l.customer_name', DB::raw('COALESCE(s.name, b.vendor_name) as party'), DB::raw('COALESCE(s.name, b.vendor_name) as supplier'), 'sales.name as sales_person', DB::raw('NULL as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', DB::raw('NULL as created_by_name'), 'p.created_at',
         ]);
     }
 
     private function expensesQuery(): Builder
     {
         return DB::table('expenses as p')->leftJoin('expense_categories as c', 'c.id', '=', 'p.category_id')->leftJoin('users as u', 'u.id', '=', 'p.created_by')->select([
-            'p.id', DB::raw("'expense' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.expense_date as payment_date', 'p.reference_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), 'p.description as party', DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('COALESCE(c.name, p.category) as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
+            'p.id', DB::raw("'expense' as transaction_type"), DB::raw("'out' as direction"), DB::raw('NULL as supplier_payment_id'), DB::raw('NULL as internal_transfer_id'), 'p.expense_date as payment_date', 'p.reference_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), DB::raw('NULL as customer_name'), 'p.description as party', DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('COALESCE(c.name, p.category) as category'), 'p.payment_mode as payment_method', 'p.paid_through as account_from', 'p.paid_through as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
         ]);
     }
 
     private function transfersQuery(): Builder
     {
         return DB::table('internal_transfers as p')->leftJoin('users as u', 'u.id', '=', 'p.created_by')->select([
-            'p.id', DB::raw("'internal_transfer' as transaction_type"), DB::raw("'transfer' as direction"), DB::raw('NULL as supplier_payment_id'), 'p.id as internal_transfer_id', 'p.transfer_date as payment_date', 'p.transfer_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), DB::raw("'Internal transfer' as party"), DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('NULL as category'), DB::raw("'internal_transfer' as payment_method"), 'p.from_account as account_from', 'p.to_account as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
+            'p.id', DB::raw("'internal_transfer' as transaction_type"), DB::raw("'transfer' as direction"), DB::raw('NULL as supplier_payment_id'), 'p.id as internal_transfer_id', 'p.transfer_date as payment_date', 'p.transfer_number as reference', DB::raw('NULL as invoice_id'), DB::raw('NULL as invoice_number'), DB::raw('NULL as vendor_bill_number'), DB::raw('NULL as lead_id'), DB::raw('NULL as lead_reference'), DB::raw('NULL as customer_name'), DB::raw("'Internal transfer' as party"), DB::raw('NULL as supplier'), DB::raw('NULL as sales_person'), DB::raw('NULL as category'), DB::raw("'internal_transfer' as payment_method"), 'p.from_account as account_from', 'p.to_account as account_to', 'p.amount', 'u.name as created_by_name', 'p.created_at',
         ]);
     }
 }

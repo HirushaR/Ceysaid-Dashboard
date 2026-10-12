@@ -42,4 +42,14 @@ class SupplierPayment extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function getAllocatedAmountAttribute(): float
+    {
+        return round((float) $this->allocations()->sum('amount'), 2);
+    }
+
+    public function getUnappliedAmountAttribute(): float
+    {
+        return round(max(0, (float) $this->amount - $this->allocated_amount), 2);
+    }
 }

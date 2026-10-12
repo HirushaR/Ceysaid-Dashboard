@@ -3,6 +3,8 @@
 namespace Tests\Feature\Finance;
 
 use App\Livewire\Admin\Finance\Transfers;
+use App\Livewire\Admin\SupplierPayments\Setoff;
+use App\Livewire\Admin\Suppliers\Create as CreateSupplier;
 use App\Models\CustomerPayment;
 use App\Models\InternalTransfer;
 use App\Models\Invoice;
@@ -60,6 +62,27 @@ class FinanceLedgerEnhancementTest extends TestCase
         $this->assertCount(1, $service->all(['search' => 'Nimali']));
     }
 
+    public function test_any_name_search_finds_customer_on_an_allocated_supplier_payment(): void
+    {
+        $supplier = Supplier::create(['name' => 'Search Test Airline']);
+        $lead = Lead::factory()->create(['customer_name' => 'Allocated Customer']);
+        $invoice = Invoice::factory()->create(['lead_id' => $lead->id]);
+        $bill = $this->bill($invoice, $supplier, 'VB-SEARCH-1', 300);
+        $payment = app(RecordSupplierPaymentService::class)->record([
+            'supplier_id' => $supplier->id,
+            'payment_date' => '2026-10-09',
+            'amount' => 200,
+            'payment_mode' => 'cash',
+            'paid_through' => 'cash',
+            'allocations' => [['vendor_bill_id' => $bill->id, 'amount' => 200]],
+        ]);
+
+        $results = app(PaymentRegisterService::class)->all(['search' => 'Allocated Customer']);
+
+        $this->assertCount(1, $results);
+        $this->assertSame($payment->id, $results->first()->supplier_payment_id);
+    }
+
     public function test_supplier_payment_edit_reallocates_bills_and_records_reason(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'account']));
@@ -88,6 +111,35 @@ class FinanceLedgerEnhancementTest extends TestCase
         $this->assertNotFalse($zip->getFromName('xl/worksheets/sheet1.xml'));
         $zip->close();
         unlink($zipPath);
+    }
+
+    public function test_vendor_opening_balance_is_created_as_payable_and_can_be_partially_set_off(): void
+    {
+        $account = User::factory()->create(['role' => 'account']);
+        $this->actingAs($account);
+
+        Livewire::test(CreateSupplier::class)
+            ->set('name', 'Opening Balance Supplier')
+            ->set('opening_balance', 800)
+            ->set('opening_balance_date', '2026-10-01')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $supplier = Supplier::query()->where('name', 'Opening Balance Supplier')->firstOrFail();
+        $openingBill = $supplier->openingBalanceBill()->firstOrFail();
+        $this->assertTrue($openingBill->is_opening_balance);
+        $this->assertSame(800.0, $supplier->totalOutstandingPayable());
+
+        $payment = app(RecordSupplierPaymentService::class)->record(['supplier_id' => $supplier->id, 'payment_date' => '2026-10-09', 'amount' => 500, 'payment_mode' => 'bank_transfer', 'paid_through' => 'ntb_current', 'allocations' => []]);
+        Livewire::test(Setoff::class, ['supplierPayment' => $payment])
+            ->set('allocations.0.amount', 300)
+            ->set('audit_reason', 'Set off advance against opening balance')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(300.0, $payment->fresh()->allocated_amount);
+        $this->assertSame(200.0, $payment->fresh()->unapplied_amount);
+        $this->assertSame(500.0, $openingBill->fresh()->outstanding_amount);
     }
 
     private function bill(Invoice $invoice, Supplier $supplier, string $number, float $amount): VendorBill

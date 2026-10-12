@@ -43,8 +43,8 @@ class UpdateSupplierPaymentService
                 $total = round($total + $allocated, 2);
                 $prepared[] = ['bill' => $bill, 'amount' => $allocated];
             }
-            if ($prepared !== [] && abs($total - $amount) > 0.009) {
-                throw ValidationException::withMessages(['amount' => 'Payment amount must equal the allocated total of LKR '.number_format($total, 2).'.']);
+            if ($total > $amount + 0.009) {
+                throw ValidationException::withMessages(['amount' => 'Setoff total cannot exceed the payment amount of LKR '.number_format($amount, 2).'.']);
             }
 
             $payment->update([

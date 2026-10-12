@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <div class="page-heading">
-        <div><p class="eyebrow">Finance</p><h1>Finance Overview</h1><p>Upcoming customer receipts and supplier payments as at {{ $asOf->format('d M Y') }}.</p></div>
+        <div><p class="eyebrow">Finance</p><h1>Finance Overview</h1><p>Upcoming customer receipts and supplier payments as at {{ $asOf->format('d M Y') }}.</p></div><div class="flex gap-2"><a href="{{ route('admin.finance-export',['type'=>'finance-overview']) }}" class="btn-secondary">Download Excel</a><a target="_blank" href="{{ route('finance.overview.pdf') }}" class="btn-secondary">Download PDF</a></div>
     </div>
 
     <section class="grid gap-5 xl:grid-cols-3" aria-label="Cash-flow forecast">

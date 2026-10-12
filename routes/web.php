@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\BankStatementPdfController;
 use App\Http\Controllers\CustomerPaymentPdfController;
 use App\Http\Controllers\FinanceExportController;
+use App\Http\Controllers\FinanceOverviewPdfController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\SupplierPayablePdfController;
@@ -58,6 +59,7 @@ use App\Livewire\Admin\Quotes\Show as QuoteShow;
 use App\Livewire\Admin\Receivables\Index as ReceivableIndex;
 use App\Livewire\Admin\SupplierPayments\Create as SupplierPaymentCreate;
 use App\Livewire\Admin\SupplierPayments\Edit as SupplierPaymentEdit;
+use App\Livewire\Admin\SupplierPayments\Setoff as SupplierPaymentSetoff;
 use App\Livewire\Admin\Suppliers\Create as SupplierCreate;
 use App\Livewire\Admin\Suppliers\Edit as SupplierEdit;
 use App\Livewire\Admin\Suppliers\Index as SupplierIndex;
@@ -136,6 +138,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/air-tickets', AirTicketIndex::class)->name('air-tickets.index');
     Route::get('/supplier-payments/create', SupplierPaymentCreate::class)->name('supplier-payments.create');
     Route::get('/supplier-payments/{supplierPayment}/edit', SupplierPaymentEdit::class)->name('supplier-payments.edit');
+    Route::get('/supplier-payments/{supplierPayment}/setoff', SupplierPaymentSetoff::class)->name('supplier-payments.setoff');
     Route::get('/receivables', ReceivableIndex::class)->name('receivables.index');
     Route::get('/payments/customer/{customerPayment}', CustomerPaymentShow::class)->name('payments.customer.show');
     Route::get('/payments/supplier/{supplierPayment}', SupplierPaymentShow::class)->name('payments.supplier.show');
@@ -170,7 +173,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/bank-statements', BankStatements::class)->name('bank-statements.index');
     Route::get('/internal-transfers', Transfers::class)->name('internal-transfers.index');
     Route::get('/expenses', ExpenseIndex::class)->name('expenses.index');
-    Route::get('/finance-export/{type}', FinanceExportController::class)->whereIn('type', ['payment-register', 'bank-statement', 'expenses', 'vendor-payments', 'invoices'])->name('finance-export');
+    Route::get('/finance-export/{type}', FinanceExportController::class)->whereIn('type', ['payment-register', 'bank-statement', 'expenses', 'vendor-payments', 'invoices', 'finance-overview'])->name('finance-export');
     Route::get('/notifications', NotificationIndex::class)->name('notifications');
 });
 
@@ -182,5 +185,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/finance/supplier-payables/pdf', SupplierPayablesSummaryPdfController::class)->name('finance.supplier-payables.summary-pdf');
     Route::get('/finance/supplier-payables/{supplier}/pdf', SupplierPayablePdfController::class)->name('finance.supplier-payables.pdf');
     Route::get('/finance/bank-statement/pdf', BankStatementPdfController::class)->name('finance.bank-statement.pdf');
+    Route::get('/finance/overview/pdf', FinanceOverviewPdfController::class)->name('finance.overview.pdf');
     Route::get('/admin/whatsapp-media/{message}', [WhatsAppMediaController::class, 'show'])->name('whatsapp.media');
 });

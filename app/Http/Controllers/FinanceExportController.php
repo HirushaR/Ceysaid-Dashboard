@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\SupplierPayment;
 use App\Services\AuditService;
 use App\Services\BankStatementService;
+use App\Services\FinanceCashFlowService;
 use App\Services\PaymentRegisterService;
 use App\Services\SimpleXlsxWriter;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FinanceExportController
 {
-    public function __invoke(string $type, Request $request, SimpleXlsxWriter $xlsx, PaymentRegisterService $payments, BankStatementService $statements): BinaryFileResponse
+    public function __invoke(string $type, Request $request, SimpleXlsxWriter $xlsx, PaymentRegisterService $payments, BankStatementService $statements, FinanceCashFlowService $cashFlow): BinaryFileResponse
     {
         abort_unless(auth()->user()->canManageAccountingRecords(), 403);
         [$title, $rows] = match ($type) {
@@ -23,6 +24,7 @@ class FinanceExportController
             'expenses' => $this->expenses(),
             'vendor-payments' => $this->vendorPayments(),
             'invoices' => $this->invoices(),
+            'finance-overview' => $this->financeOverview($cashFlow),
             default => abort(404),
         };
         $path = $xlsx->write($title, $rows);
@@ -82,5 +84,32 @@ class FinanceExportController
         });
 
         return ['Invoices', $rows];
+    }
+
+    private function financeOverview(FinanceCashFlowService $service): array
+    {
+        $asOf = today();
+        $forecast = $service->forecast($asOf);
+        $overdue = $service->overdue($asOf);
+        $rows = [['Finance Overview', 'As at', $asOf->toDateString()], [], ['Forecast period', 'Through', 'Money coming in', 'Money going out', 'Expected net']];
+        foreach ($forecast as $window) {
+            $rows[] = [$window['label'], $window['end'], $window['incoming'], $window['outgoing'], $window['net']];
+        }
+        $rows[] = [];
+        $rows[] = ['Overdue', 'Count', 'Amount'];
+        $rows[] = ['Customer receipts', $overdue['incoming_count'], $overdue['incoming']];
+        $rows[] = ['Supplier payments', $overdue['outgoing_count'], $overdue['outgoing']];
+        $rows[] = [];
+        $rows[] = ['Next payments to receive', 'Due date', 'Customer', 'Outstanding'];
+        foreach ($service->nextReceivables($asOf, 100) as $invoice) {
+            $rows[] = [$invoice->invoice_number, $invoice->due_date?->toDateString(), $invoice->lead?->customer_name, (float) $invoice->balance_amount];
+        }
+        $rows[] = [];
+        $rows[] = ['Next payments to make', 'Due date', 'Supplier', 'Outstanding'];
+        foreach ($service->nextPayables($asOf, 100) as $bill) {
+            $rows[] = [$bill->vendor_bill_number, $bill->due_date?->toDateString(), $bill->supplier?->name ?? $bill->vendor_name, $bill->outstanding_amount];
+        }
+
+        return ['Finance Overview', $rows];
     }
 }

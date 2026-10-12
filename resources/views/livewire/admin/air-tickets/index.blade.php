@@ -9,6 +9,14 @@
         @endforeach
     </section>
 
+    @if($editing_id)
+        <form wire:submit="updatePending" class="panel p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="section-label">Operations update</p><h2 class="mt-1 text-lg font-bold">Edit pending ticket request</h2></div><button type="button" wire:click="$set('editing_id', null)" class="btn-secondary">Close</button></div>
+            <div class="mt-5 grid gap-5 md:grid-cols-2"><div><label class="form-label">PCC / Provider *</label><select wire:model="edit_provider" class="form-input"><option value="">Select provider</option>@foreach($providers as $value=>$label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>@error('edit_provider')<p class="form-error">{{ $message }}</p>@enderror</div><div><label class="form-label">Booking reference (PNR) *</label><input wire:model="edit_booking_reference" class="form-input">@error('edit_booking_reference')<p class="form-error">{{ $message }}</p>@enderror</div><div><label class="form-label">Airline *</label><input wire:model="edit_airline" class="form-input">@error('edit_airline')<p class="form-error">{{ $message }}</p>@enderror</div><div><label class="form-label">Time limit *</label><input wire:model="edit_time_limit" type="datetime-local" class="form-input">@error('edit_time_limit')<p class="form-error">{{ $message }}</p>@enderror</div></div>
+            <div class="mt-4 flex justify-end"><button class="btn-primary">Save pending request</button></div>
+        </form>
+    @endif
+
     @if($reviewing_id)
         <form wire:submit="approve" class="panel p-5">
             <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="section-label">Accounts review</p><h2 class="mt-1 text-lg font-bold">Approve or return the ticket request</h2></div><button type="button" wire:click="$set('reviewing_id', null)" class="btn-secondary">Close</button></div>
@@ -46,6 +54,7 @@
                             <td>
                                 <div class="flex flex-wrap gap-2">
                                     @if($ticket->status===\App\Enums\AirTicketStatus::PENDING_APPROVAL && auth()->user()->canApproveAirTickets())<button wire:click="openReview({{ $ticket->id }})" class="text-sm font-semibold text-blue-600">Review</button>@endif
+                                    @if($ticket->status===\App\Enums\AirTicketStatus::PENDING_APPROVAL && auth()->user()->canEditPendingAirTickets())<button wire:click="openEdit({{ $ticket->id }})" class="text-sm font-semibold text-amber-600">Edit pending</button>@endif
                                     @if($ticket->status===\App\Enums\AirTicketStatus::RETURNED_FOR_CORRECTION && auth()->user()->canQueueAirTickets() && auth()->user()->can('view',$ticket->vendorBill))<a href="{{ route('admin.vendor-bills.queue-to-issue',$ticket->vendorBill) }}" class="text-sm font-semibold text-amber-600">Correct</a>@endif
                                     @if($ticket->status===\App\Enums\AirTicketStatus::READY_FOR_TICKETING && auth()->user()->canIssueAirTickets() && !$ticket->isTimeLimitExpired())<button wire:click="openIssue({{ $ticket->id }})" class="text-sm font-semibold text-blue-600">Issue ticket</button><button wire:click="hold({{ $ticket->id }})" class="text-sm font-semibold text-slate-500">Hold</button>@endif
                                     @if($ticket->status===\App\Enums\AirTicketStatus::ON_HOLD && auth()->user()->canIssueAirTickets() && !$ticket->isTimeLimitExpired())<button wire:click="resume({{ $ticket->id }})" class="text-sm font-semibold text-blue-600">Resume</button>@endif

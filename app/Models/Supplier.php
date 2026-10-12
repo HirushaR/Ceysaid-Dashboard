@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Supplier extends Model
 {
@@ -26,6 +27,11 @@ class Supplier extends Model
     public function supplierPayments(): HasMany
     {
         return $this->hasMany(SupplierPayment::class);
+    }
+
+    public function openingBalanceBill(): HasOne
+    {
+        return $this->hasOne(VendorBill::class)->where('is_opening_balance', true);
     }
 
     /**

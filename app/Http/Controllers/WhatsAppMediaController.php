@@ -7,7 +7,6 @@ use App\Models\WhatsAppMessage;
 use App\Support\WhatsAppMediaStorage;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WhatsAppMediaController extends Controller
 {
@@ -43,14 +42,6 @@ class WhatsAppMediaController extends Controller
             return false;
         }
 
-        if ($user->isAdmin()) {
-            return $conversation->isAssigned();
-        }
-
-        if ($user->isSales()) {
-            return $conversation->isAssignedTo($user);
-        }
-
-        return false;
+        return $user->canViewWhatsAppConversation($conversation);
     }
 }

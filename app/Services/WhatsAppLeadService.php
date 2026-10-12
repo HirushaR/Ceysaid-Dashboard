@@ -20,6 +20,7 @@ class WhatsAppLeadService
         $conversation->loadMissing(['contact', 'messages']);
 
         $contact = $conversation->contact;
+        $assignee = $conversation->assignedUser;
         $firstInbound = $conversation->messages()
             ->where('direction', 'inbound')
             ->orderBy('id')
@@ -37,11 +38,9 @@ class WhatsAppLeadService
             'created_by' => $user?->id,
         ];
 
-        if ($user && $user->isSales()) {
-            $attributes['assigned_to'] = $user->id;
+        if ($assignee && $assignee->isSales()) {
+            $attributes['assigned_to'] = $assignee->id;
             $attributes['status'] = LeadStatus::ASSIGNED_TO_SALES->value;
-        } elseif ($user) {
-            $attributes['assigned_to'] = $user->id;
         }
 
         $lead = Lead::create($attributes);

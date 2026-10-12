@@ -4,16 +4,17 @@ namespace App\Services;
 
 use App\Jobs\DownloadWhatsAppMediaJob;
 use App\Models\Lead;
+use App\Models\User;
 use App\Models\WebhookEvent;
 use App\Models\WhatsAppContact;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
 use App\Models\WhatsAppMessageStatus;
+use App\Notifications\WhatsAppConversationNotification;
 use App\Support\WhatsAppLogContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class WhatsAppWebhookHandler
 {
@@ -89,8 +90,9 @@ class WhatsAppWebhookHandler
         $parsed = $this->parseMessageContent($message);
 
         $whatsappMessage = null;
+        $newConversation = false;
 
-        DB::transaction(function () use ($from, $contactData, $message, $wamid, $parsed, $referral, &$whatsappMessage) {
+        DB::transaction(function () use ($from, $contactData, $message, $wamid, $parsed, $referral, &$whatsappMessage, &$newConversation) {
             $contact = WhatsAppContact::updateOrCreate(
                 ['wa_id' => $from],
                 [
@@ -103,6 +105,7 @@ class WhatsAppWebhookHandler
                 ['whatsapp_contact_id' => $contact->id],
                 ['unread_count' => 0]
             );
+            $newConversation = $conversation->wasRecentlyCreated;
 
             if ($referral) {
                 $this->applyReferralToConversation($conversation, $referral);
@@ -140,6 +143,13 @@ class WhatsAppWebhookHandler
             $contact = $whatsappMessage->conversation?->contact;
             $conversation = $whatsappMessage->conversation?->fresh();
             $lead = $conversation?->lead?->fresh();
+
+            if ($newConversation && $conversation) {
+                User::query()
+                    ->where('role', 'admin')
+                    ->orWhere(fn ($query) => $query->where('role', 'sales')->where('is_manager', true))
+                    ->each(fn (User $user) => $user->notify(new WhatsAppConversationNotification($conversation, 'unassigned')));
+            }
 
             $this->logInboundMessageEvent('stored', $value, $message, [
                 'parsed_content' => $parsed,

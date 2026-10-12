@@ -70,6 +70,16 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function canAssignWhatsAppConversations(): bool
+    {
+        return $this->isAdmin() || ($this->isSales() && $this->isManager());
+    }
+
+    public function canViewWhatsAppConversation(WhatsAppConversation $conversation): bool
+    {
+        return $this->canAssignWhatsAppConversations() || $conversation->isAssignedTo($this);
+    }
+
     public function isAccount(): bool
     {
         return $this->role === 'account';

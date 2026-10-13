@@ -128,21 +128,35 @@ class CallCentreWhatsAppTest extends TestCase
         $this->actingAs($sales)->get(route('admin.whatsapp.show', $chat))->assertOk();
     }
 
-    public function test_admin_can_open_unassigned_chat_but_regular_sales_cannot_assign_it(): void
+    public function test_regular_sales_can_see_and_claim_an_unassigned_chat_but_cannot_assign_others(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $sales = User::factory()->create(['role' => 'sales', 'is_manager' => false]);
+        $otherSales = User::factory()->create(['role' => 'sales', 'is_manager' => false]);
         $chat = $this->conversationFor();
 
         $this->actingAs($admin)->get(route('admin.whatsapp.show', $chat))->assertOk()->assertSee('Assign this conversation');
-        $this->actingAs($sales)->get(route('admin.whatsapp.show', $chat))->assertForbidden();
+        $this->actingAs($sales)->get(route('admin.whatsapp.show', $chat))->assertOk()->assertSee('Assign to me');
+        Livewire::actingAs($sales)
+            ->test(WhatsAppIndex::class)
+            ->assertSet('scope', 'unassigned')
+            ->assertSee('Assign to me')
+            ->call('claimConversation', $chat->id)
+            ->assertHasNoErrors();
+
+        $this->assertSame($sales->id, $chat->fresh()->assigned_to);
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'WhatsAppConversation.claimed',
+            'subject_id' => $chat->id,
+        ]);
+        $this->actingAs($otherSales)->get(route('admin.whatsapp.show', $chat))->assertForbidden();
         Livewire::actingAs($sales)
             ->test(WhatsAppIndex::class)
             ->call('assignConversation', $chat->id, (string) $sales->id)
             ->assertForbidden();
     }
 
-    public function test_new_whatsapp_chat_notifies_admins_and_sales_managers_for_assignment(): void
+    public function test_new_whatsapp_chat_notifies_admins_and_sales_users_for_assignment(): void
     {
         Notification::fake();
         $admin = User::factory()->create(['role' => 'admin']);
@@ -169,8 +183,7 @@ class CallCentreWhatsAppTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('whatsapp_conversations', ['assigned_to' => null]);
-        Notification::assertSentTo([$admin, $manager], WhatsAppConversationNotification::class, fn ($notification) => $notification->event === 'unassigned');
-        Notification::assertNotSentTo($sales, WhatsAppConversationNotification::class);
+        Notification::assertSentTo([$admin, $manager, $sales], WhatsAppConversationNotification::class, fn ($notification) => $notification->event === 'unassigned');
     }
 
     private function conversationFor(?User $sales = null): WhatsAppConversation

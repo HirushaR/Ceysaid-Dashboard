@@ -147,7 +147,7 @@ class WhatsAppWebhookHandler
             if ($newConversation && $conversation) {
                 User::query()
                     ->where('role', 'admin')
-                    ->orWhere(fn ($query) => $query->where('role', 'sales')->where('is_manager', true))
+                    ->orWhere('role', 'sales')
                     ->each(fn (User $user) => $user->notify(new WhatsAppConversationNotification($conversation, 'unassigned')));
             }
 

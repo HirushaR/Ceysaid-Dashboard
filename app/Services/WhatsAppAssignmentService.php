@@ -44,4 +44,36 @@ class WhatsAppAssignmentService
 
         return $conversation->fresh(['contact', 'assignedUser']);
     }
+
+    public function claim(WhatsAppConversation $conversation, User $actor): WhatsAppConversation
+    {
+        if (! $actor->canClaimWhatsAppConversations()) {
+            throw new AuthorizationException('You cannot claim WhatsApp conversations.');
+        }
+
+        $claimed = WhatsAppConversation::query()
+            ->whereKey($conversation->id)
+            ->whereNull('assigned_to')
+            ->update([
+                'assigned_to' => $actor->id,
+                'assigned_at' => now(),
+                'folder_id' => null,
+            ]);
+
+        if ($claimed === 0) {
+            throw ValidationException::withMessages([
+                'conversation' => 'This conversation has already been assigned to another salesperson.',
+            ]);
+        }
+
+        $conversation->refresh();
+        $this->auditService->record(
+            'WhatsAppConversation.claimed',
+            $conversation,
+            ['assigned_to' => null],
+            ['assigned_to' => $actor->id],
+        );
+
+        return $conversation->load(['contact', 'assignedUser']);
+    }
 }

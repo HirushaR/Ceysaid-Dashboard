@@ -5,7 +5,7 @@
             <h1>Inbox</h1>
             <p>Assign new conversations, manage folders, and convert chats into leads.</p>
         </div>
-        @if($canAssign)
+        @if($canAssign || $canClaim)
             <a href="{{ route('admin.whatsapp.index', ['scope' => 'unassigned']) }}" class="btn-secondary">
                 Unassigned
                 @if($unassignedCount)
@@ -20,8 +20,8 @@
             <input wire:model.live.debounce.300ms="search" class="form-input" placeholder="Search contact or phone">
             <select wire:model.live="scope" class="form-input">
                 <option value="mine">My chats</option>
+                <option value="unassigned">Unassigned ({{ $unassignedCount }})</option>
                 @if($canAssign)
-                    <option value="unassigned">Unassigned ({{ $unassignedCount }})</option>
                     <option value="all">All chats</option>
                 @endif
             </select>
@@ -59,6 +59,10 @@
                                 @endforeach
                             </select>
                         </div>
+                    @elseif($canClaim && ! $chat->isAssigned())
+                        <button wire:click="claimConversation({{ $chat->id }})" wire:confirm="Assign this WhatsApp conversation to yourself?" class="btn-primary shrink-0">
+                            Assign to me
+                        </button>
                     @else
                         <div class="shrink-0 text-right text-xs text-slate-500">
                             <p>{{ $chat->folder?->name ?: 'Unfiled' }}</p>

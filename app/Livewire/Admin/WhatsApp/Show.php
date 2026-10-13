@@ -29,7 +29,9 @@ class Show extends Component
     public function mount(): void
     {
         $this->authorizeChat();
-        $this->conversation->markAsRead();
+        if ($this->conversation->isAssignedTo(auth()->user())) {
+            $this->conversation->markAsRead();
+        }
         $this->refreshChat();
         $this->folder_id = $this->conversation->folder_id;
     }
@@ -151,6 +153,17 @@ class Show extends Component
         session()->flash('success', $assignee ? "Conversation assigned to {$assignee->name}." : 'Conversation returned to the unassigned queue.');
     }
 
+    public function claimConversation(WhatsAppAssignmentService $service): void
+    {
+        $actor = auth()->user();
+        abort_unless($actor->canClaimWhatsAppConversations(), 403);
+
+        $this->conversation = $service->claim($this->conversation, $actor);
+        $this->conversation->markAsRead();
+        $this->refreshChat();
+        session()->flash('success', 'Conversation assigned to you. You can now reply or create a lead.');
+    }
+
     private function assignmentTeam()
     {
         return User::query()->where('role', 'sales')->orderBy('name')->get();
@@ -164,6 +177,7 @@ class Show extends Component
             'folders' => auth()->user()->whatsappChatFolders()->orderBy('position')->get(),
             'assignmentTeam' => $canAssign ? $this->assignmentTeam() : collect(),
             'canAssign' => $canAssign,
+            'canClaim' => auth()->user()->canClaimWhatsAppConversations(),
         ])->layout('components.layouts.admin', ['title' => $this->conversation->contact?->displayName() ?? 'WhatsApp chat']);
     }
 }

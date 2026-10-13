@@ -30,7 +30,7 @@ class Index extends Component
         abort_unless($user->isAdmin() || $user->isSales(), 403);
 
         if ($this->scope === '') {
-            $this->scope = $user->canAssignWhatsAppConversations() ? 'unassigned' : 'mine';
+            $this->scope = 'unassigned';
         }
     }
 
@@ -62,6 +62,16 @@ class Index extends Component
         session()->flash('success', $assignee ? "Conversation assigned to {$assignee->name}." : 'Conversation returned to the unassigned queue.');
     }
 
+    public function claimConversation(int $conversationId, WhatsAppAssignmentService $service): void
+    {
+        $actor = auth()->user();
+        abort_unless($actor->canClaimWhatsAppConversations(), 403);
+
+        $conversation = WhatsAppConversation::query()->whereNull('assigned_to')->findOrFail($conversationId);
+        $service->claim($conversation, $actor);
+        session()->flash('success', 'Conversation assigned to you.');
+    }
+
     /** @return Collection<int, User> */
     private function assignmentTeam(): Collection
     {
@@ -72,7 +82,8 @@ class Index extends Component
     {
         $user = auth()->user();
         $canAssign = $user->canAssignWhatsAppConversations();
-        $scope = $canAssign ? $this->scope : 'mine';
+        $allowedScopes = $canAssign ? ['mine', 'unassigned', 'all'] : ['mine', 'unassigned'];
+        $scope = in_array($this->scope, $allowedScopes, true) ? $this->scope : 'mine';
 
         $query = WhatsAppConversation::query()
             ->with(['contact', 'lead', 'assignedUser', 'folder'])
@@ -88,7 +99,8 @@ class Index extends Component
             'folders' => $user->whatsappChatFolders()->orderBy('position')->get(),
             'assignmentTeam' => $canAssign ? $this->assignmentTeam() : collect(),
             'canAssign' => $canAssign,
-            'unassignedCount' => $canAssign ? WhatsAppConversation::unassigned()->count() : 0,
+            'canClaim' => $user->canClaimWhatsAppConversations(),
+            'unassignedCount' => WhatsAppConversation::unassigned()->count(),
         ])->layout('components.layouts.admin', ['title' => 'WhatsApp inbox']);
     }
 }

@@ -83,6 +83,13 @@
                     </select>
                     <p class="mt-2 text-xs text-slate-500">Changing the assignee moves the chat to that salesperson’s inbox.</p>
                 </div>
+            @elseif($canClaim && ! $conversation->isAssigned())
+                <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">This is a new unassigned conversation.</p>
+                    <button wire:click="claimConversation" wire:confirm="Assign this WhatsApp conversation to yourself?" class="btn-primary mt-3 w-full">
+                        Assign to me
+                    </button>
+                </div>
             @endif
             @if($conversation->isAssignedTo(auth()->user()))
             <div class="mt-4">

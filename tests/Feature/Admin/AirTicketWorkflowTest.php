@@ -11,7 +11,9 @@ use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\VendorBill;
+use App\Notifications\LeadDatabaseNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -21,7 +23,9 @@ class AirTicketWorkflowTest extends TestCase
 
     public function test_vendor_bill_can_be_queued_for_accounts_approval(): void
     {
+        Notification::fake();
         $admin = User::factory()->create(['role' => 'admin']);
+        $account = User::factory()->create(['role' => 'account']);
         $bill = $this->vendorBill();
         $this->actingAs($admin);
 
@@ -42,6 +46,7 @@ class AirTicketWorkflowTest extends TestCase
         $this->assertSame(AirTicketStatus::PENDING_APPROVAL, $request->status);
         $this->assertSame('1250.00', $request->amount);
         $this->assertSame(ServiceStatus::IN_PROGRESS->value, $bill->invoice->lead->fresh()->air_ticket_status);
+        Notification::assertSentTo($account, LeadDatabaseNotification::class);
     }
 
     public function test_accounts_approve_and_sales_manager_issues_ticket(): void

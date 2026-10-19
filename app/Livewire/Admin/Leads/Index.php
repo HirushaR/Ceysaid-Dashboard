@@ -12,11 +12,19 @@ class Index extends Component
 {
     use WithPagination;
 
-    #[Url] public string $search = '';
-    #[Url] public string $status = '';
-    #[Url] public string $queue = '';
+    #[Url]
+    public string $search = '';
 
-    public function updatedSearch(): void { $this->resetPage(); }
+    #[Url]
+    public string $status = '';
+
+    #[Url]
+    public string $queue = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
@@ -25,12 +33,23 @@ class Index extends Component
         if ($user->isSales() && ! $user->isManager()) {
             $query->where(fn ($q) => $q->where('assigned_to', $user->id)->orWhereNull('assigned_to'));
         } elseif ($user->isOperation() && ! $user->isManager()) {
-            $query->where(fn ($q) => $q->where('assigned_operator', $user->id)->orWhere('status', LeadStatus::INFO_GATHER_COMPLETE->value));
+            $query->where(fn ($q) => $q
+                ->where('assigned_operator', $user->id)
+                ->orWhere(fn ($claimable) => $claimable
+                    ->whereNull('assigned_operator')
+                    ->where('status', LeadStatus::INFO_GATHER_COMPLETE->value)));
         }
         $query->when($this->search, fn ($q) => $q->where(fn ($inner) => $inner
             ->where('reference_id', 'like', "%{$this->search}%")
-            ->orWhere('customer_name', 'like', "%{$this->search}%")
-            ->orWhere('contact_value', 'like', "%{$this->search}%")))
+            ->when(! ($user->isOperation() && ! $user->isManager()), fn ($details) => $details
+                ->orWhere('customer_name', 'like', "%{$this->search}%")
+                ->orWhere('contact_value', 'like', "%{$this->search}%"))
+            ->when($user->isOperation() && ! $user->isManager(), fn ($details) => $details
+                ->orWhere(fn ($assigned) => $assigned
+                    ->where('assigned_operator', $user->id)
+                    ->where(fn ($fields) => $fields
+                        ->where('customer_name', 'like', "%{$this->search}%")
+                        ->orWhere('contact_value', 'like', "%{$this->search}%"))))))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->queue === 'operations', fn ($q) => $q->where('status', LeadStatus::INFO_GATHER_COMPLETE->value));
 

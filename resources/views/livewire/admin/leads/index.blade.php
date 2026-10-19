@@ -13,13 +13,14 @@
                 <thead><tr><th>Lead</th><th>Contact</th><th>Status</th><th>Sales</th><th>Operations</th><th>Arrival</th></tr></thead>
                 <tbody>
                     @forelse($leads as $lead)
+                        @php($hideOperationDetails = auth()->user()->isOperation() && !auth()->user()->isManager() && $lead->assigned_operator !== auth()->id())
                         <tr @class(['lead-row-high-priority' => $lead->priority === 'high']) @if($lead->priority === 'high') title="High priority lead" @endif>
-                            <td><a class="table-link" href="{{ route('admin.leads.show', $lead) }}">{{ $lead->reference_id ?: '#'.$lead->id }}</a><p class="mt-1 font-medium">{{ $lead->customer_name }}</p></td>
-                            <td>{{ $lead->contact_value ?: '—' }}<p class="text-xs capitalize text-slate-500">{{ $lead->platform }}</p></td>
+                            <td><a class="table-link" href="{{ route('admin.leads.show', $lead) }}">{{ $lead->reference_id ?: '#'.$lead->id }}</a><p class="mt-1 font-medium">{{ $hideOperationDetails ? 'Details hidden until assigned' : $lead->customer_name }}</p></td>
+                            <td>{{ $hideOperationDetails ? 'Hidden' : ($lead->contact_value ?: '—') }}@unless($hideOperationDetails)<p class="text-xs capitalize text-slate-500">{{ $lead->platform }}</p>@endunless</td>
                             <td><x-status-badge :status="\App\Enums\LeadStatus::tryFrom($lead->status) ?? $lead->status" /></td>
-                            <td>{{ $lead->assignedUser?->name ?? 'Unassigned' }}</td>
+                            <td>{{ $hideOperationDetails ? 'Hidden' : ($lead->assignedUser?->name ?? 'Unassigned') }}</td>
                             <td>{{ $lead->assignedOperator?->name ?? 'Unassigned' }}</td>
-                            <td>{{ $lead->arrival_date?->format('d M Y') ?? '—' }}</td>
+                            <td>{{ $hideOperationDetails ? 'Hidden' : ($lead->arrival_date?->format('d M Y') ?? '—') }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="6" class="empty-state">No leads match these filters.</td></tr>

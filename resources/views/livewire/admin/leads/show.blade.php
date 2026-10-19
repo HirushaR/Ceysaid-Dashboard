@@ -1,6 +1,19 @@
 <div>
 @if($lead->is_other_lead)
     @include('livewire.admin.leads.partials.other-workspace')
+@elseif($restrictedOperationPreview)
+<div class="mx-auto max-w-3xl space-y-5">
+    <div class="page-heading">
+        <div><p class="eyebrow">Operations intake</p><h1>{{ $lead->reference_id ?: '#'.$lead->id }}</h1><p>Customer and trip details remain hidden until you accept this lead.</p></div>
+        <a href="{{ route('admin.leads.index', ['queue' => 'operations']) }}" class="btn-secondary">← Back to queue</a>
+    </div>
+    <section class="panel p-6">
+        <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+            <div><span class="status-badge">Awaiting operations assignment</span><h2 class="mt-3 text-xl font-bold">Accept this lead to view its details</h2><p class="mt-2 text-sm text-slate-500">Once assigned, the customer, contact, travel requirements, notes, and documents will become available to you.</p></div>
+            <button wire:click="transition('{{ \App\Enums\LeadStatus::ASSIGNED_TO_OPERATIONS->value }}')" wire:confirm="Assign this lead to yourself?" class="btn-primary shrink-0">Assign to me</button>
+        </div>
+    </section>
+</div>
 @else
 <div class="space-y-5" x-data="{ tab: 'overview', actions: false }">
     <div class="flex items-center justify-between gap-4">
@@ -39,6 +52,8 @@
                     <div><dt>Preferred contact</dt><dd class="capitalize">{{ $lead->contact_method ?: 'Not set' }}</dd></div>
                     <div><dt>Destination</dt><dd>{{ $lead->destination ?: 'Not set' }}</dd></div>
                     <div><dt>Lead type</dt><dd>{{ $lead->is_group_lead ? 'Group' : ($lead->is_cruise_lead ? 'Cruise' : 'Standard') }}</dd></div>
+                    <div><dt>Tour reference</dt><dd>{{ $lead->tour ?: 'Not set' }}</dd></div>
+                    <div><dt>Linked tour</dt><dd>{{ $lead->tourMaster?->tour_code ? $lead->tourMaster->tour_code.' · '.$lead->tourMaster->name : 'Not linked' }}</dd></div>
                     <div><dt>Source</dt><dd class="capitalize">{{ $lead->platform ?: 'Not set' }}</dd></div>
                     <div><dt>Travel dates</dt><dd>{{ $lead->arrival_date?->format('d M Y') ?? 'Not set' }} – {{ $lead->depature_date?->format('d M Y') ?? 'Not set' }}</dd></div>
                     <div><dt>Duration</dt><dd>{{ $lead->number_of_days ? $lead->number_of_days.' days' : 'Not set' }}</dd></div>

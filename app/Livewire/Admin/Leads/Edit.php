@@ -29,6 +29,8 @@ class Edit extends Component
 
     public string $destination = '';
 
+    public string $tour = '';
+
     public string $message = '';
 
     public string $priority = 'medium';
@@ -75,6 +77,7 @@ class Edit extends Component
             'contact_method' => $this->lead->contact_method ?: 'phone',
             'contact_value' => (string) ($this->lead->contact_value ?? ''),
             'destination' => (string) ($this->lead->destination ?? ''),
+            'tour' => (string) ($this->lead->tour ?? ''),
             'message' => (string) ($this->lead->message ?? ''),
             'priority' => $this->lead->priority ?: Priority::MEDIUM->value,
             'number_of_adults' => max(1, (int) ($this->lead->number_of_adults ?? 1)),
@@ -117,7 +120,7 @@ class Edit extends Component
     {
         $data = [];
         if ($this->canEditDetails()) {
-            $data += $this->validate(['customer_name' => ['required', 'string', 'max:255'], 'platform' => ['required', 'in:'.implode(',', array_column(Platform::cases(), 'value'))], 'contact_method' => ['nullable', 'string', 'max:32'], 'contact_value' => ['nullable', 'string', 'max:255'], 'destination' => ['nullable', 'string', 'max:255'], 'message' => ['nullable', 'string', 'max:10000'], 'priority' => ['required', 'in:'.implode(',', array_column(Priority::cases(), 'value'))], 'arrival_date' => ['nullable', 'date'], 'depature_date' => ['nullable', 'date', 'after_or_equal:arrival_date'], 'number_of_adults' => ['required', 'integer', 'min:1'], 'number_of_children' => ['required', 'integer', 'min:0'], 'number_of_infants' => ['required', 'integer', 'min:0'], 'is_group_lead' => ['boolean'], 'is_cruise_lead' => ['boolean'], 'tour_id' => ['nullable', 'exists:tours,id']]);
+            $data += $this->validate(['customer_name' => ['required', 'string', 'max:255'], 'platform' => ['required', 'in:'.implode(',', array_column(Platform::cases(), 'value'))], 'contact_method' => ['nullable', 'string', 'max:32'], 'contact_value' => ['nullable', 'string', 'max:255'], 'destination' => ['nullable', 'string', 'max:255'], 'tour' => ['nullable', 'string', 'max:255'], 'message' => ['nullable', 'string', 'max:10000'], 'priority' => ['required', 'in:'.implode(',', array_column(Priority::cases(), 'value'))], 'arrival_date' => ['nullable', 'date'], 'depature_date' => ['nullable', 'date', 'after_or_equal:arrival_date'], 'number_of_adults' => ['required', 'integer', 'min:1'], 'number_of_children' => ['required', 'integer', 'min:0'], 'number_of_infants' => ['required', 'integer', 'min:0'], 'is_group_lead' => ['boolean'], 'is_cruise_lead' => ['boolean'], 'tour_id' => ['nullable', 'exists:tours,id']]);
         }
         if ($this->canEditServices()) {
             $data += $this->validate(['air_ticket_status' => ['required', 'in:'.implode(',', array_column(ServiceStatus::cases(), 'value'))], 'hotel_status' => ['required', 'in:'.implode(',', array_column(ServiceStatus::cases(), 'value'))], 'visa_status' => ['required', 'in:'.implode(',', array_column(ServiceStatus::cases(), 'value'))], 'land_package_status' => ['required', 'in:'.implode(',', array_column(ServiceStatus::cases(), 'value'))]]);
@@ -154,6 +157,6 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.leads.edit', ['platforms' => Platform::options(), 'priorities' => Priority::options(), 'serviceStatuses' => ServiceStatus::options(), 'tours' => Tour::query()->orderByDesc('departure_date')->get(), 'salesUsers' => User::query()->where('role', 'sales')->orderBy('name')->get(), 'operationUsers' => User::query()->where('role', 'operation')->orderBy('name')->get()])->layout('components.layouts.admin',['title' => 'Edit lead']);
+        return view('livewire.admin.leads.edit', ['platforms' => Platform::options(), 'priorities' => Priority::options(), 'serviceStatuses' => ServiceStatus::options(), 'tours' => Tour::query()->orderByDesc('departure_date')->get(), 'salesUsers' => User::query()->where('role', 'sales')->orderBy('name')->get(), 'operationUsers' => User::query()->where('role', 'operation')->orderBy('name')->get()])->layout('components.layouts.admin', ['title' => 'Edit lead']);
     }
 }

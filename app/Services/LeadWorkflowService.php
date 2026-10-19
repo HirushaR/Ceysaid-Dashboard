@@ -48,21 +48,26 @@ class LeadWorkflowService
 
     public function transition(Lead $lead, LeadStatus $to, User $actor): Lead
     {
-        if ($lead->is_other_lead) {
-            throw ValidationException::withMessages(['status' => 'Other leads use their separate workflow.']);
-        }
-
-        $from = LeadStatus::tryFrom($lead->status);
-        if (! $from || ! $this->canTransition($from, $to, $actor)) {
-            throw ValidationException::withMessages([
-                'status' => "You cannot move this lead from {$from?->label()} to {$to->label()}.",
-            ]);
-        }
-        if ($to === LeadStatus::CONFIRMED && $lead->is_group_lead && ! $lead->tour_id) {
-            throw ValidationException::withMessages(['tour_id' => 'A tour is required before confirming a group lead.']);
-        }
-
         return DB::transaction(function () use ($lead, $to, $actor): Lead {
+            $lead = Lead::query()->lockForUpdate()->findOrFail($lead->id);
+
+            if ($lead->is_other_lead) {
+                throw ValidationException::withMessages(['status' => 'Other leads use their separate workflow.']);
+            }
+
+            $from = LeadStatus::tryFrom($lead->status);
+            if (! $from || ! $this->canTransition($from, $to, $actor)) {
+                throw ValidationException::withMessages([
+                    'status' => "You cannot move this lead from {$from?->label()} to {$to->label()}.",
+                ]);
+            }
+            if ($to === LeadStatus::ASSIGNED_TO_OPERATIONS && $lead->assigned_operator && $lead->assigned_operator !== $actor->id) {
+                throw ValidationException::withMessages(['status' => 'This lead has already been assigned to another operation team member.']);
+            }
+            if ($to === LeadStatus::CONFIRMED && $lead->is_group_lead && ! $lead->tour_id) {
+                throw ValidationException::withMessages(['tour_id' => 'A tour is required before confirming a group lead.']);
+            }
+
             $changes = ['status' => $to->value];
             if ($to === LeadStatus::ASSIGNED_TO_SALES) {
                 $changes['assigned_to'] = $actor->id;
@@ -86,8 +91,7 @@ class LeadWorkflowService
             LeadStatus::NEW => $actor->isSales() && $to === LeadStatus::ASSIGNED_TO_SALES,
             LeadStatus::ASSIGNED_TO_SALES => $actor->isSales() && $to === LeadStatus::INFO_GATHER_COMPLETE,
             LeadStatus::INFO_GATHER_COMPLETE => $actor->isOperation() && $to === LeadStatus::ASSIGNED_TO_OPERATIONS,
-            LeadStatus::ASSIGNED_TO_OPERATIONS, LeadStatus::RATE_REQUESTED, LeadStatus::AMENDMENT =>
-                $actor->isOperation() && in_array($to, [LeadStatus::RATE_REQUESTED, LeadStatus::AMENDMENT, LeadStatus::OPERATION_COMPLETE], true),
+            LeadStatus::ASSIGNED_TO_OPERATIONS, LeadStatus::RATE_REQUESTED, LeadStatus::AMENDMENT => $actor->isOperation() && in_array($to, [LeadStatus::RATE_REQUESTED, LeadStatus::AMENDMENT, LeadStatus::OPERATION_COMPLETE], true),
             LeadStatus::OPERATION_COMPLETE => $actor->isSales() && $to === LeadStatus::SENT_TO_CUSTOMER,
             LeadStatus::SENT_TO_CUSTOMER => $actor->isSales() && $to === LeadStatus::CONFIRMED,
             LeadStatus::CONFIRMED => ($actor->isOperation() || $actor->isSales()) && $to === LeadStatus::DOCUMENT_UPLOAD_COMPLETE,

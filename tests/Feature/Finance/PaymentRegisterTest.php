@@ -6,6 +6,8 @@ use App\Livewire\Admin\Payments\Index as PaymentRegister;
 use App\Models\CustomerPayment;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\User;
 use App\Models\VendorBill;
 use App\Models\VendorBillPayment;
@@ -38,6 +40,27 @@ class PaymentRegisterTest extends TestCase
             ->assertOk()
             ->assertSee('Incoming customer receipts')
             ->assertSee('outgoing supplier payments');
+    }
+
+    public function test_supplier_payment_rows_link_to_view_and_edit_screens(): void
+    {
+        $account = User::factory()->create(['role' => 'account']);
+        $supplier = Supplier::create(['name' => 'Editable Supplier']);
+        $payment = SupplierPayment::create([
+            'supplier_id' => $supplier->id,
+            'payment_number' => 'SP/2026/EDIT',
+            'payment_date' => '2026-10-19',
+            'amount' => 750,
+            'payment_mode' => 'bank_transfer',
+            'paid_through' => 'ntb_current',
+            'created_by' => $account->id,
+        ]);
+        $this->actingAs($account);
+
+        Livewire::test(PaymentRegister::class)
+            ->assertSee('SP/2026/EDIT')
+            ->assertSeeHtml('href="'.route('admin.payments.supplier.show', $payment).'"')
+            ->assertSeeHtml('href="'.route('admin.supplier-payments.edit', $payment).'"');
     }
 
     public function test_register_combines_and_summarizes_payments_by_payment_date(): void

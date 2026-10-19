@@ -5,17 +5,25 @@ namespace App\Livewire\Admin\AirTickets;
 use App\Enums\AirTicketStatus;
 use App\Enums\ServiceStatus;
 use App\Models\AirTicketRequest;
+use App\Models\User;
 use App\Models\VendorBill;
+use App\Notifications\LeadDatabaseNotification;
 use App\Services\LeadActionLogger;
+use App\Support\AdminNotificationAction;
+use App\Support\AdminNotificationMessage;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Queue extends Component
 {
     public VendorBill $vendorBill;
+
     public string $provider = '';
+
     public string $booking_reference = '';
+
     public string $airline = '';
+
     public string $time_limit = '';
 
     public const PROVIDERS = [
@@ -55,7 +63,7 @@ class Queue extends Component
             'time_limit' => ['required', 'date', 'after:now'],
         ]);
 
-        DB::transaction(function () use ($data, $user): void {
+        $request = DB::transaction(function () use ($data, $user): AirTicketRequest {
             $request = AirTicketRequest::updateOrCreate(
                 ['vendor_bill_id' => $this->vendorBill->id],
                 $data + [
@@ -82,7 +90,11 @@ class Queue extends Component
                 null,
                 ['air_ticket_request_id' => $request->id, 'status' => $request->status->value],
             );
+
+            return $request;
         });
+
+        $this->notifyAccountsTeam($request);
 
         session()->flash('success', 'Ticket request queued for accounts approval.');
 
@@ -95,5 +107,23 @@ class Queue extends Component
             'providers' => self::PROVIDERS,
             'request' => $this->vendorBill->airTicketRequest,
         ])->layout('components.layouts.admin', ['title' => 'Queue ticket issuing']);
+    }
+
+    private function notifyAccountsTeam(AirTicketRequest $request): void
+    {
+        $request->loadMissing('vendorBill.invoice.lead');
+        $lead = $request->vendorBill?->invoice?->lead;
+        $message = AdminNotificationMessage::make()
+            ->title('Air ticket approval required')
+            ->body('PNR '.$request->booking_reference.' from vendor bill '.$request->vendorBill?->vendor_bill_number.' is waiting for accounts approval. Time limit: '.$request->time_limit?->format('d M Y, g:i A').'.')
+            ->warning()
+            ->icon('heroicon-o-ticket')
+            ->actions([
+                AdminNotificationAction::make('review')->label('Review request')->url(route('admin.air-tickets.index', ['tab' => 'pending'])),
+            ]);
+
+        User::query()
+            ->whereIn('role', ['account', 'admin'])
+            ->each(fn (User $recipient) => $recipient->notify(new LeadDatabaseNotification($message, $lead?->id)));
     }
 }

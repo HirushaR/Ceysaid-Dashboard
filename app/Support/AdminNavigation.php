@@ -96,9 +96,9 @@ class AdminNavigation
         $groups[] = ['label' => 'Operations', 'items' => $operations];
         $employeeItems = [
             ['label' => 'My Leave Requests', 'route' => 'admin.leave.index', 'active' => 'admin.leave.index'],
-            ['label' => 'Leave Calendar', 'route' => 'admin.leave.calendar', 'active' => 'admin.leave.calendar'],
         ];
         if ($user->isAdmin() || $user->isHR()) {
+            $employeeItems[] = ['label' => 'Leave Calendar', 'route' => 'admin.leave.calendar', 'active' => 'admin.leave.calendar'];
             $employeeItems[] = ['label' => 'Office Closures', 'route' => 'admin.closures.index', 'active' => 'admin.closures.*'];
         }
         $groups[] = ['label' => 'Employee Services', 'items' => $employeeItems];

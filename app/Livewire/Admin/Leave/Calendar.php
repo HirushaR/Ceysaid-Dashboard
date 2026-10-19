@@ -1,3 +1,42 @@
 <?php
-namespace App\Livewire\Admin\Leave;use App\Enums\LeaveStatus;use App\Models\Leave;use App\Models\OfficeClosure;use Livewire\Attributes\Url;use Livewire\Component;
-class Calendar extends Component{#[Url]public string $month='';public function mount():void{$this->month=$this->month?:now()->format('Y-m');}public function render(){$start=\Carbon\Carbon::parse($this->month.'-01')->startOfMonth();$end=$start->copy()->endOfMonth();$leaves=Leave::with('user')->where('status',LeaveStatus::APPROVED)->whereDate('start_date','<=',$end)->whereDate('end_date','>=',$start)->orderBy('start_date')->get();$closures=OfficeClosure::whereDate('start_date','<=',$end)->whereDate('end_date','>=',$start)->orderBy('start_date')->get();return view('livewire.admin.leave.calendar',compact('leaves','closures','start'))->layout('components.layouts.admin',['title'=>'Leave calendar']);}}
+
+namespace App\Livewire\Admin\Leave;
+
+use App\Enums\LeaveStatus;
+use App\Models\Leave;
+use App\Models\OfficeClosure;
+use Carbon\Carbon;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+
+class Calendar extends Component
+{
+    #[Url]
+    public string $month = '';
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()->isAdmin() || auth()->user()->isHR(), 403);
+        $this->month = $this->month ?: now()->format('Y-m');
+    }
+
+    public function render()
+    {
+        $start = Carbon::parse($this->month.'-01')->startOfMonth();
+        $end = $start->copy()->endOfMonth();
+        $leaves = Leave::with('user')
+            ->where('status', LeaveStatus::APPROVED)
+            ->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start)
+            ->orderBy('start_date')
+            ->get();
+        $closures = OfficeClosure::query()
+            ->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start)
+            ->orderBy('start_date')
+            ->get();
+
+        return view('livewire.admin.leave.calendar', compact('leaves', 'closures', 'start'))
+            ->layout('components.layouts.admin', ['title' => 'Leave calendar']);
+    }
+}

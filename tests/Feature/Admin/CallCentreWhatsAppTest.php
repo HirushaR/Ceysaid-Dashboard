@@ -128,6 +128,33 @@ class CallCentreWhatsAppTest extends TestCase
         $this->actingAs($sales)->get(route('admin.whatsapp.show', $chat))->assertOk();
     }
 
+    public function test_admin_whatsapp_inbox_defaults_to_all_assigned_and_unassigned_chats(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $sales = User::factory()->create(['role' => 'sales']);
+        $unassigned = $this->conversationFor();
+        $unassigned->update(['last_message_preview' => 'Unassigned admin-visible message']);
+        $assignedContact = WhatsAppContact::create([
+            'wa_id' => '94770000001',
+            'phone' => '94770000001',
+            'profile_name' => 'Assigned WhatsApp Guest',
+        ]);
+        WhatsAppConversation::create([
+            'whatsapp_contact_id' => $assignedContact->id,
+            'assigned_to' => $sales->id,
+            'assigned_at' => now(),
+            'last_message_at' => now(),
+            'last_message_preview' => 'Assigned admin-visible message',
+            'unread_count' => 1,
+        ]);
+        $this->actingAs($admin);
+
+        Livewire::test(WhatsAppIndex::class)
+            ->assertSet('scope', 'all')
+            ->assertSee('Unassigned admin-visible message')
+            ->assertSee('Assigned admin-visible message');
+    }
+
     public function test_regular_sales_can_see_and_claim_an_unassigned_chat_but_cannot_assign_others(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

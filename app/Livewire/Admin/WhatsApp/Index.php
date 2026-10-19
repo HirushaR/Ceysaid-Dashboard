@@ -30,7 +30,7 @@ class Index extends Component
         abort_unless($user->isAdmin() || $user->isSales(), 403);
 
         if ($this->scope === '') {
-            $this->scope = 'unassigned';
+            $this->scope = $user->isAdmin() ? 'all' : 'unassigned';
         }
     }
 

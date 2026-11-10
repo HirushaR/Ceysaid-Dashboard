@@ -28,9 +28,11 @@ use App\Livewire\Admin\Customers\Index as CustomerIndex;
 use App\Livewire\Admin\Customers\Show as CustomerShow;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Expenses\Index as ExpenseIndex;
+use App\Livewire\Admin\Finance\AccountingPilotReport;
 use App\Livewire\Admin\Finance\BankStatements;
 use App\Livewire\Admin\Finance\Overview as FinanceOverview;
 use App\Livewire\Admin\Finance\Transfers;
+use App\Livewire\Admin\Invoices\Accounting as InvoiceAccounting;
 use App\Livewire\Admin\Invoices\Create as InvoiceCreate;
 use App\Livewire\Admin\Invoices\Edit as InvoiceEdit;
 use App\Livewire\Admin\Invoices\Index as InvoiceIndex;
@@ -125,6 +127,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/invoices/create', InvoiceCreate::class)->name('invoices.create');
     Route::get('/invoices/{invoice}/edit', InvoiceEdit::class)->name('invoices.edit');
     Route::get('/invoices/{invoice}/payments/create', RecordPayment::class)->name('invoices.payments.create');
+    Route::get('/invoices/{invoice}/accounting', InvoiceAccounting::class)->name('invoices.accounting');
     Route::get('/invoices/{invoice}', InvoiceShow::class)->name('invoices.show');
     Route::get('/suppliers', SupplierIndex::class)->name('suppliers.index');
     Route::get('/suppliers/create', SupplierCreate::class)->name('suppliers.create');
@@ -170,6 +173,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('/exports/{type}', AdminExportController::class)->whereIn('type', ['leads', 'invoices', 'staff'])->name('exports.download');
     Route::get('/payments', PaymentIndex::class)->name('payments.index');
     Route::get('/finance-overview', FinanceOverview::class)->name('finance.overview');
+    Route::get('/accounting-pilot', AccountingPilotReport::class)->name('accounting-pilot.index');
     Route::get('/bank-statements', BankStatements::class)->name('bank-statements.index');
     Route::get('/internal-transfers', Transfers::class)->name('internal-transfers.index');
     Route::get('/expenses', ExpenseIndex::class)->name('expenses.index');

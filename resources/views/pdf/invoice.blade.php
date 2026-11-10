@@ -12,7 +12,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Invoice {{ $invoice->invoice_number }}</title>
+    <title>{{ $bookingRequest ? 'Booking payment request' : 'Invoice' }} {{ $invoice->invoice_number }}</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -141,7 +141,10 @@
                     </div>
                 @endif
                 <div class="company-details">
-                    <div class="doc-title">Invoice</div>
+                    <div class="doc-title">{{ $bookingRequest ? 'Booking payment request' : 'Invoice' }}</div>
+                    @if ($bookingRequest)
+                        <p>Revenue recognition follows service delivery. This document is not a tax invoice.</p>
+                    @endif
                     <p><strong>{{ $company['name'] }}</strong></p>
                     @foreach(preg_split("/\r\n|\n|\r/", (string) $company['address']) as $line)
                         @if(trim($line) !== '')
@@ -155,8 +158,8 @@
             </td>
             <td class="meta">
                 <div class="invoice-meta">
-                    <p><strong>Invoice #:</strong> {{ $invoice->invoice_number }}</p>
-                    <p><strong>Invoice Date:</strong> {{ optional($invoice->invoice_date)->format('d.m.Y') ?? '—' }}</p>
+                    <p><strong>{{ $bookingRequest ? 'Booking reference' : 'Invoice #' }}:</strong> {{ $invoice->invoice_number }}</p>
+                    <p><strong>{{ $bookingRequest ? 'Request date' : 'Invoice Date' }}:</strong> {{ optional($invoice->invoice_date)->format('d.m.Y') ?? '—' }}</p>
                     <p><strong>Due Date:</strong> {{ optional($invoice->due_date)->format('d.m.Y') ?? '—' }}</p>
                     <p><strong>Terms:</strong> {{ $terms }}</p>
                     <p><strong>Sales Person:</strong> {{ $invoice->salesPerson?->name ?? $invoice->lead?->assignedUser?->name ?? '—' }}</p>
@@ -274,8 +277,14 @@
             <td>Total</td>
             <td>LKR {{ $fmt($sub) }}</td>
         </tr>
+        @if ($bookingRequest)
+            <tr>
+                <td>Payments recorded</td>
+                <td>LKR {{ $fmt($sub - $bal) }}</td>
+            </tr>
+        @endif
         <tr>
-            <td>Balance Due</td>
+            <td>{{ $bookingRequest ? 'Remaining booking amount' : 'Balance Due' }}</td>
             <td>LKR {{ $fmt($bal) }}</td>
         </tr>
     </table>

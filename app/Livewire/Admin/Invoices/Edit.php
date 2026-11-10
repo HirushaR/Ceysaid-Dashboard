@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Invoices;
 
 use App\Models\Invoice;
+use App\Services\AccountingPilot;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -32,6 +33,7 @@ class Edit extends Component
     public function mount(): void
     {
         abort_unless(auth()->user()->canEditInvoices(), 403);
+        abort_if(app(AccountingPilot::class)->booking($this->invoice->id), 409, 'This booking is locked for the accounting pilot.');
         $this->invoice->load(['lineItems', 'customerPayments']);
         foreach (['lead_id', 'terms', 'bank_account', 'subject', 'description', 'notes'] as $f) {
             $this->$f = $this->invoice->$f ?? ($f === 'bank_account' ? 'ntb_current' : '');
@@ -59,9 +61,13 @@ class Edit extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()->canEditInvoices(), 403);
         $data = $this->validate(['invoice_date' => ['required', 'date'], 'due_date' => ['required', 'date', 'after_or_equal:invoice_date'], 'terms' => ['nullable', 'string', 'max:255'], 'bank_account' => ['required', 'in:'.implode(',', array_keys(config('ceysaid.company.bank_accounts', [])))], 'subject' => ['nullable', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000'], 'notes' => ['nullable', 'string', 'max:5000'], 'lines' => ['required', 'array', 'min:1'], 'lines.*.description' => ['required', 'string', 'max:2000'], 'lines.*.customer_details' => ['nullable', 'string', 'max:255'], 'lines.*.quantity' => ['required', 'numeric', 'gt:0'], 'lines.*.rate' => ['required', 'numeric', 'min:0']]);
         DB::transaction(function () use ($data) {
             $invoice = Invoice::query()->lockForUpdate()->findOrFail($this->invoice->id);
+            if (app(AccountingPilot::class)->booking($invoice->id)) {
+                throw ValidationException::withMessages(['lines' => 'This booking is locked for the accounting pilot.']);
+            }
             $total = round(collect($data['lines'])->sum(fn ($l) => (float) $l['quantity'] * (float) $l['rate']), 2);
             $paid = round((float) $invoice->customerPayments()->sum('amount'), 2);
             if ($total + 0.0001 < $paid) {

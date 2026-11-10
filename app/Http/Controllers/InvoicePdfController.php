@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\AccountingPilot;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -32,6 +33,7 @@ class InvoicePdfController
             'invoice' => $invoice,
             'company' => $company,
             'logoPath' => $logoPath,
+            'bookingRequest' => app(AccountingPilot::class)->booking($invoice->id) !== null,
         ]);
 
         return $pdf->download($filename);

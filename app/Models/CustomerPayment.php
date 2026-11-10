@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\AccountingPilot;
 use App\Services\DocumentNumberService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class CustomerPayment extends Model
 {
@@ -16,6 +18,7 @@ class CustomerPayment extends Model
         'payment_method',
         'deposit_to',
         'notes',
+        'recorded_by',
     ];
 
     protected $casts = [
@@ -51,6 +54,12 @@ class CustomerPayment extends Model
             }
             $payment->receipt_number = app(DocumentNumberService::class)
                 ->nextCustomerReceiptNumberForLead((int) $invoice->lead_id);
+        });
+
+        static::updating(function (CustomerPayment $payment): void {
+            if ($payment->isDirty($payment->getFillable()) && app(AccountingPilot::class)->booking((int) $payment->getOriginal('invoice_id'))) {
+                throw ValidationException::withMessages(['accounting' => 'Pilot receipts are locked against editing.']);
+            }
         });
 
         // Update invoice payment status when payment is created, updated, or deleted

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Invoices;
 
 use App\Models\Invoice;
+use App\Services\AccountingPilot;
 use Livewire\Component;
 
 class Show extends Component
@@ -19,6 +20,8 @@ class Show extends Component
     {
         $logs = $this->invoice->lead?->actionLogs()->with('user')->whereIn('action', ['invoice_created', 'invoice_updated'])->where(fn ($q) => $q->where('new_values->invoice_id', $this->invoice->id)->orWhere('description', 'like', '%'.$this->invoice->invoice_number.'%'))->latest()->limit(20)->get() ?? collect();
 
-        return view('livewire.admin.invoices.show', compact('logs'))->layout('components.layouts.admin', ['title' => $this->invoice->invoice_number]);
+        $pilotBooking = app(AccountingPilot::class)->booking($this->invoice->id);
+
+        return view('livewire.admin.invoices.show', compact('logs', 'pilotBooking'))->layout('components.layouts.admin', ['title' => $this->invoice->invoice_number]);
     }
 }
